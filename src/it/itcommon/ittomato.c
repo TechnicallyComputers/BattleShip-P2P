@@ -11,7 +11,7 @@ ITDesc dITTomatoItemDesc =
 {
     nITKindTomato,                          // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataTomatoItemAttributes,    // Offset of item attributes in file?
+    llITCommonDataTomatoItemAttributes,    // Offset of item attributes in file?
 
     // DObj transformation struct
     {

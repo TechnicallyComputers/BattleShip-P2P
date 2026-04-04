@@ -13,7 +13,7 @@ ITDesc dITGLuckyItemDesc =
 {
     nITKindGLucky,                          // Item Kind
     &gGRCommonStruct.yamabuki.item_head,    // Pointer to item file data?
-    &llGRYamabukiMapGLuckyItemAttributes,   // Offset of item attributes in file?
+    llGRYamabukiMapGLuckyItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {

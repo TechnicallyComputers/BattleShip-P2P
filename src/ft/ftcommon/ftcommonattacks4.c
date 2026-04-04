@@ -122,7 +122,7 @@ void ftCommonAttackS4SetStatus(GObj *fighter_gobj)
 
     case nFTKindNess:
     case nFTKindNNess:
-        fp->special_coll = (FTSpecialColl*) ((uintptr_t)gFTNessFileMainMotion + (intptr_t)&llNessMainMotionAttackS4ReflectorFTSpecialColl);
+        fp->special_coll = (FTSpecialColl*) ((uintptr_t)gFTNessFileMainMotion + (intptr_t)llNessMainMotionAttackS4ReflectorFTSpecialColl);
         break;
     }
 }

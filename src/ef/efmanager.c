@@ -101,10 +101,10 @@ EFDesc dEFManagerDamageSlashEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects1DamageSlashDObjDesc,    // DObj Setup attributes offset (?)
-    &llEFCommonEffects1DamageSlashMObjSub,     // MObjSub offset
-    &llEFCommonEffects1DamageSlashAnimJoint,   // AnimJoint offset
-    &llEFCommonEffects1DamageSlashMatAnimJoint // MatAnimJoint offset
+    llEFCommonEffects1DamageSlashDObjDesc,    // DObj Setup attributes offset (?)
+    llEFCommonEffects1DamageSlashMObjSub,     // MObjSub offset
+    llEFCommonEffects1DamageSlashAnimJoint,   // AnimJoint offset
+    llEFCommonEffects1DamageSlashMatAnimJoint // MatAnimJoint offset
 };
 
 // 0x8012DF4C
@@ -131,10 +131,10 @@ EFDesc dEFManagerShockSmallEffectDesc =
     efManagerVelAddDestroyAnimEnd,           // Proc Update
     lbCommonDObjScaleXProcDisplay,           // Proc Render
 
-    &llEFCommonEffects2ShockSmallDObjDesc,     // DObj Setup attributes offset (?)
-    &llEFCommonEffects2ShockSmallMObjSub,      // MObjSub offset
+    llEFCommonEffects2ShockSmallDObjDesc,     // DObj Setup attributes offset (?)
+    llEFCommonEffects2ShockSmallMObjSub,      // MObjSub offset
     0x0,                                       // AnimJoint offset
-    &llEFCommonEffects2ShockSmallMatAnimJoint  // MatAnimJoint offset
+    llEFCommonEffects2ShockSmallMatAnimJoint  // MatAnimJoint offset
 };
 
 // 0x8012DF74
@@ -161,9 +161,9 @@ EFDesc dEFManagerDamageFlyOrbsEffectDesc =
     efManagerDamageFlyOrbsProcUpdate,    // Proc Update
     lbCommonDObjScaleXProcDisplay,       // Proc Render
 
-    &llEFCommonEffects1FlyOrbsDObjDesc,     // DObj Setup attributes offset (?)
+    llEFCommonEffects1FlyOrbsDObjDesc,     // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llEFCommonEffects1FlyOrbsAnimJoint,    // AnimJoint offset
+    llEFCommonEffects1FlyOrbsAnimJoint,    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -221,10 +221,10 @@ EFDesc dEFManagerImpactWaveEffectDesc =
     efManagerImpactWaveProcUpdate,       // Proc Update
     efManagerImpactWaveProcDisplay,      // Proc Render
 
-    &llEFCommonEffects1ImpactWaveDObjDesc,    // DObj Setup attributes offset (?)
-    &llEFCommonEffects1ImpactWaveMObjSub,     // MObjSub offset
-    &llEFCommonEffects1ImpactWaveAnimJoint,   // AnimJoint offset
-    &llEFCommonEffects1ImpactWaveMatAnimJoint // MatAnimJoint offset
+    llEFCommonEffects1ImpactWaveDObjDesc,    // DObj Setup attributes offset (?)
+    llEFCommonEffects1ImpactWaveMObjSub,     // MObjSub offset
+    llEFCommonEffects1ImpactWaveAnimJoint,   // AnimJoint offset
+    llEFCommonEffects1ImpactWaveMatAnimJoint // MatAnimJoint offset
 };
 
 // 0x8012DFEC
@@ -251,10 +251,10 @@ EFDesc dEFManagerStarRodSparkEffectDesc =
     efManagerStarRodSparkProcUpdate,     // Proc Update
     lbCommonDObjScaleXProcDisplay,       // Proc Render
 
-    &llEFCommonEffects1CommonSparkDObjDesc,    // DObj Setup attributes offset (?)
-    &llEFCommonEffects1CommonSparkMObjSub,     // MObjSub offset
-    &llEFCommonEffects1CommonSparkAnimJoint,   // AnimJoint offset
-    &llEFCommonEffects1CommonSparkMatAnimJoint // MatAnimJoint offset
+    llEFCommonEffects1CommonSparkDObjDesc,    // DObj Setup attributes offset (?)
+    llEFCommonEffects1CommonSparkMObjSub,     // MObjSub offset
+    llEFCommonEffects1CommonSparkAnimJoint,   // AnimJoint offset
+    llEFCommonEffects1CommonSparkMatAnimJoint // MatAnimJoint offset
 };
 
 // 0x8012E014
@@ -281,10 +281,10 @@ EFDesc dEFManagerDamageFlySparksEffectDesc =
     efManagerDamageFlySparksProcUpdate,  // Proc Update
     lbCommonDObjScaleXProcDisplay,       // Proc Render
 
-    &llEFCommonEffects1CommonSparkDObjDesc,    // DObj Setup attributes offset (?)
-    &llEFCommonEffects1CommonSparkMObjSub,     // MObjSub offset
-    &llEFCommonEffects1CommonSparkAnimJoint,   // AnimJoint offset
-    &llEFCommonEffects1CommonSparkMatAnimJoint // MatAnimJoint offset
+    llEFCommonEffects1CommonSparkDObjDesc,    // DObj Setup attributes offset (?)
+    llEFCommonEffects1CommonSparkMObjSub,     // MObjSub offset
+    llEFCommonEffects1CommonSparkAnimJoint,   // AnimJoint offset
+    llEFCommonEffects1CommonSparkMatAnimJoint // MatAnimJoint offset
 };
 
 // 0x8012E03C
@@ -341,10 +341,10 @@ EFDesc dEFManagerDamageFlyMDustEffectDesc =
     efManagerDamageFlySparksProcUpdate,  // Proc Update
     gcDrawDObjTreeDLLinksForGObj,        // Proc Render
 
-    &llEFCommonEffects1DamageFlyMDustDObjDesc,     // DObj Setup attributes offset (?)
-    &llEFCommonEffects1DamageFlyMDustMObjSub,      // MObjSub offset
-    &llEFCommonEffects1DamageFlyMDustAnimJoint,    // AnimJoint offset
-    &llEFCommonEffects1DamageFlyMDustMatAnimJoint  // MatAnimJoint offset
+    llEFCommonEffects1DamageFlyMDustDObjDesc,     // DObj Setup attributes offset (?)
+    llEFCommonEffects1DamageFlyMDustMObjSub,      // MObjSub offset
+    llEFCommonEffects1DamageFlyMDustAnimJoint,    // AnimJoint offset
+    llEFCommonEffects1DamageFlyMDustMatAnimJoint  // MatAnimJoint offset
 };
 
 // 0x8012E08C
@@ -401,19 +401,19 @@ EFDesc dEFManagerFireSparkEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     lbCommonDObjScaleXProcDisplay,     // Proc Render
 
-    &llEFCommonEffects2FireSparkDObjDesc,    // DObj Setup attributes offset (?)
-    &llEFCommonEffects2FireSparkMObjSub,     // MObjSub offset
-    &llEFCommonEffects2FireSparkAnimJoint,   // AnimJoint offset
-    &llEFCommonEffects2FireSparkMatAnimJoint // MatAnimJoint offset
+    llEFCommonEffects2FireSparkDObjDesc,    // DObj Setup attributes offset (?)
+    llEFCommonEffects2FireSparkMObjSub,     // MObjSub offset
+    llEFCommonEffects2FireSparkAnimJoint,   // AnimJoint offset
+    llEFCommonEffects2FireSparkMatAnimJoint // MatAnimJoint offset
 };
 
 // 0x8012E0DC
 intptr_t dEFManagerFoxReflectorAnimJointOffsets[/* */] = 
 { 
-    &llFoxSpecial2ReflectorStartAnimJoint, 
-    &llFoxSpecial2ReflectorLoopAnimJoint, 
-    &llFoxSpecial2ReflectorHitAnimJoint, 
-    &llFoxSpecial2ReflectorEndAnimJoint 
+    llFoxSpecial2ReflectorStartAnimJoint, 
+    llFoxSpecial2ReflectorLoopAnimJoint, 
+    llFoxSpecial2ReflectorHitAnimJoint, 
+    llFoxSpecial2ReflectorEndAnimJoint 
 };
 
 // 0x8012E0EC
@@ -440,9 +440,9 @@ EFDesc dEFManagerFoxReflectorEffectDesc =
     efManagerFoxReflectorProcUpdate,      // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llFoxSpecial2ReflectorDObjDesc,        // DObj Setup attributes offset (?)
+    llFoxSpecial2ReflectorDObjDesc,        // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llFoxSpecial2ReflectorStartAnimJoint,  // AnimJoint offset
+    llFoxSpecial2ReflectorStartAnimJoint,  // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -480,7 +480,7 @@ EFDesc dEFManagerShieldEffectDesc =
     efManagerShieldProcUpdate,                     // Proc Update
     efManagerShieldProcDisplay,                    // Proc Render
 
-    &llFTManagerCommonShieldDObjDesc,       // DObj Setup attributes offset (?)
+    llFTManagerCommonShieldDObjDesc,       // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -510,7 +510,7 @@ EFDesc dEFManagerYoshiShieldEffectDesc =
     efManagerShieldProcUpdate,                     // Proc Update
     efManagerYoshiShieldProcDisplay,               // Proc Render
 
-    &llYoshiModelShieldDObjDesc,            // DObj Setup attributes offset (?)
+    llYoshiModelShieldDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -540,10 +540,10 @@ EFDesc dEFManagerCatchSwirlEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects2CatchSwirlMObjSub,                // DObj Setup attributes offset (?)
-    &llEFCommonEffects2CatchSwirlDObjDesc,                  // MObjSub offset
-    &llEFCommonEffects2CatchSwirlAnimJoint,                // AnimJoint offset
-    &llEFCommonEffects2CatchSwirlMatAnimJoint              // MatAnimJoint offset
+    llEFCommonEffects2CatchSwirlMObjSub,                // DObj Setup attributes offset (?)
+    llEFCommonEffects2CatchSwirlDObjDesc,                  // MObjSub offset
+    llEFCommonEffects2CatchSwirlAnimJoint,                // AnimJoint offset
+    llEFCommonEffects2CatchSwirlMatAnimJoint              // MatAnimJoint offset
 };
 
 // 0x8012E1AC
@@ -570,10 +570,10 @@ EFDesc dEFManagerReflectBreakEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects2ReflectBreakMObjSub,              // DObj Setup attributes offset (?)
-    &llEFCommonEffects2ReflectBreakDObjDesc,                // MObjSub offset
-    &llEFCommonEffects2ReflectBreakAnimJoint,              // AnimJoint offset
-    &llEFCommonEffects2ReflectBreakMatAnimJoint            // MatAnimJoint offset
+    llEFCommonEffects2ReflectBreakMObjSub,              // DObj Setup attributes offset (?)
+    llEFCommonEffects2ReflectBreakDObjDesc,                // MObjSub offset
+    llEFCommonEffects2ReflectBreakAnimJoint,              // AnimJoint offset
+    llEFCommonEffects2ReflectBreakMatAnimJoint            // MatAnimJoint offset
 };
 
 // 0x8012E1D4
@@ -600,10 +600,10 @@ EFDesc dEFManagerPikachuUnkEffectDesc =
     func_ovl2_801017E8,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llPikachuSpecial2UnkDObjDesc,                // DObj Setup attributes offset (?)
-    &llPikachuSpecial2UnkMObjSub,                  // MObjSub offset
-    &llPikachuSpecial2UnkAnimJoint,                // AnimJoint offset
-    &llPikachuSpecial2UnkMatAnimJoint              // MatAnimJoint offset
+    llPikachuSpecial2UnkDObjDesc,                // DObj Setup attributes offset (?)
+    llPikachuSpecial2UnkMObjSub,                  // MObjSub offset
+    llPikachuSpecial2UnkAnimJoint,                // AnimJoint offset
+    llPikachuSpecial2UnkMatAnimJoint              // MatAnimJoint offset
 };
 
 // 0x8012E1FC
@@ -630,10 +630,10 @@ EFDesc dEFManagerPikachuThunderShockEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llPikachuSpecial2ThunderShockDObjDesc,              // DObj Setup attributes offset (?)
-    &llPikachuSpecial2ThunderShockMObjSub,                // MObjSub offset
-    &llPikachuSpecial2ThunderShock0AnimJoint,              // AnimJoint offset
-    &llPikachuSpecial2ThunderShock0MatAnimJoint            // MatAnimJoint offset
+    llPikachuSpecial2ThunderShockDObjDesc,              // DObj Setup attributes offset (?)
+    llPikachuSpecial2ThunderShockMObjSub,                // MObjSub offset
+    llPikachuSpecial2ThunderShock0AnimJoint,              // AnimJoint offset
+    llPikachuSpecial2ThunderShock0MatAnimJoint            // MatAnimJoint offset
 };
 
 // 0x8012E224
@@ -660,8 +660,8 @@ EFDesc dEFManagerPikachuThunderTrailEffectDesc =
     efManagerPikachuThunderTrailProcUpdate,     // Proc Update
     efManagerPikachuThunderTrailProcDisplay,     // Proc Render
 
-    &llPikachuModelThunderTrailDObjDesc,              // DObj Setup attributes offset (?)
-    &llPikachuModelThunderTrailMObjSub,                // MObjSub offset
+    llPikachuModelThunderTrailDObjDesc,              // DObj Setup attributes offset (?)
+    llPikachuModelThunderTrailMObjSub,                // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
@@ -690,10 +690,10 @@ EFDesc dEFManagerThunderJoltEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llPikachuSpecial3ThunderJoltDObjDesc,               // DObj Setup attributes offset (?)
-    &llPikachuSpecial3ThunderJoltMObjSub,                 // MObjSub offset
-    &llPikachuSpecial3ThunderJoltAnimJoint,               // AnimJoint offset
-    &llPikachuSpecial3ThunderJoltMatAnimJoint             // MatAnimJoint offset
+    llPikachuSpecial3ThunderJoltDObjDesc,               // DObj Setup attributes offset (?)
+    llPikachuSpecial3ThunderJoltMObjSub,                 // MObjSub offset
+    llPikachuSpecial3ThunderJoltAnimJoint,               // AnimJoint offset
+    llPikachuSpecial3ThunderJoltMatAnimJoint             // MatAnimJoint offset
 };
 
 // 0x8012E274
@@ -720,7 +720,7 @@ EFDesc dEFManagerVulcanJabEffectDesc =
     efManagerKirbyVulcanJabProcUpdate,        // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llKirbySpecial2VulcanJabDObjDesc,                 // DObj Setup attributes offset (?)
+    llKirbySpecial2VulcanJabDObjDesc,                 // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -750,10 +750,10 @@ EFDesc dEFManagerSamusGrappleBeamEffectDesc =
     gcPlayAnimAll,                          // Proc Update (WHAT IS THIS FUNCTION???)
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llSamusSpecial2GrappleBeamDObjDesc,               // DObj Setup attributes offset (?)
-    &llSamusSpecial2GrappleBeamMObjSub,                 // MObjSub offset
-    &llSamusSpecial2GrappleBeamAnimJoint,               // AnimJoint offset
-    &llSamusSpecial2GrappleBeamMatAnimJoint             // MatAnimJoint offset
+    llSamusSpecial2GrappleBeamDObjDesc,               // DObj Setup attributes offset (?)
+    llSamusSpecial2GrappleBeamMObjSub,                 // MObjSub offset
+    llSamusSpecial2GrappleBeamAnimJoint,               // AnimJoint offset
+    llSamusSpecial2GrappleBeamMatAnimJoint             // MatAnimJoint offset
 };
 
 // 0x8012E2C4
@@ -780,10 +780,10 @@ EFDesc dEFManagerCaptainFalconKickEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llCaptainSpecial2FalconKickDObjDesc,                // DObj Setup attributes offset (?)
-    &llCaptainSpecial2FalconKickMObjSub,                  // MObjSub offset
-    &llCaptainSpecial2FalconKickAnimJoint,                // AnimJoint offset
-    &llCaptainSpecial2FalconKickMatAnimJoint              // MatAnimJoint offset
+    llCaptainSpecial2FalconKickDObjDesc,                // DObj Setup attributes offset (?)
+    llCaptainSpecial2FalconKickMObjSub,                  // MObjSub offset
+    llCaptainSpecial2FalconKickAnimJoint,                // AnimJoint offset
+    llCaptainSpecial2FalconKickMatAnimJoint              // MatAnimJoint offset
 };
 
 // 0x8012E2EC
@@ -810,10 +810,10 @@ EFDesc dEFManagerCaptainFalconPunchEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     lbCommonDObjScaleXProcDisplay,                     // Proc Render
 
-    &llCaptainSpecial3FalconPunchDObjDesc,               // DObj Setup attributes offset (?)
-    &llCaptainSpecial3FalconPunchMObjSub,                 // MObjSub offset
+    llCaptainSpecial3FalconPunchDObjDesc,               // DObj Setup attributes offset (?)
+    llCaptainSpecial3FalconPunchMObjSub,                 // MObjSub offset
     0x0,                                    // AnimJoint offset
-    &llCaptainSpecial3FalconPunchMatAnimJoint             // MatAnimJoint offset
+    llCaptainSpecial3FalconPunchMatAnimJoint             // MatAnimJoint offset
 };
 
 // 0x8012E314
@@ -840,10 +840,10 @@ EFDesc dEFManagerPurinSingEffectDesc =
     efManagerHaveStructProcUpdate,          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llPurinSpecial2SingDObjDesc,                 // DObj Setup attributes offset (?)
-    &llPurinSpecial2SingMObjSub,                   // MObjSub offset
-    &llPurinSpecial2SingAnimJoint,                 // AnimJoint offset
-    &llPurinSpecial2SingMatAnimJoint               // MatAnimJoint offset
+    llPurinSpecial2SingDObjDesc,                 // DObj Setup attributes offset (?)
+    llPurinSpecial2SingMObjSub,                   // MObjSub offset
+    llPurinSpecial2SingAnimJoint,                 // AnimJoint offset
+    llPurinSpecial2SingMatAnimJoint               // MatAnimJoint offset
 };
 
 // 0x8012E33C
@@ -870,10 +870,10 @@ EFDesc dEFManagerDeadExplodeEffectDesc =
     efManagerHaveStructProcUpdate,          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects2DeadExplodeDefaultMObjSub,        // DObj Setup attributes offset (?)
-    &llEFCommonEffects2DeadExplodeDefaultDObjDesc,          // MObjSub offset
-    &llEFCommonEffects2DeadExplodeDefaultAnimJoint,        // AnimJoint offset
-    &llEFCommonEffects2DeadExplodeDefaultMatAnimJoint      // MatAnimJoint offset
+    llEFCommonEffects2DeadExplodeDefaultMObjSub,        // DObj Setup attributes offset (?)
+    llEFCommonEffects2DeadExplodeDefaultDObjDesc,          // MObjSub offset
+    llEFCommonEffects2DeadExplodeDefaultAnimJoint,        // AnimJoint offset
+    llEFCommonEffects2DeadExplodeDefaultMatAnimJoint      // MatAnimJoint offset
 };
 
 // 0x8012E364
@@ -882,10 +882,10 @@ u8 dEFManagerDeadExplodeGenID[/* */] = { 0x2D, 0x2C, 0x2B, 0x2A, 0x3F, 0x3E, 0x3
 // 0x8012E36C
 intptr_t dEFManagerDeadExplodeMatAnimJoints[/* */] =
 {
-    &llEFCommonEffects2DeadExplode1MatAnimJoint,
-    &llEFCommonEffects2DeadExplode2MatAnimJoint,
-    &llEFCommonEffects2DeadExplode3MatAnimJoint,
-    &llEFCommonEffects2DeadExplode4MatAnimJoint
+    llEFCommonEffects2DeadExplode1MatAnimJoint,
+    llEFCommonEffects2DeadExplode2MatAnimJoint,
+    llEFCommonEffects2DeadExplode3MatAnimJoint,
+    llEFCommonEffects2DeadExplode4MatAnimJoint
 };
 
 // 0x8012E37C
@@ -912,9 +912,9 @@ EFDesc dEFManagerKirbyCutterUpEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llKirbySpecial2CutterUpDObjDesc,             // DObj Setup attributes offset (?)
+    llKirbySpecial2CutterUpDObjDesc,             // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llKirbySpecial2CutterUpAnimJoint,             // AnimJoint offset
+    llKirbySpecial2CutterUpAnimJoint,             // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -942,9 +942,9 @@ EFDesc dEFManagerKirbyCutterDownEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llKirbySpecial2CutterDownDObjDesc,           // DObj Setup attributes offset (?)
+    llKirbySpecial2CutterDownDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llKirbySpecial2CutterDownAnimJoint,           // AnimJoint offset
+    llKirbySpecial2CutterDownAnimJoint,           // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -972,7 +972,7 @@ EFDesc dEFManagerKirbyCutterDrawEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llKirbySpecial2CutterDrawDObjDesc,           // DObj Setup attributes offset (?)
+    llKirbySpecial2CutterDrawDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1002,9 +1002,9 @@ EFDesc dEFManagerKirbyCutterTrailEffectDesc =
     efManagerNoEjectProcUpdate,                     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,                // Proc Render
 
-    &llKirbySpecial2CutterTrailDObjDesc,          // DObj Setup attributes offset (?)
+    llKirbySpecial2CutterTrailDObjDesc,          // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llKirbySpecial2CutterTrailAnimJoint,          // AnimJoint offset
+    llKirbySpecial2CutterTrailAnimJoint,          // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1032,10 +1032,10 @@ EFDesc dEFManagerNessPsychicMagnetEffectDesc =
     gcPlayAnimAll,                          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llNessSpecial2PsychicMagnetDObjDesc,             // DObj Setup attributes offset (?)
-    &llNessSpecial2PsychicMagnetMObjSub,               // MObjSub offset
-    &llNessSpecial2PsychicMagnetAnimJoint,             // AnimJoint offset
-    &llNessSpecial2PsychicMagnetMatAnimJoint           // MatAnimJoint offset
+    llNessSpecial2PsychicMagnetDObjDesc,             // DObj Setup attributes offset (?)
+    llNessSpecial2PsychicMagnetMObjSub,               // MObjSub offset
+    llNessSpecial2PsychicMagnetAnimJoint,             // AnimJoint offset
+    llNessSpecial2PsychicMagnetMatAnimJoint           // MatAnimJoint offset
 };
 
 // 0x8012E444
@@ -1062,7 +1062,7 @@ EFDesc dEFManagerNessPKThunderTrailEffectDesc =
     efManagerNessPKThunderTrailProcUpdate,   // Proc Update
     efManagerNessPKThunderTrailProcDisplay,   // Proc Render
 
-    &llNessModelPKThunderTrailDObjDesc,            // DObj Setup attributes offset (?)
+    llNessModelPKThunderTrailDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1092,7 +1092,7 @@ EFDesc dEFManagerNessPKReflectTrailEffectDesc =
     efManagerNessPKReflectTrailProcUpdate,   // Proc Update
     efManagerNessPKThunderTrailProcDisplay,   // Proc Render
 
-    &llNessModelPKThunderTrailDObjDesc,            // DObj Setup attributes offset (?)
+    llNessModelPKThunderTrailDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1122,10 +1122,10 @@ EFDesc dEFManagerNessPKThunderWaveEffectDesc =
     gcPlayAnimAll,                          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llNessModelPKThunderWaveDObjDesc,             // DObj Setup attributes offset (?)
-    &llNessModelPKThunderWaveMObjSub,               // MObjSub offset
-    &llNessModelPKThunderWaveAnimJoint,             // AnimJoint offset
-    &llNessModelPKThunderWaveMatAnimJoint           // MatAnimJoint offset
+    llNessModelPKThunderWaveDObjDesc,             // DObj Setup attributes offset (?)
+    llNessModelPKThunderWaveMObjSub,               // MObjSub offset
+    llNessModelPKThunderWaveAnimJoint,             // AnimJoint offset
+    llNessModelPKThunderWaveMatAnimJoint           // MatAnimJoint offset
 };
 
 // 0x8012E4BC
@@ -1152,10 +1152,10 @@ EFDesc dEFManagerNessPKFlashEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llEFCommonEffects2NessPKFlashMObjSub,                   // DObj Setup attributes offset (?)
-    &llEFCommonEffects2NessPKFlashDObjDesc,                     // MObjSub offset
-    &llEFCommonEffects2NessPKFlashAnimJoint,                   // AnimJoint offset
-    &llEFCommonEffects2NessPKFlashMatAnimJoint                 // MatAnimJoint offset
+    llEFCommonEffects2NessPKFlashMObjSub,                   // DObj Setup attributes offset (?)
+    llEFCommonEffects2NessPKFlashDObjDesc,                     // MObjSub offset
+    llEFCommonEffects2NessPKFlashAnimJoint,                   // AnimJoint offset
+    llEFCommonEffects2NessPKFlashMatAnimJoint                 // MatAnimJoint offset
 };
 
 // 0x8012E4E4
@@ -1182,10 +1182,10 @@ EFDesc dEFManagerLinkEntryWaveEffectDesc =
     gcPlayAnimAll,                          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llLinkSpecial2EntryWaveDObjDesc,             // DObj Setup attributes offset (?)
-    &llLinkSpecial2EntryWaveMObjSub,               // MObjSub offset
-    &llLinkSpecial2EntryWaveAnimJoint,             // AnimJoint offset
-    &llLinkSpecial2EntryWaveMatAnimJoint           // MatAnimJoint offset
+    llLinkSpecial2EntryWaveDObjDesc,             // DObj Setup attributes offset (?)
+    llLinkSpecial2EntryWaveMObjSub,               // MObjSub offset
+    llLinkSpecial2EntryWaveAnimJoint,             // AnimJoint offset
+    llLinkSpecial2EntryWaveMatAnimJoint           // MatAnimJoint offset
 };
 
 // 0x8012E50C
@@ -1212,10 +1212,10 @@ EFDesc dEFManagerLinkEntryBeamEffectDesc =
     gcPlayAnimAll,                          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llLinkSpecial2EntryBeamDObjDesc,             // DObj Setup attributes offset (?)
-    &llLinkSpecial2EntryBeamMObjSub,               // MObjSub offset
-    &llLinkSpecial2EntryBeamAnimJoint,             // AnimJoint offset
-    &llLinkSpecial2EntryBeamMatAnimJoint           // MatAnimJoint offset
+    llLinkSpecial2EntryBeamDObjDesc,             // DObj Setup attributes offset (?)
+    llLinkSpecial2EntryBeamMObjSub,               // MObjSub offset
+    llLinkSpecial2EntryBeamAnimJoint,             // AnimJoint offset
+    llLinkSpecial2EntryBeamMatAnimJoint           // MatAnimJoint offset
 };
 
 // 0x8012E534
@@ -1242,9 +1242,9 @@ EFDesc dEFManagerKirbyEntryStarEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llKirbySpecial2EntryStarDObjDesc,            // DObj Setup attributes offset (?)
+    llKirbySpecial2EntryStarDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llKirbySpecial2EntryStarLAnimJoint,           // AnimJoint offset
+    llKirbySpecial2EntryStarLAnimJoint,           // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1272,10 +1272,10 @@ EFDesc dEFManagerMBallRaysEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects3MBallRaysDObjDesc,                 // DObj Setup attributes offset (?)
-    &llEFCommonEffects3MBallRaysMObjSub,                   // MObjSub offset
-    &llEFCommonEffects3MBallRaysAnimJoint,                 // AnimJoint offset
-    &llEFCommonEffects3MBallRaysMatAnimJoint               // MatAnimJoint offset
+    llEFCommonEffects3MBallRaysDObjDesc,                 // DObj Setup attributes offset (?)
+    llEFCommonEffects3MBallRaysMObjSub,                   // MObjSub offset
+    llEFCommonEffects3MBallRaysAnimJoint,                 // AnimJoint offset
+    llEFCommonEffects3MBallRaysMatAnimJoint               // MatAnimJoint offset
 };
 
 // 0x8012E584
@@ -1302,10 +1302,10 @@ EFDesc dEFManagerMBallThrownEffectDesc =
     efManagerMBallThrownProcUpdate,                // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llITCommonDataMBallThrownDObjDesc,               // DObj Setup attributes offset (?)
-    &llITCommonDataMBallThrownMObjSub,                 // MObjSub offset
-    &llITCommonDataMBallThrownLAnimJoint,              // AnimJoint offset
-    &llITCommonDataMBallThrownLMatAnimJoint            // MatAnimJoint offset
+    llITCommonDataMBallThrownDObjDesc,               // DObj Setup attributes offset (?)
+    llITCommonDataMBallThrownMObjSub,                 // MObjSub offset
+    llITCommonDataMBallThrownLAnimJoint,              // AnimJoint offset
+    llITCommonDataMBallThrownLMatAnimJoint            // MatAnimJoint offset
 };
 
 // 0x8012E5AC
@@ -1332,14 +1332,14 @@ EFDesc dEFManagerYoshiEntryEggEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     lbCommonDObjScaleXProcDisplay,                     // Proc Render
 
-    &llYoshiSpecial2EntryEggDObjDesc,             // DObj Setup attributes offset (?)
-    &llYoshiSpecial2EntryEggMObjSub,               // MObjSub offset
-    &llYoshiSpecial2EntryEggAnimJoint,             // AnimJoint offset
-    &llYoshiSpecial2EntryEggMatAnimJoint           // MatAnimJoint offset
+    llYoshiSpecial2EntryEggDObjDesc,             // DObj Setup attributes offset (?)
+    llYoshiSpecial2EntryEggMObjSub,               // MObjSub offset
+    llYoshiSpecial2EntryEggAnimJoint,             // AnimJoint offset
+    llYoshiSpecial2EntryEggMatAnimJoint           // MatAnimJoint offset
 };
 
 // 0x8012E5D4
-intptr_t dEFManagerYoshiEggLayAnimJoints[/* */] = { &llYoshiSpecial3EggLayWaitAnimJoint, &llYoshiSpecial3EggLayBreakAnimJoint };
+intptr_t dEFManagerYoshiEggLayAnimJoints[/* */] = { llYoshiSpecial3EggLayWaitAnimJoint, llYoshiSpecial3EggLayBreakAnimJoint };
 
 // 0x8012E5DC
 EFDesc dEFManagerYoshiEggLayEffectDesc =
@@ -1365,9 +1365,9 @@ EFDesc dEFManagerYoshiEggLayEffectDesc =
     efManagerYoshiEggLayProcUpdate,                     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llYoshiSpecial3EggLayDObjDesc,               // DObj Setup attributes offset (?)
+    llYoshiSpecial3EggLayDObjDesc,               // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llYoshiSpecial3EggLayThrowAnimJoint,          // AnimJoint offset
+    llYoshiSpecial3EggLayThrowAnimJoint,          // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1395,7 +1395,7 @@ EFDesc dEFManagerYoshiEggEscapeEffectDesc =
     NULL,                                   // Proc Update
     efManagerYoshiShieldProcDisplay,        // Proc Render
 
-    &llYoshiModelShieldDObjDesc,            // DObj Setup attributes offset (?)
+    llYoshiModelShieldDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1425,10 +1425,10 @@ EFDesc dEFManagerLinkSpinAttackEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llLinkSpecial2SpinAttackDObjDesc,                // DObj Setup attributes offset (?)
-    &llLinkSpecial2SpinAttackMObjSub,                  // MObjSub offset
-    &llLinkSpecial2SpinAttackAnimJoint,                // AnimJoint offset
-    &llLinkSpecial2SpinAttackMatAnimJoint              // MatAnimJoint offset
+    llLinkSpecial2SpinAttackDObjDesc,                // DObj Setup attributes offset (?)
+    llLinkSpecial2SpinAttackMObjSub,                  // MObjSub offset
+    llLinkSpecial2SpinAttackAnimJoint,                // AnimJoint offset
+    llLinkSpecial2SpinAttackMatAnimJoint              // MatAnimJoint offset
 };
 
 // 0x8012E654
@@ -1455,9 +1455,9 @@ EFDesc dEFManagerDonkeyEntryTaruEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llDonkeySpecial2EntryTaruDObjDesc,           // DObj Setup attributes offset (?)
+    llDonkeySpecial2EntryTaruDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llDonkeySpecial2EntryTaruAnimJoint,           // AnimJoint offset
+    llDonkeySpecial2EntryTaruAnimJoint,           // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1485,9 +1485,9 @@ EFDesc dEFManagerSamusEntryPointEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llSamusSpecial2EntryPointDObjDesc,           // DObj Setup attributes offset (?)
+    llSamusSpecial2EntryPointDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llSamusSpecial2EntryPointAnimJoint,           // AnimJoint offset
+    llSamusSpecial2EntryPointAnimJoint,           // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1515,7 +1515,7 @@ EFDesc dEFManagerCaptainEntryCarEffectDesc =
     efManagerCaptainEntryCarProcUpdate,            // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llCaptainSpecial2EntryCarDObjDesc,           // DObj Setup attributes offset (?)
+    llCaptainSpecial2EntryCarDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1545,9 +1545,9 @@ EFDesc dEFManagerMarioEntryDokanEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeForGObj,                // Proc Render
 
-    &llMarioSpecial2EntryDokanDObjDesc,           // DObj Setup attributes offset (?)
+    llMarioSpecial2EntryDokanDObjDesc,           // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llMarioSpecial2EntryDokanAnimJoint,           // AnimJoint offset
+    llMarioSpecial2EntryDokanAnimJoint,           // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1575,7 +1575,7 @@ EFDesc dEFManagerFoxEntryArwingEffectDesc =
     efManagerFoxEntryArwingProcUpdate,             // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llFoxSpecial3EntryArwingDObjDesc,            // DObj Setup attributes offset (?)
+    llFoxSpecial3EntryArwingDObjDesc,            // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1608,7 +1608,7 @@ EFDesc dEFManagerCaptureKirbyStarEffectDesc =
     efManagerCaptureKirbyStarProcUpdate,    // Proc Update
     lbCommonDObjScaleXProcDisplay,                     // Proc Render
 
-    &llITCommonDataKirbyStarDObjDesc,                 // DObj Setup attributes offset (?)
+    llITCommonDataKirbyStarDObjDesc,                 // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1638,7 +1638,7 @@ EFDesc dEFManagerLoseKirbyStarEffectDesc =
     efManagerLoseKirbyStarProcUpdate,       // Proc Update
     lbCommonDObjScaleXProcDisplay,                     // Proc Render
 
-    &llITCommonDataKirbyStarDObjDesc,                 // DObj Setup attributes offset (?)
+    llITCommonDataKirbyStarDObjDesc,                 // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
     0x0,                                    // AnimJoint offset
     0x0                                     // MatAnimJoint offset
@@ -1668,9 +1668,9 @@ EFDesc dEFManagerRebirthHaloEffectDesc =
     gcPlayAnimAll,                          // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects3RebirthHaloDObjDesc,               // DObj Setup attributes offset (?)
+    llEFCommonEffects3RebirthHaloDObjDesc,               // DObj Setup attributes offset (?)
     0x0,                                    // MObjSub offset
-    &llEFCommonEffects3RebirthHaloAnimJoint,               // AnimJoint offset
+    llEFCommonEffects3RebirthHaloAnimJoint,               // AnimJoint offset
     0x0                                     // MatAnimJoint offset
 };
 
@@ -1698,10 +1698,10 @@ EFDesc dEFManagerItemGetSwirlEffectDesc =
     efManagerHaveStructProcUpdate,     // Proc Update
     gcDrawDObjTreeDLLinksForGObj,         // Proc Render
 
-    &llEFCommonEffects3ItemGetSwirlDObjDesc,              // DObj Setup attributes offset (?)
-    &llEFCommonEffects3ItemGetSwirlMObjSub,                // MObjSub offset
-    &llEFCommonEffects3ItemGetSwirlAnimJoint,              // AnimJoint offset
-    &llEFCommonEffects3ItemGetSwirlMatAnimJoint            // MatAnimJoint offset
+    llEFCommonEffects3ItemGetSwirlDObjDesc,              // DObj Setup attributes offset (?)
+    llEFCommonEffects3ItemGetSwirlMObjSub,                // MObjSub offset
+    llEFCommonEffects3ItemGetSwirlAnimJoint,              // AnimJoint offset
+    llEFCommonEffects3ItemGetSwirlMatAnimJoint            // MatAnimJoint offset
 };
 
 // // // // // // // // // // // //
@@ -1751,9 +1751,9 @@ void efManagerInitEffects(void)
     efDisplayMakeCLD();
     efDisplayMakeXLU();
 
-    gEFManagerFiles[0] = lbRelocGetExternHeapFile(&llEFCommonEffects1FileID, syTaskmanMalloc(lbRelocGetFileSize(&llEFCommonEffects1FileID), 0x10));
-    gEFManagerFiles[1] = lbRelocGetExternHeapFile(&llEFCommonEffects2FileID, syTaskmanMalloc(lbRelocGetFileSize(&llEFCommonEffects2FileID), 0x10));
-    gEFManagerFiles[2] = lbRelocGetExternHeapFile(&llEFCommonEffects3FileID, syTaskmanMalloc(lbRelocGetFileSize(&llEFCommonEffects3FileID), 0x10));
+    gEFManagerFiles[0] = lbRelocGetExternHeapFile(llEFCommonEffects1FileID, syTaskmanMalloc(lbRelocGetFileSize(llEFCommonEffects1FileID), 0x10));
+    gEFManagerFiles[1] = lbRelocGetExternHeapFile(llEFCommonEffects2FileID, syTaskmanMalloc(lbRelocGetFileSize(llEFCommonEffects2FileID), 0x10));
+    gEFManagerFiles[2] = lbRelocGetExternHeapFile(llEFCommonEffects3FileID, syTaskmanMalloc(lbRelocGetFileSize(llEFCommonEffects3FileID), 0x10));
 
     efDisplayInitAll();
 }
@@ -3834,19 +3834,19 @@ GObj* efManagerQuakeMakeEffect(s32 magnitude)
     switch (magnitude)
     {
     case 0:
-        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], &llEFCommonEffects1QuakeMag0AnimJoint), 0.0F);
+        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], llEFCommonEffects1QuakeMag0AnimJoint), 0.0F);
         break;
 
     case 1:
-        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], &llEFCommonEffects1QuakeMag1AnimJoint), 0.0F);
+        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], llEFCommonEffects1QuakeMag1AnimJoint), 0.0F);
         break;
 
     case 2:
-        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], &llEFCommonEffects1QuakeMag2AnimJoint), 0.0F);
+        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], llEFCommonEffects1QuakeMag2AnimJoint), 0.0F);
         break;
 
     case 3:
-        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], &llEFCommonEffects1QuakeMag3AnimJoint), 0.0F);
+        gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gEFManagerFiles[0], llEFCommonEffects1QuakeMag3AnimJoint), 0.0F);
         break;
 
     default:
@@ -4020,7 +4020,7 @@ GObj* efManagerFireSparkMakeEffect(GObj *fighter_gobj) // I really have no idea 
     dobj->translate.vec.f.y = 160.0F;
     dobj->user_data.p = fp->joints[16];
 
-    lbCommonSetDObjTransformsForTreeDObjs(dobj->child, lbRelocGetFileData(DObjDesc*, gEFManagerFiles[1], &llEFCommonEffects2FireSparkDObjDesc));
+    lbCommonSetDObjTransformsForTreeDObjs(dobj->child, lbRelocGetFileData(DObjDesc*, gEFManagerFiles[1], llEFCommonEffects2FireSparkDObjDesc));
 
     return effect_gobj;
 }
@@ -4437,8 +4437,8 @@ GObj* efManagerPikachuThunderShockMakeEffect(GObj *fighter_gobj, Vec3f *pos, s32
         gcAddAnimAll
         (
             effect_gobj, 
-            lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial2, &llPikachuSpecial2ThunderShock1AnimJoint),
-            lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial2, &llPikachuSpecial2ThunderShock1MatAnimJoint),
+            lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial2, llPikachuSpecial2ThunderShock1AnimJoint),
+            lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial2, llPikachuSpecial2ThunderShock1MatAnimJoint),
             0.0F
         );
         gcPlayAnimAll(effect_gobj);
@@ -4448,8 +4448,8 @@ GObj* efManagerPikachuThunderShockMakeEffect(GObj *fighter_gobj, Vec3f *pos, s32
         gcAddAnimAll
         (
             effect_gobj, 
-            lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial2, &llPikachuSpecial2ThunderShock2AnimJoint),
-            lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial2, &llPikachuSpecial2ThunderShock2MatAnimJoint),
+            lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial2, llPikachuSpecial2ThunderShock2AnimJoint),
+            lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial2, llPikachuSpecial2ThunderShock2MatAnimJoint),
             0.0F
         );
         gcPlayAnimAll(effect_gobj);
@@ -5192,7 +5192,7 @@ GObj* efManagerKirbyEntryStarMakeEffect(Vec3f *pos, s32 lr)
     GObj *effect_gobj;
     DObj *dobj;
 
-    dEFManagerKirbyEntryStarEffectDesc.o_anim_joint = (lr == +1) ? &llKirbySpecial2EntryStarRAnimJoint : &llKirbySpecial2EntryStarLAnimJoint;
+    dEFManagerKirbyEntryStarEffectDesc.o_anim_joint = (lr == +1) ? llKirbySpecial2EntryStarRAnimJoint : llKirbySpecial2EntryStarLAnimJoint;
 
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerKirbyEntryStarEffectDesc);
 
@@ -5255,18 +5255,18 @@ GObj* efManagerMBallThrownMakeEffect(Vec3f *pos, s32 lr)
 
     dEFManagerMBallThrownEffectDesc.file_head = &file;
 
-    p_file = lbRelocGetFileData(void**, gITManagerCommonData, &llITCommonDataMBallThrownFileHead);
-    file = ((uintptr_t)*p_file - (intptr_t)&llITCommonDataMBallThrownDObjDesc);
+    p_file = lbRelocGetFileData(void**, gITManagerCommonData, llITCommonDataMBallThrownFileHead);
+    file = ((uintptr_t)*p_file - (intptr_t)llITCommonDataMBallThrownDObjDesc);
 
     if (lr == +1)
     {
-        dEFManagerMBallThrownEffectDesc.o_anim_joint = (intptr_t)&llITCommonDataMBallThrownRAnimJoint;
-        dEFManagerMBallThrownEffectDesc.o_matanim_joint = (intptr_t)&llITCommonDataMBallThrownRMatAnimJoint;
+        dEFManagerMBallThrownEffectDesc.o_anim_joint = (intptr_t)llITCommonDataMBallThrownRAnimJoint;
+        dEFManagerMBallThrownEffectDesc.o_matanim_joint = (intptr_t)llITCommonDataMBallThrownRMatAnimJoint;
     }
     else
     {
-        dEFManagerMBallThrownEffectDesc.o_anim_joint = (intptr_t)&llITCommonDataMBallThrownLAnimJoint;
-        dEFManagerMBallThrownEffectDesc.o_matanim_joint = (intptr_t)&llITCommonDataMBallThrownLMatAnimJoint;
+        dEFManagerMBallThrownEffectDesc.o_anim_joint = (intptr_t)llITCommonDataMBallThrownLAnimJoint;
+        dEFManagerMBallThrownEffectDesc.o_matanim_joint = (intptr_t)llITCommonDataMBallThrownLMatAnimJoint;
     }
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerMBallThrownEffectDesc);
 
@@ -5417,7 +5417,7 @@ GObj* efManagerYoshiEggLayMakeEffect(GObj *fighter_gobj)
     dobj->child->child->xobjs[0]->kind = nGCMatrixKindTra;
 
     gcAddXObjForDObjFixed(dobj->child->child, 0x2E, 0);
-    lbCommonSetDObjTransformsForTreeDObjs(dobj->child, lbRelocGetFileData(DObjDesc*, gFTDataYoshiSpecial3, &llYoshiSpecial3EggLayDObjDesc));
+    lbCommonSetDObjTransformsForTreeDObjs(dobj->child, lbRelocGetFileData(DObjDesc*, gFTDataYoshiSpecial3, llYoshiSpecial3EggLayDObjDesc));
 
     return effect_gobj;
 }
@@ -5634,18 +5634,18 @@ GObj* efManagerCaptainEntryCarMakeEffect(Vec3f *pos, s32 lr)
     }
     dobj = DObjGetStruct(effect_gobj);
 
-    gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gFTDataCaptainSpecial2, &llCaptainSpecial2_6200_AnimJoint), 0.0F);
+    gcAddAnimJointAll(effect_gobj, lbRelocGetFileData(AObjEvent32**, gFTDataCaptainSpecial2, llCaptainSpecial2_6200_AnimJoint), 0.0F);
 
     node_dobj = dobj->child->child->child;
 
     for (i = nFTPartsJointCommonStart; i > 0; i--)
     {
         gcAddXObjForDObjFixed(node_dobj, nGCMatrixKindRecalcRotRpyRSca, 0);
-        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, &llCaptainSpecial2_6518_AnimJoint), 0.0F);
+        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, llCaptainSpecial2_6518_AnimJoint), 0.0F);
 
         node_dobj = node_dobj->sib_next;
 
-        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, &llCaptainSpecial2_6598_AnimJoint), 0.0F);
+        gcAddDObjAnimJoint(node_dobj, lbRelocGetFileData(AObjEvent32*, gFTDataCaptainSpecial2, llCaptainSpecial2_6598_AnimJoint), 0.0F);
 
         node_dobj = node_dobj->sib_next;
     }
@@ -5727,13 +5727,13 @@ GObj* efManagerFoxEntryArwingMakeEffect(Vec3f *pos, s32 lr)
     what = dobj->child->child->child->sib_next->sib_next->sib_next->sib_next->sib_next->sib_next->child;
 
     gcAddXObjForDObjFixed(what, 0x2C, 0);
-    gcAddDObjAnimJoint(what, lbRelocGetFileData(AObjEvent32*, gFTDataFoxSpecial3, &llFoxSpecial3_2E74_AnimJoint), 0.0F);
+    gcAddDObjAnimJoint(what, lbRelocGetFileData(AObjEvent32*, gFTDataFoxSpecial3, llFoxSpecial3_2E74_AnimJoint), 0.0F);
 
     if (lr == +1)
     {
-        lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, &llFoxSpecial2EntryArwingRAnimJoint), 0.0F);
+        lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, llFoxSpecial2EntryArwingRAnimJoint), 0.0F);
     }
-    else lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, &llFoxSpecial2EntryArwingLAnimJoint), 0.0F);
+    else lbCommonAddDObjAnimJointAll(dobj->child, lbRelocGetFileData(AObjEvent32**, gFTDataFoxSpecial2, llFoxSpecial2EntryArwingLAnimJoint), 0.0F);
 
     gcPlayAnimAll(effect_gobj);
 
@@ -5847,7 +5847,7 @@ void efManagerCaptureKirbyStarProcUpdate(GObj *effect_gobj)
     fp = ftGetStruct(ep->fighter_gobj);
     topn_dobj = DObjGetStruct(effect_gobj);
 
-    copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
+    copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
 
     child_dobj = topn_dobj->child;
 
@@ -5885,12 +5885,12 @@ GObj* efManagerCaptureKirbyStarMakeEffect(GObj *fighter_gobj)
     DObj *dobj;
     FTKirbyCopy *copy;
 
-    copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
+    copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
 
     dEFManagerCaptureKirbyStarEffectDesc.file_head = &addr;
 
-    p_addr = lbRelocGetFileData(void**, gITManagerCommonData, &llITCommonDataStarRodWeaponAttributes);
-    addr = (void*) ((uintptr_t)*p_addr - (intptr_t)&llITCommonDataKirbyStarDObjDesc);
+    p_addr = lbRelocGetFileData(void**, gITManagerCommonData, llITCommonDataStarRodWeaponAttributes);
+    addr = (void*) ((uintptr_t)*p_addr - (intptr_t)llITCommonDataKirbyStarDObjDesc);
 
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerCaptureKirbyStarEffectDesc);
 
@@ -5964,8 +5964,8 @@ GObj* efManagerLoseKirbyStarMakeEffect(GObj *fighter_gobj)
 
     dEFManagerLoseKirbyStarEffectDesc.file_head = &addr;
 
-    p_addr = lbRelocGetFileData(void**, gITManagerCommonData, &llITCommonDataStarRodWeaponAttributes);
-    addr = ((uintptr_t)*p_addr - (intptr_t)&llITCommonDataKirbyStarDObjDesc);
+    p_addr = lbRelocGetFileData(void**, gITManagerCommonData, llITCommonDataStarRodWeaponAttributes);
+    addr = ((uintptr_t)*p_addr - (intptr_t)llITCommonDataKirbyStarDObjDesc);
 
     effect_gobj = efManagerMakeEffectNoForce(&dEFManagerLoseKirbyStarEffectDesc);
 

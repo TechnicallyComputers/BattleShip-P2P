@@ -13,7 +13,7 @@ ITDesc dITFFlowerItemDesc =
 {
     nITKindFFlower,                         // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataFFlowerItemAttributes,   // Offset of item attributes in file?
+    llITCommonDataFFlowerItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -101,7 +101,7 @@ WPDesc dITFFlowerWeaponFlameWeaponDesc =
     0x00,                                        // Render flags?
     nWPKindFFlowerFlame,                         // Weapon Kind
     &gITManagerCommonData,                       // Pointer to character's loaded files?
-    &llITCommonDataFFlowerFlameWeaponAttributes, // Offset of weapon attributes in loaded files
+    llITCommonDataFFlowerFlameWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -338,7 +338,7 @@ void itFFlowerShootFlame(GObj *fighter_gobj, Vec3f *pos, s32 index, s32 ammo_sub
 {
     ITStruct *ip = itGetStruct(ftGetStruct(fighter_gobj)->item_gobj);
     Vec3f vel;
-    f32 *angle = (f32*) ((uintptr_t)*dITFFlowerItemDesc.p_file + (intptr_t) &llITCommonDataFFlowerFlameAngles);
+    f32 *angle = (f32*) ((uintptr_t)*dITFFlowerItemDesc.p_file + (intptr_t) llITCommonDataFFlowerFlameAngles);
 
     vel.x = __cosf(angle[index]) * ITFFLOWER_AMMO_VEL;
     vel.y = __sinf(angle[index]) * ITFFLOWER_AMMO_VEL;

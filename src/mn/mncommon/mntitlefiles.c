@@ -8,7 +8,7 @@
 // // // // // // // // // // // //
 
 // 0x80134420
-u32 dMNTitleFileIDs[/* */] = { &llMNTitleFileID, &llMNTitleFireAnimFileID };
+u32 dMNTitleFileIDs[/* */] = { llMNTitleFileID, llMNTitleFireAnimFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -34,7 +34,7 @@ void mnTitleLoadFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMNTitleStatusBuffer;

@@ -84,7 +84,7 @@ void *sMVEndingFiles[2];
 // // // // // // // // // // // //
 
 // 0x80132AD0
-u32 dMVEndingFileIDs[/* */] = { &llMVCommonFileID, &llMVEndingFileID };
+u32 dMVEndingFileIDs[/* */] = { llMVCommonFileID, llMVEndingFileID };
 
 // 0x80132AD8
 Lights1 dMVEndingLights11 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x14, 0x14, 0x14);
@@ -161,10 +161,10 @@ void mvEndingMakeRoomBackground(void)
 
     sMVEndingRoomBackgroundGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], &llMVCommonRoomBackgroundDObjDesc), NULL);
+    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], llMVCommonRoomBackgroundDObjDesc), NULL);
     gcAddGObjDisplay(gobj, gcDrawDObjTreeDLLinksForGObj, 29, GOBJ_PRIORITY_DEFAULT, ~0);
-    gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMVEndingFiles[0], &llMVCommonRoomBackgroundMObjSub));
-    gcAddMatAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32***, sMVEndingFiles[0], &llMVCommonRoomBackgroundMatAnimJoint), 0.0F);
+    gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMVEndingFiles[0], llMVCommonRoomBackgroundMObjSub));
+    gcAddMatAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32***, sMVEndingFiles[0], llMVCommonRoomBackgroundMatAnimJoint), 0.0F);
     gcPlayAnimAll(gobj);
 }
 
@@ -175,7 +175,7 @@ void mvEndingMakeRoomDesk(void)
 
     sMVEndingRoomDeskGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], &llMVCommonRoomDeskDObjDesc), NULL);
+    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], llMVCommonRoomDeskDObjDesc), NULL);
     gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 29, GOBJ_PRIORITY_DEFAULT, ~0);
 }
 
@@ -186,9 +186,9 @@ void mvEndingMakeRoomBooks(void)
 
     sMVEndingRoomBooksGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], &llMVCommonRoomBooksDObjDesc), NULL);
+    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], llMVCommonRoomBooksDObjDesc), NULL);
     gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 29, GOBJ_PRIORITY_DEFAULT, ~0);
-    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], &llMVCommonRoomBooksAnimJoint), 300.0F);
+    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], llMVCommonRoomBooksAnimJoint), 300.0F);
     gcPlayAnimAll(gobj);
 }
 
@@ -199,9 +199,9 @@ void mvEndingMakeRoomPencils(void)
 
     sMVEndingRoomPencilsGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], &llMVCommonRoomPencilsDObjDesc), NULL);
+    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], llMVCommonRoomPencilsDObjDesc), NULL);
     gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 29, GOBJ_PRIORITY_DEFAULT, ~0);
-    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], &llMVCommonRoomPencilsAnimJoint), 300.0F);
+    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], llMVCommonRoomPencilsAnimJoint), 300.0F);
     gcPlayAnimAll(gobj);
 }
 
@@ -212,9 +212,9 @@ void mvEndingMakeRoomLamp(void)
 
     sMVEndingRoomLampGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], &llMVCommonRoomLampDObjDesc), NULL);
+    gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMVEndingFiles[0], llMVCommonRoomLampDObjDesc), NULL);
     gcAddGObjDisplay(gobj, gcDrawDObjTreeForGObj, 29, GOBJ_PRIORITY_DEFAULT, ~0);
-    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], &llMVCommonRoomLampAnimJoint), 300.0F);
+    gcAddAnimJointAll(gobj, lbRelocGetFileData(AObjEvent32**, sMVEndingFiles[0], llMVCommonRoomLampAnimJoint), 300.0F);
     gcPlayAnimAll(gobj);
 }
 
@@ -226,11 +226,11 @@ void mvEndingMakeRoomTissues(void)
 
     sMVEndingRoomTissuesGObj = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
-    dobj = gcAddDObjForGObj(gobj, lbRelocGetFileData(void*, sMVEndingFiles[0], &llMVCommonRoomTissuesDisplayList));
+    dobj = gcAddDObjForGObj(gobj, lbRelocGetFileData(void*, sMVEndingFiles[0], llMVCommonRoomTissuesDisplayList));
 
     gcAddXObjForDObjFixed(dobj, nGCMatrixKindTraRotRpyRSca, 0);
     gcAddGObjDisplay(gobj, gcDrawDObjDLHead0, 29, GOBJ_PRIORITY_DEFAULT, ~0);
-    gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, sMVEndingFiles[0], &llMVCommonRoomTissuesAnimJoint), 300.0F);
+    gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, sMVEndingFiles[0], llMVCommonRoomTissuesAnimJoint), 300.0F);
     gcPlayAnimAll(gobj);
 }
 
@@ -402,7 +402,7 @@ void mvEndingSetupOperatorCamera(GObj *gobj)
     cobj->projection.persp.near = 128.0F;
     cobj->projection.persp.far = 16384.0F;
 
-    gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVEndingFiles[1], &llMVEndingOperatorCamAnimJoint), 0.0F);
+    gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVEndingFiles[1], llMVEndingOperatorCamAnimJoint), 0.0F);
     gcAddGObjProcess(gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 
@@ -511,7 +511,7 @@ void mvEndingFuncStart(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMVEndingStatusBuffer;

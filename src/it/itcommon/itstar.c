@@ -12,7 +12,7 @@ ITDesc dITStarItemDesc =
 {
     nITKindStar,                            // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataStarItemAttributes,      // Offset of item attributes in file?
+    llITCommonDataStarItemAttributes,      // Offset of item attributes in file?
 
     // DObj transformation struct
     {

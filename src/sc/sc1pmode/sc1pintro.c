@@ -15,7 +15,7 @@ extern u32 sySchedulerGetTicCount();
 // // // // // // // // // // // //
 
 // 0x80134DF0
-u32 dSC1PIntroFileIDs[/* */] = { &llSC1PIntroFileID, &llCharacterNamesFileID, &llBonusPictureFileID, &llBonusPicturePlatformFileID };
+u32 dSC1PIntroFileIDs[/* */] = { llSC1PIntroFileID, llCharacterNamesFileID, llBonusPictureFileID, llBonusPicturePlatformFileID };
 
 // 0x80134E00
 Lights1 dSC1PIntroLights1 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x3C, 0x3C, 0x3C);
@@ -116,7 +116,7 @@ void sc1PIntroMakeSky(void)
     
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 26, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroSkySprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroSkySprite));
     
     sobj->pos.x = 10.0F;
     sobj->pos.y = 59.0F;
@@ -130,12 +130,12 @@ void sc1PIntroMakeBanners(void)
     
     gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 28, GOBJ_PRIORITY_DEFAULT, ~0);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroBannerTopSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroBannerTopSprite));
     
     sobj->pos.x = 10.0F;
     sobj->pos.y = 10.0F;
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroBannerBottomSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroBannerBottomSprite));
     sobj->pos.x = 10.0F;
     sobj->pos.y = 182.0F;
 }
@@ -196,7 +196,7 @@ void sc1PIntroMakeVSDecal(void)
 
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroVSDecalSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroVSDecalSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -229,19 +229,19 @@ void sc1PIntroMakeLabels(s32 stage)
     // 0x80134E40
     intptr_t number_offsets[/* */] =    
     {
-        &llSC1PIntroNumber1Sprite,
-        &llSC1PIntroNumber2Sprite,
-        &llSC1PIntroNumber3Sprite,
-        &llSC1PIntroNumber1Sprite,
-        &llSC1PIntroNumber4Sprite,
-        &llSC1PIntroNumber5Sprite,
-        &llSC1PIntroNumber6Sprite,
-        &llSC1PIntroNumber2Sprite,
-        &llSC1PIntroNumber7Sprite,
-        &llSC1PIntroNumber8Sprite,
-        &llSC1PIntroNumber9Sprite,
-        &llSC1PIntroNumber3Sprite,
-        &llSC1PIntroNumber10Sprite,
+        llSC1PIntroNumber1Sprite,
+        llSC1PIntroNumber2Sprite,
+        llSC1PIntroNumber3Sprite,
+        llSC1PIntroNumber1Sprite,
+        llSC1PIntroNumber4Sprite,
+        llSC1PIntroNumber5Sprite,
+        llSC1PIntroNumber6Sprite,
+        llSC1PIntroNumber2Sprite,
+        llSC1PIntroNumber7Sprite,
+        llSC1PIntroNumber8Sprite,
+        llSC1PIntroNumber9Sprite,
+        llSC1PIntroNumber3Sprite,
+        llSC1PIntroNumber10Sprite,
         0x0
     };
     
@@ -250,7 +250,7 @@ void sc1PIntroMakeLabels(s32 stage)
     
     if (sc1PIntroCheckNotBonusStage(stage) == FALSE)
     {
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroBonusTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroBonusTextSprite));
 
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -264,7 +264,7 @@ void sc1PIntroMakeLabels(s32 stage)
     }
     if (stage == nSC1PGameStageBoss)
     {
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroFinalTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroFinalTextSprite));
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -276,7 +276,7 @@ void sc1PIntroMakeLabels(s32 stage)
         sobj->pos.x = 15.0F;
         sobj->pos.y = 17.0F;
     }
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroStageTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroStageTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -314,20 +314,20 @@ void sc1PIntroMakeFigures(s32 stage)
     // 0x80134E78
     intptr_t figure_offsets[/* */] =
     {
-        &llSC1PIntroLinkMarkerSprite,
-        &llSC1PIntroYoshiMarkerSprite,
-        &llSC1PIntroFoxMarkerSprite,
-        &llSC1PIntroBonusMarkerSprite,
-        &llSC1PIntroMarioBrosMarkerSprite,
-        &llSC1PIntroPikachuMarkerSprite,
-        &llSC1PIntroDKMarkerSprite,
-        &llSC1PIntroBonusMarkerSprite,
-        &llSC1PIntroKirbyMarkerSprite,
-        &llSC1PIntroSamusMarkerSprite,
-        &llSC1PIntroMarioMarkerSprite,
-        &llSC1PIntroBonusMarkerSprite,
-        &llSC1PIntroExclamationMarkSprite,
-        &llSC1PIntroBossMarkerSprite,
+        llSC1PIntroLinkMarkerSprite,
+        llSC1PIntroYoshiMarkerSprite,
+        llSC1PIntroFoxMarkerSprite,
+        llSC1PIntroBonusMarkerSprite,
+        llSC1PIntroMarioBrosMarkerSprite,
+        llSC1PIntroPikachuMarkerSprite,
+        llSC1PIntroDKMarkerSprite,
+        llSC1PIntroBonusMarkerSprite,
+        llSC1PIntroKirbyMarkerSprite,
+        llSC1PIntroSamusMarkerSprite,
+        llSC1PIntroMarioMarkerSprite,
+        llSC1PIntroBonusMarkerSprite,
+        llSC1PIntroExclamationMarkSprite,
+        llSC1PIntroBossMarkerSprite,
         0x0
     };
 
@@ -386,7 +386,7 @@ void sc1PIntroMakeBonusTasks(s32 stage)
     switch (stage)
     {
     case nSC1PGameStageBonus1:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroBreakTheTargetsTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroBreakTheTargetsTextSprite));
 
 #if defined(REGION_US)
         sobj->pos.x = 160 - (sobj->sprite.width / 2);
@@ -397,7 +397,7 @@ void sc1PIntroMakeBonusTasks(s32 stage)
         break;
         
     case nSC1PGameStageBonus2:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroBoardThePlatformsTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroBoardThePlatformsTextSprite));
         
 #if defined(REGION_US)
         sobj->pos.x = 160 - (sobj->sprite.width / 2);
@@ -408,7 +408,7 @@ void sc1PIntroMakeBonusTasks(s32 stage)
         break;
         
     case nSC1PGameStageBonus3:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroRaceToTheFinishTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroRaceToTheFinishTextSprite));
         
 #if defined(REGION_US)
         sobj->pos.x = 160 - (sobj->sprite.width / 2);
@@ -456,27 +456,27 @@ void sc1PIntroMakeVSName(s32 stage)
     // 0x80134F24
     intptr_t opponent_offsets[/* */] =
     {
-        &llCharacterNamesLinkSprite,
-        &llSC1PIntroYoshiTeamVS18TextSprite,
-        &llSC1PIntroFoxMcCloudTextSprite,
+        llCharacterNamesLinkSprite,
+        llSC1PIntroYoshiTeamVS18TextSprite,
+        llSC1PIntroFoxMcCloudTextSprite,
         0x0,
-        &llSC1PIntroMarioBrosTextSprite,
-        &llCharacterNamesPikachuSprite,
-        &llSC1PIntroGiantDKTextSprite,
+        llSC1PIntroMarioBrosTextSprite,
+        llCharacterNamesPikachuSprite,
+        llSC1PIntroGiantDKTextSprite,
         0x0,
-        &llSC1PIntroKirbyTeamVS8TextSprite,
-        &llSC1PIntroSamusAranTextSprite,
-        &llSC1PIntroMetalMarioTextSprite,
+        llSC1PIntroKirbyTeamVS8TextSprite,
+        llSC1PIntroSamusAranTextSprite,
+        llSC1PIntroMetalMarioTextSprite,
         0x0,
-        &llSC1PIntroFightingPolygonTeamVS30TextSprite,
-        &llSC1PIntroMasterHandTextSprite,
+        llSC1PIntroFightingPolygonTeamVS30TextSprite,
+        llSC1PIntroMasterHandTextSprite,
         0x0
     };
 
     sSC1PIntroVSNameGObj = gobj = gcMakeGObjSPAfter(0, NULL, 19, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroVSTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroVSTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -524,18 +524,18 @@ void sc1PIntroMakeName(s32 stage)
     // 0x80134F60
     intptr_t name_offsets[/* */] =
     {
-        &llCharacterNamesMarioSprite,
-        &llCharacterNamesFoxSprite,
-        &llCharacterNamesDonkeySprite,
-        &llCharacterNamesSamusSprite,
-        &llCharacterNamesLuigiSprite,
-        &llCharacterNamesLinkSprite,
-        &llCharacterNamesYoshiSprite,
-        &llCharacterNamesCaptainSprite,
-        &llCharacterNamesKirbySprite,
-        &llCharacterNamesPikachuSprite,
-        &llCharacterNamesPurinSprite,
-        &llCharacterNamesNessSprite
+        llCharacterNamesMarioSprite,
+        llCharacterNamesFoxSprite,
+        llCharacterNamesDonkeySprite,
+        llCharacterNamesSamusSprite,
+        llCharacterNamesLuigiSprite,
+        llCharacterNamesLinkSprite,
+        llCharacterNamesYoshiSprite,
+        llCharacterNamesCaptainSprite,
+        llCharacterNamesKirbySprite,
+        llCharacterNamesPikachuSprite,
+        llCharacterNamesPurinSprite,
+        llCharacterNamesNessSprite
     };
 
     sSC1PIntroNameGObj = gobj = gcMakeGObjSPAfter(0, NULL, 19, GOBJ_PRIORITY_DEFAULT);
@@ -552,7 +552,7 @@ void sc1PIntroMakeName(s32 stage)
     
     if (sc1PIntroGetAlliesNum(stage) != 0)
     {
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroDashSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroDashSprite));
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -819,7 +819,7 @@ void sc1PIntroMakeAllyText(s32 stage)
     
     if (stage == nSC1PGameStageMario)
     {
-        SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroAllyTextSprite));
+        SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroAllyTextSprite));
         
         sobj->pos.x = 80.0F;
         sobj->pos.y = 80.0F;
@@ -828,14 +828,14 @@ void sc1PIntroMakeAllyText(s32 stage)
     }
     else
     {
-        SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroAllyText2Sprite));
+        SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroAllyText2Sprite));
         
         sobj->pos.x = 80.0F;
         sobj->pos.y = 70.0F;
         
         sc1PIntroInitAllyTextParams(sobj);
         
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], &llSC1PIntroAllyTextSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[0], llSC1PIntroAllyTextSprite));
         
         sobj->pos.x = 90.0F;
         sobj->pos.y = 100.0F;
@@ -1042,7 +1042,7 @@ void sc1PIntroMakeBonusPicture(s32 stage)
     switch (stage)
     {
     case nSC1PGameStageBonus1:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[2], &llBonusPictureTargetSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[2], llBonusPictureTargetSprite));
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1052,7 +1052,7 @@ void sc1PIntroMakeBonusPicture(s32 stage)
         break;
         
     case nSC1PGameStageBonus2:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[3], &llBonusPicturePlatformSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[3], llBonusPicturePlatformSprite));
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1062,7 +1062,7 @@ void sc1PIntroMakeBonusPicture(s32 stage)
         break;
         
     case nSC1PGameStageBonus3:
-        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[2], &llBonusPictureRaceSprite));
+        sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSC1PIntroFiles[2], llBonusPictureRaceSprite));
         
         sobj->sprite.attr &= ~SP_FASTCOPY;
         sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1137,20 +1137,20 @@ CObj* sc1PIntroMakeStageCamera(s32 stage, u32 dl_link)
     // 0x80135180
     intptr_t camanim_joints[/* */] =
     {
-        &llSC1PIntroStageLinkCamAnimJoint,
-        &llSC1PIntroStageYoshiCamAnimJoint,
-        &llSC1PIntroStageFoxCamAnimJoint,
+        llSC1PIntroStageLinkCamAnimJoint,
+        llSC1PIntroStageYoshiCamAnimJoint,
+        llSC1PIntroStageFoxCamAnimJoint,
         0x0,
-        &llSC1PIntroStageMarioCamAnimJoint,
-        &llSC1PIntroStagePikachuCamAnimJoint,
-        &llSC1PIntroStageDonkeyCamAnimJoint,
+        llSC1PIntroStageMarioCamAnimJoint,
+        llSC1PIntroStagePikachuCamAnimJoint,
+        llSC1PIntroStageDonkeyCamAnimJoint,
         0x0,
-        &llSC1PIntroStageKirbyCamAnimJoint,
-        &llSC1PIntroStageSamusCamAnimJoint,
-        &llSC1PIntroStageMMarioCamAnimJoint,
+        llSC1PIntroStageKirbyCamAnimJoint,
+        llSC1PIntroStageSamusCamAnimJoint,
+        llSC1PIntroStageMMarioCamAnimJoint,
         0x0,
-        &llSC1PIntroStageZakoCamAnimJoint,
-        &llSC1PIntroStageBossCamAnimJoint
+        llSC1PIntroStageZakoCamAnimJoint,
+        llSC1PIntroStageBossCamAnimJoint
     };
     
     gobj = gcMakeCameraGObj
@@ -1503,18 +1503,18 @@ void sc1PIntroMakeFighterCamera(s32 fkind, s32 cobj_id)
     // 0x801359D0
     intptr_t camanim_joints[/* */] =
     {
-        &llSC1PIntroFighterMarioCamAnimJoint,
-        &llSC1PIntroFighterFoxCamAnimJoint,
-        &llSC1PIntroFighterDonkeyCamAnimJoint,
-        &llSC1PIntroFighterSamusCamAnimJoint,
-        &llSC1PIntroFighterLuigiCamAnimJoint,
-        &llSC1PIntroFighterLinkCamAnimJoint,
-        &llSC1PIntroFighterYoshiCamAnimJoint,
-        &llSC1PIntroFighterCaptainCamAnimJoint,
-        &llSC1PIntroFighterKirbyCamAnimJoint,
-        &llSC1PIntroFighterPikachuCamAnimJoint,
-        &llSC1PIntroFighterPurinCamAnimJoint,
-        &llSC1PIntroFighterNessCamAnimJoint
+        llSC1PIntroFighterMarioCamAnimJoint,
+        llSC1PIntroFighterFoxCamAnimJoint,
+        llSC1PIntroFighterDonkeyCamAnimJoint,
+        llSC1PIntroFighterSamusCamAnimJoint,
+        llSC1PIntroFighterLuigiCamAnimJoint,
+        llSC1PIntroFighterLinkCamAnimJoint,
+        llSC1PIntroFighterYoshiCamAnimJoint,
+        llSC1PIntroFighterCaptainCamAnimJoint,
+        llSC1PIntroFighterKirbyCamAnimJoint,
+        llSC1PIntroFighterPikachuCamAnimJoint,
+        llSC1PIntroFighterPurinCamAnimJoint,
+        llSC1PIntroFighterNessCamAnimJoint
     };
 
     // 0x80135A00 - col 0 is dl_link, col 1 is dl_link_priority
@@ -1931,7 +1931,7 @@ void sc1PIntroFuncStart(void)
     s32 i;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sSC1PIntroStatusBuffer;

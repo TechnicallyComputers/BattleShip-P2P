@@ -13,7 +13,7 @@ WPDesc dWPPikachuThunderJoltAirWeaponDesc =
     0x00,                                               // Render flags?
     nWPKindThunderJoltAir,                             // Weapon Kind
     &gFTDataPikachuSpecial1,                              // Pointer to character's loaded files?
-    &llPikachuSpecial1ThunderJoltAirWeaponAttributes,          // Offset of weapon attributes in loaded files
+    llPikachuSpecial1ThunderJoltAirWeaponAttributes,          // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -37,7 +37,7 @@ WPDesc dWPPikachuThunderJoltGroundWeaponDesc =
     0x03,                                               // Render flags?
     nWPKindThunderJoltGround,                          // Weapon Kind
     &gFTDataPikachuSpecial1,                              // Pointer to character's loaded files?
-    &llPikachuSpecial1ThunderJoltGroundWeaponAttributes,       // Offset of weapon attributes in loaded files
+    llPikachuSpecial1ThunderJoltGroundWeaponAttributes,       // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -190,8 +190,8 @@ void wpPikachuThunderJoltGroundAddAnim(GObj *weapon_gobj)
     gcAddAnimAll
     (
         weapon_gobj, 
-        lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial3, &llPikachuSpecial3ThunderJoltBAnimJoint), 
-        lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial3, &llPikachuSpecial3ThunderJoltBMatAnimJoint), 
+        lbRelocGetFileData(AObjEvent32**, gFTDataPikachuSpecial3, llPikachuSpecial3ThunderJoltBAnimJoint), 
+        lbRelocGetFileData(AObjEvent32***, gFTDataPikachuSpecial3, llPikachuSpecial3ThunderJoltBMatAnimJoint), 
         0.0F
     );
     gcPlayAnimAll(weapon_gobj);

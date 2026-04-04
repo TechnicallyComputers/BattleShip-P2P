@@ -16,7 +16,7 @@ extern u32 sySchedulerGetTicCount();
 // // // // // // // // // // // //
 
 // 0x80132330
-u32 dMVOpeningYosterFileIDs[/* */] = { &llMVOpeningYosterFileID, &llStageYoshiFileID };
+u32 dMVOpeningYosterFileIDs[/* */] = { llMVOpeningYosterFileID, llStageYoshiFileID };
 
 // 0x80132338
 Lights1 dMVOpeningYosterLights11 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x14, 0x14, 0x14);
@@ -75,7 +75,7 @@ void mvOpeningYosterMakeNest(void)
         (
             DObjDesc*,
             sMVOpeningYosterFiles[0],
-            &llMVOpeningYosterNestDObjDesc
+            llMVOpeningYosterNestDObjDesc
         ),
         NULL
     );
@@ -137,7 +137,7 @@ void mvOpeningYosterMakeWallpaper(void)
         (
             Sprite*,
             sMVOpeningYosterFiles[1],
-            &llStageYoshiSprite
+            llStageYoshiSprite
         )
     );
     wallpaper_sobj->pos.x = 10.0F;
@@ -155,7 +155,7 @@ void mvOpeningYosterMakeGround(void)
         (
             DObjDesc*,
             sMVOpeningYosterFiles[0],
-            &llMVOpeningYosterGroundDObjDesc
+            llMVOpeningYosterGroundDObjDesc
         ),
         NULL
     );
@@ -172,7 +172,7 @@ void mvOpeningYosterMakeGround(void)
         (
             AObjEvent32**,
             sMVOpeningYosterFiles[0],
-            &llMVOpeningYosterGroundAnimJoint
+            llMVOpeningYosterGroundAnimJoint
         ),
         0.0F
     );
@@ -214,7 +214,7 @@ void mvOpeningYosterMakeMainCamera(void)
         (
             AObjEvent32*,
             sMVOpeningYosterFiles[0],
-            &llMVOpeningYosterCamAnimJoint
+            llMVOpeningYosterCamAnimJoint
         ),
         0.0F
     );
@@ -296,7 +296,7 @@ void mvOpeningYosterFuncStart(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMVOpeningYosterStatusBuffer;

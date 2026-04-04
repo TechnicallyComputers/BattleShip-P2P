@@ -13,7 +13,7 @@ WPDesc dWPYoshiEggThrowWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindEggThrow,                        // Weapon Kind
     &gFTDataYoshiMain,                      // Pointer to character's loaded files?
-    &llYoshiMainEggThrowWeaponAttributes,      // Offset of weapon attributes in loaded files
+    llYoshiMainEggThrowWeaponAttributes,      // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

@@ -13,7 +13,7 @@ ITDesc dITStarRodItemDesc =
 {
     nITKindStarRod,                         // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataStarRodItemAttributes,   // Offset of item attributes in file?
+    llITCommonDataStarRodItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -101,7 +101,7 @@ WPDesc dITStarRodWeaponStarWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindStarRodStar,                     // Weapon Kind
     &gITManagerCommonData,                  // Pointer to character's loaded files?
-    &llITCommonDataStarRodWeaponAttributes, // Offset of weapon attributes in loaded files
+    llITCommonDataStarRodWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -371,7 +371,7 @@ GObj* itStarRodWeaponStarMakeWeapon(GObj *fighter_gobj, Vec3f *pos, ub8 is_smash
 
     if (is_smash == TRUE)
     {
-        dITStarRodWeaponStarWeaponDesc.o_attributes = (intptr_t)&llITCommonDataStarRodSmashWeaponAttributes; // Set attribute data on smash input - Linker thing
+        dITStarRodWeaponStarWeaponDesc.o_attributes = (intptr_t)llITCommonDataStarRodSmashWeaponAttributes; // Set attribute data on smash input - Linker thing
     }
     weapon_gobj = wpManagerMakeWeapon(fighter_gobj, &dITStarRodWeaponStarWeaponDesc, pos, (WEAPON_FLAG_COLLPROJECT | WEAPON_FLAG_PARENT_FIGHTER));
 

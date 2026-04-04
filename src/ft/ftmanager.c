@@ -66,7 +66,7 @@ void ftManagerSetupFileSize(void)
     FTMotionDesc *motion_desc;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = NULL;
@@ -163,9 +163,9 @@ void ftManagerAllocFighter(u32 data_flags, s32 allocs_num)
     gFTManagerMotionCount = 1;
     gFTManagerStatUpdateCount = 1;
 
-    gFTManagerCommonFile = lbRelocGetExternHeapFile((u32)&llFTManagerCommonFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&llFTManagerCommonFileID), 0x10));
+    gFTManagerCommonFile = lbRelocGetExternHeapFile((u32)llFTManagerCommonFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)llFTManagerCommonFileID), 0x10));
 
-    lbRelocGetExternHeapFile((u32)&ll_201_FileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&ll_201_FileID), 0x10));
+    lbRelocGetExternHeapFile((u32)ll_201_FileID, syTaskmanMalloc(lbRelocGetFileSize((u32)ll_201_FileID), 0x10));
 
     for (i = 0; i < (nFTKindEnumCount + ARRAY_COUNT(gSCManagerFighterFileSizes)) / 2; i++)
     {
@@ -629,7 +629,7 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 
         if (fp->fkind == nFTKindKirby)
         {
-            FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
+            FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
 
             ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy[fp->passive_vars.kirby.copy_id].copy_modelpart_id);
         }

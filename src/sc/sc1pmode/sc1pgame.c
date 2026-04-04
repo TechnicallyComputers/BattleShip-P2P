@@ -776,7 +776,7 @@ void sc1PGameSetupFiles(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sSC1PGameStatusBuffer;
@@ -1557,7 +1557,7 @@ void sc1PGameWaitStageBossUpdate(void)
     sp20.y = 0.0F;
     sp20.z = 0.0F;
 
-    gmCameraSetStatusAnim(lbRelocGetFileData(AObjEvent32*, ((uintptr_t)gMPCollisionGroundData->gr_desc[1].dobjdesc - (intptr_t)&llGRLastMapFileHead), &D_NF_00006010), 0.0F, &sp20);
+    gmCameraSetStatusAnim(lbRelocGetFileData(AObjEvent32*, ((uintptr_t)gMPCollisionGroundData->gr_desc[1].dobjdesc - (intptr_t)llGRLastMapFileHead), &D_NF_00006010), 0.0F, &sp20);
 
     for (player = 0; TRUE; player++) // Wut da haeiyll
     {
@@ -1700,7 +1700,7 @@ void sc1PGameTeamStockDisplayProcDisplay(GObj *interface_gobj)
                         break;
 
                     case nSC1PGameStageZako:
-                        sobj->sprite = *lbRelocGetFileData(Sprite*, sSC1PGameZakoStockFile, &llFTStocksZakoSprite);
+                        sobj->sprite = *lbRelocGetFileData(Sprite*, sSC1PGameZakoStockFile, llFTStocksZakoSprite);
                         break;
                     }
                     sobj->sprite.attr &= ~SP_HIDDEN;
@@ -1750,14 +1750,14 @@ void sc1PGameInitTeamStockDisplay(void)
     case nSC1PGameStageZako:
         sSC1PGameZakoStockFile = lbRelocGetExternHeapFile
         (
-            (u32)&llFTStocksZakoFileID,
+            (u32)llFTStocksZakoFileID,
             syTaskmanMalloc
             (
-                lbRelocGetFileSize((u32)&llFTStocksZakoFileID),
+                lbRelocGetFileSize((u32)llFTStocksZakoFileID),
                 0x10
             )
         );
-        sprite = lbRelocGetFileData(Sprite*, sSC1PGameZakoStockFile, &llFTStocksZakoSprite);
+        sprite = lbRelocGetFileData(Sprite*, sSC1PGameZakoStockFile, llFTStocksZakoSprite);
 
         sprite->attr = SP_TEXSHUF | SP_TRANSPARENT;
 
@@ -1768,7 +1768,7 @@ void sc1PGameInitTeamStockDisplay(void)
 
         for (i = 0; i < sSC1PGameEnemyStocksRemaining; i++)
         {
-            lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[4], &ll_104_FileID));
+            lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[4], ll_104_FileID));
         }
         sSC1PGameEnemyStocksDisplay = sSC1PGameEnemyStocksRemaining + 1;
 
@@ -2006,7 +2006,7 @@ void sc1PGameBossDefeatInterfaceProcSet(void)
 {
     gcFuncGObjAll(ifCommonBattleInterfaceResumeGObj, 0);
     sc1PGameBossSetChangeWallpaper();
-    gmCameraSetStatusAnim((void*) (((uintptr_t)gMPCollisionGroundData->gr_desc[1].dobjdesc - (intptr_t)&llGRLastMapFileHead) + (intptr_t)&D_NF_00006450), 0.0F, &sSC1PGameBossDefeatZoomPosition);
+    gmCameraSetStatusAnim((void*) (((uintptr_t)gMPCollisionGroundData->gr_desc[1].dobjdesc - (intptr_t)llGRLastMapFileHead) + (intptr_t)&D_NF_00006450), 0.0F, &sSC1PGameBossDefeatZoomPosition);
     ifCommonBattleBossDefeatSetGameStatus();
 }
 
@@ -2044,11 +2044,11 @@ void sc1PGameFuncStart(void)
     {
         syDmaReadRom(0xF10, signature, ARRAY_COUNT(signature));
 
-        file = lbRelocGetExternHeapFile((u32)&llSYSignValidateFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&llSYSignValidateFileID), 0x10));
-        func_sign = lbRelocGetFileData(sb32 (*)(void*), file, &llSYSignValidateFunc);
+        file = lbRelocGetExternHeapFile((u32)llSYSignValidateFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)llSYSignValidateFileID), 0x10));
+        func_sign = lbRelocGetFileData(sb32 (*)(void*), file, llSYSignValidateFunc);
 
-        osWritebackDCache(func_sign, *lbRelocGetFileData(s32*, file, &llSYSignValidateNBytes));
-        osInvalICache(func_sign, *lbRelocGetFileData(s32*, file, &llSYSignValidateNBytes));
+        osWritebackDCache(func_sign, *lbRelocGetFileData(s32*, file, llSYSignValidateNBytes));
+        osInvalICache(func_sign, *lbRelocGetFileData(s32*, file, llSYSignValidateNBytes));
 
         if (func_sign(signature) == FALSE)
         {
@@ -2078,7 +2078,7 @@ void sc1PGameFuncStart(void)
         // Need to load PK Fire graphics from Ness' file
         plns = dFTManagerDataFiles[nFTKindNess];
 
-        lbRelocGetExternHeapFile((uintptr_t)&ll_230_FileID, syTaskmanMalloc(lbRelocGetFileSize((uintptr_t)&ll_230_FileID), 0x10));
+        lbRelocGetExternHeapFile((uintptr_t)ll_230_FileID, syTaskmanMalloc(lbRelocGetFileSize((uintptr_t)ll_230_FileID), 0x10));
         efParticleGetLoadBankID
         (
             plns->particles_script_lo, 

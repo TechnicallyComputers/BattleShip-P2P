@@ -14,7 +14,7 @@ ITDesc dITIwarkItemDesc =
 {
     nITKindIwark,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataWarkItemAttributes,      // Offset of item attributes in file?
+    llITCommonDataWarkItemAttributes,      // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -68,7 +68,7 @@ WPDesc dITIwarkWeaponRockWeaponDesc =
     0x01,                                   // Render flags?
     nWPKindIwarkRock,                       // Weapon Kind
     &gITManagerCommonData,                  // Pointer to weapon's loaded files?
-    &llITCommonDataWarkRockWeaponAttributes,// Offset of weapon attributes in loaded files
+    llITCommonDataWarkRockWeaponAttributes,// Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -219,7 +219,7 @@ void itIwarkAttackInitVars(GObj *item_gobj)
 
     if (ip->kind == nITKindIwark)
     {
-        dobj->dl = dl = (Gfx*) itGetPData(ip, &llITCommonDataWarkDataStart, &llITCommonDataWarkDisplayList);
+        dobj->dl = dl = (Gfx*) itGetPData(ip, llITCommonDataWarkDataStart, llITCommonDataWarkDisplayList);
 
         pos.y += ITIWARK_IWARK_ADD_POS_Y;
     }
@@ -323,7 +323,7 @@ GObj* itIwarkMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         dobj->translate.vec.f.y -= ip->attr->map_coll_bottom;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, &llITCommonDataWarkDataStart), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataWarkDataStart), 0.0F);
     }
     return item_gobj;
 }

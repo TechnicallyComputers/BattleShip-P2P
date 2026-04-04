@@ -13,7 +13,7 @@ WPDesc dWPKirbyCutterWeaponDesc =
     0x03,                                  // Render flags?
     nWPKindCutter,                         // Weapon Kind
     &gFTDataKirbyMain,                     // Pointer to character's loaded files?
-    &llKirbyMainCutterWeaponAttributes,    // Offset of weapon attributes in loaded files
+    llKirbyMainCutterWeaponAttributes,    // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

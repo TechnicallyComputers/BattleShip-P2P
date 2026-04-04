@@ -28,7 +28,7 @@ FTKeyEvent dMVOpeningPikachuKeyEvents[/* */] =
 };
 
 // 0x8018E0FC
-u32 dMVOpeningPikachuFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningPikachuFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -93,7 +93,7 @@ void mvOpeningPikachuSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningPikachuStatusBuffer;
@@ -128,13 +128,13 @@ void mvOpeningPikachuMakeName(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterPSprite,
-		&llIFCommonAnnounceCommonLetterISprite,
-		&llIFCommonAnnounceCommonLetterKSprite,
-		&llIFCommonAnnounceCommonLetterASprite,
-		&llIFCommonAnnounceCommonLetterCSprite,
-		&llIFCommonAnnounceCommonLetterHSprite,
-		&llIFCommonAnnounceCommonLetterUSprite,
+		llIFCommonAnnounceCommonLetterPSprite,
+		llIFCommonAnnounceCommonLetterISprite,
+		llIFCommonAnnounceCommonLetterKSprite,
+		llIFCommonAnnounceCommonLetterASprite,
+		llIFCommonAnnounceCommonLetterCSprite,
+		llIFCommonAnnounceCommonLetterHSprite,
+		llIFCommonAnnounceCommonLetterUSprite,
 		0x0
 	};
 	f32 pos_x[/* */] =
@@ -413,7 +413,7 @@ void mvOpeningPikachuMakePosedFighterCamera(void)
 
 	cobj->projection.persp.aspect = 5.0F / 11.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningPikachuFiles[1], &llMVOpeningCommonPikachuCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningPikachuFiles[1], llMVOpeningCommonPikachuCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

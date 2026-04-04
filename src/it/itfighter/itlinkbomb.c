@@ -21,7 +21,7 @@ ITDesc dItLinkBombItemDesc =
 {
 	nITKindLinkBomb, 						// Item Kind
 	&gFTDataLinkMain, 						// Pointer to item file data?
-	&llLinkMainBombItemAttributes,			// Offset of item attributes in file?
+	llLinkMainBombItemAttributes,			// Offset of item attributes in file?
 
 	// DObj transformation struct
 	{
@@ -147,7 +147,7 @@ void itLinkBombExplodeWaitUpdateScale(GObj *item_gobj)
 
 	if (ip->item_vars.linkbomb.scale_int == 0)
 	{
-		f32 *scales = (f32*) ((uintptr_t)*dItLinkBombItemDesc.p_file + (intptr_t)&llLinkMainBombBloatScales);
+		f32 *scales = (f32*) ((uintptr_t)*dItLinkBombItemDesc.p_file + (intptr_t)llLinkMainBombBloatScales);
 		s32 scale_id = (ip->item_vars.linkbomb.scale_id > ITLINKBOMB_SCALE_INDEX_REWIND) ?
 					      (ITLINKBOMB_SCALE_INDEX_MAX - ip->item_vars.linkbomb.scale_id) :
 					   								    ip->item_vars.linkbomb.scale_id;
@@ -522,7 +522,7 @@ void itLinkBombExplodeInitVars(GObj *item_gobj)
 void itLinkBombExplodeUpdateAttackEvent(GObj *item_gobj)
 {
 	ITStruct *ip = itGetStruct(item_gobj);
-	ITAttackEvent *ev = itGetAttackEvent(dItLinkBombItemDesc, &llLinkMainBombAttackEvents);
+	ITAttackEvent *ev = itGetAttackEvent(dItLinkBombItemDesc, llLinkMainBombAttackEvents);
 
 	if (ip->multi == ev[ip->event_id].timer)
 	{

@@ -14,7 +14,7 @@
 // // // // // // // // // // // //
 
 // 0x80132830
-u32 dMNScreenAdjustFileIDs[/* */] = { &llMNScreenAdjustFileID };
+u32 dMNScreenAdjustFileIDs[/* */] = { llMNScreenAdjustFileID };
 
 // 0x80132838
 Lights1 dMNScreenAdjustLights1 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x3C, 0x3C, 0x3C);
@@ -156,7 +156,7 @@ void mnScreenAdjustMakeGuide(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
 
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNScreenAdjustFiles[0], &llMNScreenAdjustGuideSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNScreenAdjustFiles[0], llMNScreenAdjustGuideSprite));
     
     sobj->pos.x = 10.0F;
     sobj->pos.y = 10.0F;
@@ -171,7 +171,7 @@ void mnScreenAdjustMakeInstruction(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
 
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNScreenAdjustFiles[0], &llMNScreenAdjustInstructionSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNScreenAdjustFiles[0], llMNScreenAdjustInstructionSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -423,7 +423,7 @@ void mnScreenAdjustFuncStart(void)
     s32 unused[2];
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMNScreenAdjustStatusBuffer;

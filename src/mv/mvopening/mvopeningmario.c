@@ -35,7 +35,7 @@ FTKeyEvent dMVOpeningMarioKeyEvents[/* */] =
 };
 
 // 0x8018E0E8
-u32 dMVOpeningMarioFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningMarioFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -100,7 +100,7 @@ void mvOpeningMarioSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningMarioStatusBuffer;
@@ -136,11 +136,11 @@ void mvOpeningMarioMakeName(void)
 	// 0x8018E0F0
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterMSprite,
-		&llIFCommonAnnounceCommonLetterASprite,
-		&llIFCommonAnnounceCommonLetterRSprite,
-		&llIFCommonAnnounceCommonLetterISprite,
-		&llIFCommonAnnounceCommonLetterOSprite,
+		llIFCommonAnnounceCommonLetterMSprite,
+		llIFCommonAnnounceCommonLetterASprite,
+		llIFCommonAnnounceCommonLetterRSprite,
+		llIFCommonAnnounceCommonLetterISprite,
+		llIFCommonAnnounceCommonLetterOSprite,
 		0x0
 	};
 
@@ -423,7 +423,7 @@ void mvOpeningMarioMakePosedFighterCamera(void)
 	
 	cobj->projection.persp.aspect = 5.0F / 11.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningMarioFiles[1], &llMVOpeningCommonMarioCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningMarioFiles[1], llMVOpeningCommonMarioCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

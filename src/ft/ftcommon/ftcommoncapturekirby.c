@@ -475,7 +475,7 @@ void ftCommonThrownKirbyStarSetStatus(GObj *fighter_gobj)
 {
     s32 i;
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, &llKirbyMainMotionSpecialNFTKirbyCopy);
+    FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
 
     if (fp->ga == nMPKineticsGround)
     {

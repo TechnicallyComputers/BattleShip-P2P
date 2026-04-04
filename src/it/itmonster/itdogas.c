@@ -13,7 +13,7 @@ ITDesc dITDogasItemDesc =
 {
     nITKindDogas,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataDogasItemAttributes,     // Offset of item attributes in file?
+    llITCommonDataDogasItemAttributes,     // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -67,7 +67,7 @@ WPDesc dITDogasWeaponSmogWeaponDesc =
     0x03,                                   // Render flags?
     nWPKindDogasSmog,                       // Weapon Kind
     &gITManagerCommonData,                    // Pointer to weapon's loaded files?
-    &llITCommonDataDogasSmogWeaponAttributes,    // Offset of weapon attributes in loaded files
+    llITCommonDataDogasSmogWeaponAttributes,    // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -197,7 +197,7 @@ void itDogasAttackInitVars(GObj *item_gobj)
     {
         ip->item_vars.dogas.pos = dobj->translate.vec.f;
 
-        gcAddDObjAnimJoint(dobj->child, itGetPData(ip, &llITCommonDataDogasDataStart, &llITCommonDataDogasAnimJoint), 0.0F);
+        gcAddDObjAnimJoint(dobj->child, itGetPData(ip, llITCommonDataDogasDataStart, llITCommonDataDogasAnimJoint), 0.0F);
 
         gcPlayAnimAll(item_gobj);
         func_800269C0_275C0(nSYAudioVoiceMBallDogasAppear);
@@ -265,7 +265,7 @@ GObj* itDogasMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
         ip->physics.vel_air.z = 0.0F;
         ip->physics.vel_air.y = ITMONSTER_RISE_VEL_Y;
 
-        gcAddDObjAnimJoint(dobj->child, itGetMonsterAnimNode(ip, &llITCommonDataDogasDataStart), 0.0F);
+        gcAddDObjAnimJoint(dobj->child, itGetMonsterAnimNode(ip, llITCommonDataDogasDataStart), 0.0F);
     }
     return item_gobj;
 }

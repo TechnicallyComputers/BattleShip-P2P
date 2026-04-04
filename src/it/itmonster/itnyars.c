@@ -14,7 +14,7 @@ ITDesc dITNyarsItemDesc =
 {
     nITKindNyars,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataNyarsItemAttributes,     // Offset of item attributes in file?
+    llITCommonDataNyarsItemAttributes,     // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -56,7 +56,7 @@ WPDesc dITNyarsWeaponCoinWeaponDesc =
     0x01,                                     // Render flags?
     nWPKindNyarsCoin,                         // Weapon Kind
     &gITManagerCommonData,                    // Pointer to character's loaded files?
-    &llITCommonDataNyarsCoinWeaponAttributes, // Offset of weapon attributes in loaded files
+    llITCommonDataNyarsCoinWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -196,7 +196,7 @@ GObj* itNyarsMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         dobj->translate.vec.f.y -= ip->attr->map_coll_bottom;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, &llITCommonDataNyarsAnimJoint), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataNyarsAnimJoint), 0.0F);
     }
     return item_gobj;
 }

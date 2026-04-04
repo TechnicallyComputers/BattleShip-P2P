@@ -11,7 +11,7 @@ ITDesc dITHeartItemDesc =
 {
     nITKindHeart,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataHeartItemAttributes,     // Offset of item attributes in file?
+    llITCommonDataHeartItemAttributes,     // Offset of item attributes in file?
 
     // DObj transformation struct
     {

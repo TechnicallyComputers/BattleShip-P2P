@@ -16,17 +16,17 @@
 // 0x80136F50
 u32 dMNPlayers1PBonusFileIDs[/* */] =
 {
-	&llMNPlayersCommonFileID,
-	&llFTEmblemSpritesFileID,
-	&llMNSelectCommonFileID,
-	&llMNPlayersGameModesFileID,
-	&llMNPlayersPortraitsFileID,
-	&llMNPlayers1PModeFileID,
-	&llMNPlayersDifficultyFileID,
-	&llFTStocksZakoFileID,
-	&llMNCommonFontsFileID,
-	&llIFCommonDigitsFileID,
-	&llMNPlayersSpotlightFileID
+	llMNPlayersCommonFileID,
+	llFTEmblemSpritesFileID,
+	llMNSelectCommonFileID,
+	llMNPlayersGameModesFileID,
+	llMNPlayersPortraitsFileID,
+	llMNPlayers1PModeFileID,
+	llMNPlayersDifficultyFileID,
+	llFTStocksZakoFileID,
+	llMNCommonFontsFileID,
+	llIFCommonDigitsFileID,
+	llMNPlayersSpotlightFileID
 };
 
 // 0x80136F7C
@@ -182,11 +182,11 @@ void mnPlayers1PBonusMakeNumber(GObj *gobj, s32 number, f32 x, f32 y, u32 *color
 {
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonDigits0Sprite, &llIFCommonDigits1Sprite,
-		&llIFCommonDigits2Sprite, &llIFCommonDigits3Sprite,
-		&llIFCommonDigits4Sprite, &llIFCommonDigits5Sprite,
-		&llIFCommonDigits6Sprite, &llIFCommonDigits7Sprite,
-		&llIFCommonDigits8Sprite, &llIFCommonDigits9Sprite
+		llIFCommonDigits0Sprite, llIFCommonDigits1Sprite,
+		llIFCommonDigits2Sprite, llIFCommonDigits3Sprite,
+		llIFCommonDigits4Sprite, llIFCommonDigits5Sprite,
+		llIFCommonDigits6Sprite, llIFCommonDigits7Sprite,
+		llIFCommonDigits8Sprite, llIFCommonDigits9Sprite
 	};
 	SObj *sobj;
 	f32 left_x = x;
@@ -219,23 +219,23 @@ void mnPlayers1PBonusMakeNumber(GObj *gobj, s32 number, f32 x, f32 y, u32 *color
 // 0x80136FD8
 intptr_t dMNPlayers1PBonusFontOffsets[/* */] =
 {
-	&llMNCommonFontsLetterASprite, &llMNCommonFontsLetterBSprite,
-	&llMNCommonFontsLetterCSprite, &llMNCommonFontsLetterDSprite,
-	&llMNCommonFontsLetterESprite, &llMNCommonFontsLetterFSprite,
-	&llMNCommonFontsLetterGSprite, &llMNCommonFontsLetterHSprite,
-	&llMNCommonFontsLetterISprite, &llMNCommonFontsLetterJSprite,
-	&llMNCommonFontsLetterKSprite, &llMNCommonFontsLetterLSprite,
-	&llMNCommonFontsLetterMSprite, &llMNCommonFontsLetterNSprite,
-	&llMNCommonFontsLetterOSprite, &llMNCommonFontsLetterPSprite,
-	&llMNCommonFontsLetterQSprite, &llMNCommonFontsLetterRSprite,
-	&llMNCommonFontsLetterSSprite, &llMNCommonFontsLetterTSprite,
-	&llMNCommonFontsLetterUSprite, &llMNCommonFontsLetterVSprite,
-	&llMNCommonFontsLetterWSprite, &llMNCommonFontsLetterXSprite,
-	&llMNCommonFontsLetterYSprite, &llMNCommonFontsLetterZSprite,
+	llMNCommonFontsLetterASprite, llMNCommonFontsLetterBSprite,
+	llMNCommonFontsLetterCSprite, llMNCommonFontsLetterDSprite,
+	llMNCommonFontsLetterESprite, llMNCommonFontsLetterFSprite,
+	llMNCommonFontsLetterGSprite, llMNCommonFontsLetterHSprite,
+	llMNCommonFontsLetterISprite, llMNCommonFontsLetterJSprite,
+	llMNCommonFontsLetterKSprite, llMNCommonFontsLetterLSprite,
+	llMNCommonFontsLetterMSprite, llMNCommonFontsLetterNSprite,
+	llMNCommonFontsLetterOSprite, llMNCommonFontsLetterPSprite,
+	llMNCommonFontsLetterQSprite, llMNCommonFontsLetterRSprite,
+	llMNCommonFontsLetterSSprite, llMNCommonFontsLetterTSprite,
+	llMNCommonFontsLetterUSprite, llMNCommonFontsLetterVSprite,
+	llMNCommonFontsLetterWSprite, llMNCommonFontsLetterXSprite,
+	llMNCommonFontsLetterYSprite, llMNCommonFontsLetterZSprite,
 
-	&llMNCommonFontsSymbolApostropheSprite,
-	&llMNCommonFontsSymbolPercentSprite,
-	&llMNCommonFontsSymbolPeriodSprite
+	llMNCommonFontsSymbolApostropheSprite,
+	llMNCommonFontsSymbolPercentSprite,
+	llMNCommonFontsSymbolPeriodSprite
 };
 
 // 0x8013704C
@@ -365,7 +365,7 @@ void mnPlayers1PBonusPortraitAddCross(GObj *gobj, s32 portrait)
 	f32 x = sobj->pos.x;
 	f32 y = sobj->pos.y;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], &llMNPlayersPortraitsCrossSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], llMNPlayersPortraitsCrossSprite));
 
 	sobj->pos.x = x + 4.0F;
 	sobj->pos.y = y + 12.0F;
@@ -463,17 +463,17 @@ void mnPlayers1PBonusMakePortraitShadow(s32 portrait)
 	{
 		0x0, 									0x0,
 		0x0, 									0x0,
-		&llMNPlayersPortraitsLuigiShadowSprite, 	0x0,
-		0x0, 									&llMNPlayersPortraitsCaptainShadowSprite,
+		llMNPlayersPortraitsLuigiShadowSprite, 	0x0,
+		0x0, 									llMNPlayersPortraitsCaptainShadowSprite,
 		0x0, 									0x0,
-		&llMNPlayersPortraitsPurinShadowSprite, 	&llMNPlayersPortraitsNessShadowSprite
+		llMNPlayersPortraitsPurinShadowSprite, 	llMNPlayersPortraitsNessShadowSprite
 	};
 
 	gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnPlayers1PBonusPortraitProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], &llMNPlayersPortraitsPortraitFireBgSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], llMNPlayersPortraitsPortraitFireBgSprite));
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 25;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 36;
 
@@ -495,7 +495,7 @@ void mnPlayers1PBonusMakePortraitShadow(s32 portrait)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnPlayers1PBonusPortraitProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], &llMNPlayersPortraitsPortraitQuestionMarkSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], llMNPlayersPortraitsPortraitQuestionMarkSprite));
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->envcolor.r = 0x5B;
@@ -516,12 +516,12 @@ void mnPlayers1PBonusMakePortrait(s32 portrait)
 	SObj *sobj;
 	intptr_t offsets[/* */] =
 	{
-		&llMNPlayersPortraitsMarioSprite,   &llMNPlayersPortraitsFoxSprite,
-		&llMNPlayersPortraitsDonkeySprite,  &llMNPlayersPortraitsSamusSprite,
-		&llMNPlayersPortraitsLuigiSprite,   &llMNPlayersPortraitsLinkSprite,
-		&llMNPlayersPortraitsYoshiSprite,   &llMNPlayersPortraitsCaptainSprite,
-		&llMNPlayersPortraitsKirbySprite,   &llMNPlayersPortraitsPikachuSprite,
-		&llMNPlayersPortraitsPurinSprite,   &llMNPlayersPortraitsNessSprite
+		llMNPlayersPortraitsMarioSprite,   llMNPlayersPortraitsFoxSprite,
+		llMNPlayersPortraitsDonkeySprite,  llMNPlayersPortraitsSamusSprite,
+		llMNPlayersPortraitsLuigiSprite,   llMNPlayersPortraitsLinkSprite,
+		llMNPlayersPortraitsYoshiSprite,   llMNPlayersPortraitsCaptainSprite,
+		llMNPlayersPortraitsKirbySprite,   llMNPlayersPortraitsPikachuSprite,
+		llMNPlayersPortraitsPurinSprite,   llMNPlayersPortraitsNessSprite
 	};
 
 	if (mnPlayers1PBonusCheckFighterLocked(mnPlayers1PBonusGetFighterKind(portrait)) != FALSE)
@@ -535,7 +535,7 @@ void mnPlayers1PBonusMakePortrait(s32 portrait)
 		wallpaper_gobj->user_data.s = portrait;
 		gcAddGObjProcess(wallpaper_gobj, mnPlayers1PBonusPortraitProcUpdate, nGCProcessKindFunc, 1);
 
-		sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], &llMNPlayersPortraitsPortraitFireBgSprite));
+		sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], llMNPlayersPortraitsPortraitFireBgSprite));
 		sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 25;
 		sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 36;
 
@@ -586,21 +586,21 @@ void mnPlayers1PBonusMakeNameAndEmblem(GObj *gobj, s32 player, s32 fkind)
 	};
 	intptr_t emblem_offsets[/* */] =
 	{
-		&llFTEmblemSpritesMarioSprite,     &llFTEmblemSpritesFoxSprite,
-		&llFTEmblemSpritesDonkeySprite,    &llFTEmblemSpritesMetroidSprite,
-		&llFTEmblemSpritesMarioSprite,     &llFTEmblemSpritesZeldaSprite,
-		&llFTEmblemSpritesYoshiSprite,     &llFTEmblemSpritesFZeroSprite,
-		&llFTEmblemSpritesKirbySprite,     &llFTEmblemSpritesPMonstersSprite,
-		&llFTEmblemSpritesPMonstersSprite, &llFTEmblemSpritesMotherSprite
+		llFTEmblemSpritesMarioSprite,     llFTEmblemSpritesFoxSprite,
+		llFTEmblemSpritesDonkeySprite,    llFTEmblemSpritesMetroidSprite,
+		llFTEmblemSpritesMarioSprite,     llFTEmblemSpritesZeldaSprite,
+		llFTEmblemSpritesYoshiSprite,     llFTEmblemSpritesFZeroSprite,
+		llFTEmblemSpritesKirbySprite,     llFTEmblemSpritesPMonstersSprite,
+		llFTEmblemSpritesPMonstersSprite, llFTEmblemSpritesMotherSprite
 	};
 	intptr_t name_offsets[/* */] =
 	{
-		&llMNPlayersCommonMarioTextSprite,      &llMNPlayersCommonFoxTextSprite,
-		&llMNPlayersCommonDKTextSprite,         &llMNPlayersCommonSamusTextSprite,
-		&llMNPlayersCommonLuigiTextSprite,      &llMNPlayersCommonLinkTextSprite,
-		&llMNPlayersCommonYoshiTextSprite,      &llMNPlayersCommonCaptainFalconTextSprite,
-		&llMNPlayersCommonKirbyTextSprite,      &llMNPlayersCommonPikachuTextSprite,
-		&llMNPlayersCommonJigglypuffTextSprite, &llMNPlayersCommonNessTextSprite
+		llMNPlayersCommonMarioTextSprite,      llMNPlayersCommonFoxTextSprite,
+		llMNPlayersCommonDKTextSprite,         llMNPlayersCommonSamusTextSprite,
+		llMNPlayersCommonLuigiTextSprite,      llMNPlayersCommonLinkTextSprite,
+		llMNPlayersCommonYoshiTextSprite,      llMNPlayersCommonCaptainFalconTextSprite,
+		llMNPlayersCommonKirbyTextSprite,      llMNPlayersCommonPikachuTextSprite,
+		llMNPlayersCommonJigglypuffTextSprite, llMNPlayersCommonNessTextSprite
 	};
 
 	if (fkind != nFTKindNull)
@@ -731,8 +731,8 @@ void mnPlayers1PBonusSetGateLUT(GObj *gobj, s32 player)
 
 	intptr_t offsets[/* */] =
 	{
-		&llMNPlayersCommonGateMan1PLUT, &llMNPlayersCommonGateMan2PLUT,
-		&llMNPlayersCommonGateMan3PLUT, &llMNPlayersCommonGateMan4PLUT
+		llMNPlayersCommonGateMan1PLUT, llMNPlayersCommonGateMan2PLUT,
+		llMNPlayersCommonGateMan3PLUT, llMNPlayersCommonGateMan4PLUT
 	};
 
 	sobj = SObjGetStruct(gobj);
@@ -747,8 +747,8 @@ void mnPlayers1PBonusMakeGate(s32 player)
 
 	intptr_t offsets[/* */] =
 	{
-		&llMNPlayersCommon1PTextSprite, &llMNPlayersCommon2PTextSprite,
-		&llMNPlayersCommon3PTextSprite, &llMNPlayersCommon4PTextSprite
+		llMNPlayersCommon1PTextSprite, llMNPlayersCommon2PTextSprite,
+		llMNPlayersCommon3PTextSprite, llMNPlayersCommon4PTextSprite
 	};
 	f32 pos_x[/* */] = { 8.0F, 5.0F, 5.0F, 5.0F };
 
@@ -766,7 +766,7 @@ void mnPlayers1PBonusMakeGate(s32 player)
 		(
 			Sprite*,
 			sMNPlayers1PBonusFiles[5],
-			&llMNPlayers1PModeRedCardSprite
+			llMNPlayers1PModeRedCardSprite
 		),
 		nGCProcessKindFunc,
 		NULL,
@@ -798,16 +798,16 @@ void mnPlayers1PBonusMakeGate(s32 player)
 // 0x80137354
 intptr_t dMNPlayers1PBonusDigitOffsets[/* */] =
 {
-	&llMNPlayersCommon0DarkSprite,
-	&llMNPlayersCommon1DarkSprite,
-	&llMNPlayersCommon2DarkSprite,
-	&llMNPlayersCommon3DarkSprite,
-	&llMNPlayersCommon4DarkSprite,
-	&llMNPlayersCommon5DarkSprite,
-	&llMNPlayersCommon6DarkSprite,
-	&llMNPlayersCommon7DarkSprite,
-	&llMNPlayersCommon8DarkSprite,
-	&llMNPlayersCommon9DarkSprite
+	llMNPlayersCommon0DarkSprite,
+	llMNPlayersCommon1DarkSprite,
+	llMNPlayersCommon2DarkSprite,
+	llMNPlayersCommon3DarkSprite,
+	llMNPlayersCommon4DarkSprite,
+	llMNPlayersCommon5DarkSprite,
+	llMNPlayersCommon6DarkSprite,
+	llMNPlayersCommon7DarkSprite,
+	llMNPlayersCommon8DarkSprite,
+	llMNPlayersCommon9DarkSprite
 };
 
 // 0x80138A5C
@@ -831,7 +831,7 @@ void mnPlayers1PBonusMakeWallpaper(void)
 
 	gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 26, GOBJ_PRIORITY_DEFAULT, ~0);
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[2], &llMNSelectCommonStoneBackgroundSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[2], llMNSelectCommonStoneBackgroundSprite));
 	sobj->cms = G_TX_WRAP;
 	sobj->cmt = G_TX_WRAP;
 	sobj->masks = 6;
@@ -884,9 +884,9 @@ void mnPlayers1PBonusMakeLabels(void)
 
 	if (sMNPlayers1PBonusBonusKind == 0)
 	{
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[3], &llMNPlayersGameModesBonus1BreakTheTargetsTextSprite));
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[3], llMNPlayersGameModesBonus1BreakTheTargetsTextSprite));
 	}
-	else sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[3], &llMNPlayersGameModesBonus2BoardThePlatformsTextSprite));
+	else sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[3], llMNPlayersGameModesBonus2BoardThePlatformsTextSprite));
 	
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -902,7 +902,7 @@ void mnPlayers1PBonusMakeLabels(void)
 	}
 	else func_800269C0_275C0(nSYAudioVoiceAnnounceBoardThePlatforms);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonBackButtonSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonBackButtonSprite));
 	sobj->pos.x = 244.0F;
 	sobj->pos.y = 23.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1052,7 +1052,7 @@ void mnPlayers1PBonusMakeBestTime(void)
 		sMNPlayers1PBonusHiScoreGObj = gobj = gcMakeGObjSPAfter(0, NULL, 23, GOBJ_PRIORITY_DEFAULT);
 		gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 26, GOBJ_PRIORITY_DEFAULT, ~0);
 
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeBestTimeTextSprite));
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeBestTimeTextSprite));
 		sobj->pos.x = 177.0F;
 		sobj->pos.y = 198.0F;
 		sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1063,7 +1063,7 @@ void mnPlayers1PBonusMakeBestTime(void)
 
 		mnPlayers1PBonusMakeNumber(gobj, mnPlayers1PBonusGetMins(best_time), 237.0F, 195.0F, colors2, 2, TRUE);
 
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeSecSprite));
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeSecSprite));
 		sobj->pos.x = 239.0F;
 		sobj->pos.y = 195.0F;
 		sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1077,7 +1077,7 @@ void mnPlayers1PBonusMakeBestTime(void)
 
 		mnPlayers1PBonusMakeNumber(gobj, mnPlayers1PBonusGetSec(best_time), 259.0F, 195.0F, colors2, 2, TRUE);
 
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeCSecSprite));
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeCSecSprite));
 		sobj->pos.x = 261.0F;
 		sobj->pos.y = 195.0F;
 		sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1125,9 +1125,9 @@ void mnPlayers1PBonusMakeBestTaskCount(void)
 
 		if (sMNPlayers1PBonusBonusKind == 0)
 		{
-			sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeTargetsTextSprite));
+			sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeTargetsTextSprite));
 		}
-		else sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModePlatformsTextSprite));
+		else sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModePlatformsTextSprite));
 		
 #if defined(REGION_US)
 		sobj->pos.x = 235.0F;
@@ -1198,7 +1198,7 @@ void mnPlayers1PBonusMakeTotalTime(void)
 	sMNPlayers1PBonusTotalTimeGObj = gobj = gcMakeGObjSPAfter(0, NULL, 23, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 26, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeTotalBestTimeTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeTotalBestTimeTextSprite));
 	sobj->pos.x = 142.0F;
 	sobj->pos.y = 209.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1211,7 +1211,7 @@ void mnPlayers1PBonusMakeTotalTime(void)
 	remainder = centiseconds / 100;
 	mnPlayers1PBonusMakeNumber(gobj, centiseconds % 100, 283.0F, 206.0F, colors2, 2, TRUE);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeCSecSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeCSecSprite));
 	sobj->pos.x = 261.0F;
 	sobj->pos.y = 206.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1228,7 +1228,7 @@ void mnPlayers1PBonusMakeTotalTime(void)
 	seconds %= TIME_SEC;
 	mnPlayers1PBonusMakeNumber(gobj, seconds, 259.0F, 206.0F, colors2, 2, TRUE);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], &llMNPlayers1PModeSecSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[5], llMNPlayers1PModeSecSprite));
 	sobj->pos.x = 239.0F;
 	sobj->pos.y = 206.0F;
 	sobj->sprite.attr &= ~SP_FASTCOPY;
@@ -1420,16 +1420,16 @@ void mnPlayers1PBonusUpdateCursor(GObj *gobj, s32 player, s32 cursor_status)
 	};
 	intptr_t num_offsets[/* */] =
 	{
-		&llMNPlayersCommon1PTextGradientSprite,
-		&llMNPlayersCommon2PTextGradientSprite,
-		&llMNPlayersCommon3PTextGradientSprite,
-		&llMNPlayersCommon4PTextGradientSprite
+		llMNPlayersCommon1PTextGradientSprite,
+		llMNPlayersCommon2PTextGradientSprite,
+		llMNPlayersCommon3PTextGradientSprite,
+		llMNPlayersCommon4PTextGradientSprite
 	};
 	intptr_t cursor_offsets[/* */] =
 	{
-		&llMNPlayersCommonCursorHandPointSprite,
-		&llMNPlayersCommonCursorHandGrabSprite,
-		&llMNPlayersCommonCursorHandHoverSprite
+		llMNPlayersCommonCursorHandPointSprite,
+		llMNPlayersCommonCursorHandGrabSprite,
+		llMNPlayersCommonCursorHandHoverSprite
 	};
 	Vec2i pos[/* */] =
 	{
@@ -1632,7 +1632,7 @@ void mnPlayers1PBonusMakePortraitFlash(s32 player)
 	gobj->user_data.s = player;
 	gcAddGObjProcess(gobj, mnPlayers1PBonusPortraitFlashThreadUpdate, nGCProcessKindThread, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], &llMNPlayersPortraitsWhiteSquareSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[4], llMNPlayersPortraitsWhiteSquareSprite));
 	sobj->pos.x = (((portrait >= 6) ? portrait - 6 : portrait) * 45) + 26;
 	sobj->pos.y = (((portrait >= 6) ? 1 : 0) * 43) + 37;
 }
@@ -2179,11 +2179,11 @@ void mnPlayers1PBonusCursorProcUpdate(GObj *gobj)
 // 0x801374AC
 intptr_t dMNPlayers1PBonusPuckSpriteOffsets[/* */] =
 {
-	&llMNPlayersCommon1PPuckSprite,
-	&llMNPlayersCommon2PPuckSprite,
-	&llMNPlayersCommon3PPuckSprite,
-	&llMNPlayersCommon4PPuckSprite,
-	&llMNPlayersCommonCPPuckSprite
+	llMNPlayersCommon1PPuckSprite,
+	llMNPlayersCommon2PPuckSprite,
+	llMNPlayersCommon3PPuckSprite,
+	llMNPlayersCommon4PPuckSprite,
+	llMNPlayersCommonCPPuckSprite
 };
 
 // 0x80135BA4 - Unused?
@@ -2332,10 +2332,10 @@ void mnPlayers1PBonusMakeCursor(s32 player)
 	// ???
 	intptr_t unused_offsets[/* */] =
 	{
-		&llMNPlayersCommon1PTextGradientSprite,
-		&llMNPlayersCommon2PTextGradientSprite,
-		&llMNPlayersCommon3PTextGradientSprite,
-		&llMNPlayersCommon4PTextGradientSprite
+		llMNPlayersCommon1PTextGradientSprite,
+		llMNPlayersCommon2PTextGradientSprite,
+		llMNPlayersCommon3PTextGradientSprite,
+		llMNPlayersCommon4PTextGradientSprite
 	};
 	u32 priorities[/* */] = { 6, 4, 2, 0 };
 
@@ -2353,7 +2353,7 @@ void mnPlayers1PBonusMakeCursor(s32 player)
 		(
 			Sprite*,
 			sMNPlayers1PBonusFiles[0],
-			&llMNPlayersCommonCursorHandGrabSprite
+			llMNPlayersCommonCursorHandGrabSprite
 		),
 		nGCProcessKindFunc,
 		mnPlayers1PBonusCursorProcUpdate,
@@ -2379,10 +2379,10 @@ void mnPlayers1PBonusMakePuck(s32 player)
 
 	intptr_t offsets[/* */] =
 	{
-		&llMNPlayersCommon1PPuckSprite,
-		&llMNPlayersCommon2PPuckSprite,
-		&llMNPlayersCommon3PPuckSprite,
-		&llMNPlayersCommon4PPuckSprite
+		llMNPlayersCommon1PPuckSprite,
+		llMNPlayersCommon2PPuckSprite,
+		llMNPlayersCommon3PPuckSprite,
+		llMNPlayersCommon4PPuckSprite
 	};
 
 	// Display orders for pucks on initial load
@@ -2539,9 +2539,9 @@ void mnPlayers1PBonusMakeSpotlight(void)
 {
 	GObj *gobj = gcMakeGObjSPAfter(0, NULL, 21, GOBJ_PRIORITY_DEFAULT);
 
-	gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMNPlayers1PBonusFiles[10], &llMNPlayersSpotlightDObjDesc), NULL);
+	gcSetupCommonDObjs(gobj, lbRelocGetFileData(DObjDesc*, sMNPlayers1PBonusFiles[10], llMNPlayersSpotlightDObjDesc), NULL);
 	gcAddGObjDisplay(gobj, gcDrawDObjTreeDLLinksForGObj, 9, GOBJ_PRIORITY_DEFAULT, ~0);
-	gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMNPlayers1PBonusFiles[10], &llMNPlayersSpotlightMObjSub));
+	gcAddMObjAll(gobj, lbRelocGetFileData(MObjSub***, sMNPlayers1PBonusFiles[10], llMNPlayersSpotlightMObjSub));
 	gcAddGObjProcess(gobj, mnPlayers1PBonusSpotlightProcUpdate, nGCProcessKindFunc, 1);
 	gcPlayAnimAll(gobj);
 
@@ -2580,7 +2580,7 @@ void mnPlayers1PBonusMakeReady(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 35, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnPlayers1PBonusReadyProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonReadyBannerSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonReadyBannerSprite));
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->envcolor.r = 0x00;
@@ -2598,7 +2598,7 @@ void mnPlayers1PBonusMakeReady(void)
 	sobj->pos.x = 0.0F;
 	sobj->pos.y = 71.0F;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonReadyToFightTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonReadyToFightTextSprite));
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->envcolor.r = 0xFF;
@@ -2615,9 +2615,9 @@ void mnPlayers1PBonusMakeReady(void)
 	gcAddGObjProcess(gobj, mnPlayers1PBonusReadyProcUpdate, nGCProcessKindFunc, 1);
 
 #if defined(REGION_US)
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonPressTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonPressTextSprite));
 #else
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonPushTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonPushTextSprite));
 #endif
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -2631,7 +2631,7 @@ void mnPlayers1PBonusMakeReady(void)
 #endif
 	sobj->pos.y = 219.0F;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonStartTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonStartTextSprite));
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->sprite.red = 0xFF;
@@ -2645,7 +2645,7 @@ void mnPlayers1PBonusMakeReady(void)
 	sobj->pos.y = 219.0F;
 
 #if defined(REGION_JP)
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], &llMNPlayersCommonButtonTextSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNPlayers1PBonusFiles[0], llMNPlayersCommonButtonTextSprite));
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
 	sobj->sprite.red = 0xD6;
@@ -2819,7 +2819,7 @@ void mnPlayers1PBonusFuncStart(void)
 	s32 i, j;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMNPlayers1PBonusStatusBuffer;

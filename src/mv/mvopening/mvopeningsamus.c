@@ -30,7 +30,7 @@ FTKeyEvent dMVOpeningSamusKeyEvents[/* */] =
 };
 
 // 0x8018E164
-u32 dMVOpeningSamusFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningSamusFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -95,7 +95,7 @@ void mvOpeningSamusSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningSamusStatusBuffer;
@@ -130,11 +130,11 @@ void mvOpeningSamusMakeName(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterSSprite,
-		&llIFCommonAnnounceCommonLetterASprite,
-		&llIFCommonAnnounceCommonLetterMSprite,
-		&llIFCommonAnnounceCommonLetterUSprite,
-		&llIFCommonAnnounceCommonLetterSSprite,
+		llIFCommonAnnounceCommonLetterSSprite,
+		llIFCommonAnnounceCommonLetterASprite,
+		llIFCommonAnnounceCommonLetterMSprite,
+		llIFCommonAnnounceCommonLetterUSprite,
+		llIFCommonAnnounceCommonLetterSSprite,
 		0x0
 	};
 	f32 pos_x[/* */] =
@@ -428,7 +428,7 @@ void mvOpeningSamusMakePosedFighterCamera(void)
 	
 	cobj->projection.persp.aspect = 5.0F / 11.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningSamusFiles[1], &llMVOpeningCommonSamusCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningSamusFiles[1], llMVOpeningCommonSamusCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

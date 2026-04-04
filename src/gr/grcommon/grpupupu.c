@@ -73,8 +73,8 @@ enum grPupupuFlowerStatus
 // 0x8012E870
 intptr_t dGRPupupuWhispyEyesAnims[/* */][nGRPupupuWhispyEyesStatusEnumCount][2] =
 {
-    { { &llGRPupupuMapWhispyEyesLeftTurnAnimJoint, &llGRPupupuMapWhispyEyesLeftTurnMatAnimJoint }, { &llGRPupupuMapWhispyEyesLeftBlinkAnimJoint, 0x0 } },
-    { { &llGRPupupuMapWhispyEyesRightTurnAnimJoint, &llGRPupupuMapWhispyEyesRightTurnMatAnimJoint }, { &llGRPupupuMapWhispyEyesRightBlinkAnimJoint, 0x0 } }
+    { { llGRPupupuMapWhispyEyesLeftTurnAnimJoint, llGRPupupuMapWhispyEyesLeftTurnMatAnimJoint }, { llGRPupupuMapWhispyEyesLeftBlinkAnimJoint, 0x0 } },
+    { { llGRPupupuMapWhispyEyesRightTurnAnimJoint, llGRPupupuMapWhispyEyesRightTurnMatAnimJoint }, { llGRPupupuMapWhispyEyesRightBlinkAnimJoint, 0x0 } }
 };
 
 // 0x8012E890
@@ -82,33 +82,33 @@ intptr_t dGRPupupuWhispyMouthAnims[/* */][nGRPupupuWhispyMouthStatusEnumCount][2
 {
     // Left-facing
     {
-        { &llGRPupupuMapWhispyMouthLeftStretchAnimJoint, &llGRPupupuMapWhispyMouthLeftStretchMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthLeftTurnAnimJoint, &llGRPupupuMapWhispyMouthLeftTurnMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthLeftOpenAnimJoint, &llGRPupupuMapWhispyMouthLeftOpenMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthLeftCloseAnimJoint, &llGRPupupuMapWhispyMouthLeftCloseMatAnimJoint }
+        { llGRPupupuMapWhispyMouthLeftStretchAnimJoint, llGRPupupuMapWhispyMouthLeftStretchMatAnimJoint },
+        { llGRPupupuMapWhispyMouthLeftTurnAnimJoint, llGRPupupuMapWhispyMouthLeftTurnMatAnimJoint },
+        { llGRPupupuMapWhispyMouthLeftOpenAnimJoint, llGRPupupuMapWhispyMouthLeftOpenMatAnimJoint },
+        { llGRPupupuMapWhispyMouthLeftCloseAnimJoint, llGRPupupuMapWhispyMouthLeftCloseMatAnimJoint }
     },
 
     // Right-facing
     {
-        { &llGRPupupuMapWhispyMouthRightStretchAnimJoint, &llGRPupupuMapWhispyMouthRightStretchMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthRightTurnAnimJoint, &llGRPupupuMapWhispyMouthRightTurnMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthRightOpenAnimJoint, &llGRPupupuMapWhispyMouthRightOpenMatAnimJoint },
-        { &llGRPupupuMapWhispyMouthRightCloseAnimJoint, &llGRPupupuMapWhispyMouthRightCloseMatAnimJoint }
+        { llGRPupupuMapWhispyMouthRightStretchAnimJoint, llGRPupupuMapWhispyMouthRightStretchMatAnimJoint },
+        { llGRPupupuMapWhispyMouthRightTurnAnimJoint, llGRPupupuMapWhispyMouthRightTurnMatAnimJoint },
+        { llGRPupupuMapWhispyMouthRightOpenAnimJoint, llGRPupupuMapWhispyMouthRightOpenMatAnimJoint },
+        { llGRPupupuMapWhispyMouthRightCloseAnimJoint, llGRPupupuMapWhispyMouthRightCloseMatAnimJoint }
     }
 };
 
 // 0x8012E8D0
 intptr_t dGRPupupuWhispyMouthTextures[/* */][nGRPupupuWhispyMouthTextureEnumCount] =
 {
-    { &llGRPupupuMapWhispyMouthLeftOpenTexture, &llGRPupupuMapWhispyMouthLeftBlowTexture, &llGRPupupuMapWhispyMouthLeftCloseTexture },
-    { &llGRPupupuMapWhispyMouthRightOpenTexture, &llGRPupupuMapWhispyMouthRightBlowTexture, &llGRPupupuMapWhispyMouthRightCloseTexture }
+    { llGRPupupuMapWhispyMouthLeftOpenTexture, llGRPupupuMapWhispyMouthLeftBlowTexture, llGRPupupuMapWhispyMouthLeftCloseTexture },
+    { llGRPupupuMapWhispyMouthRightOpenTexture, llGRPupupuMapWhispyMouthRightBlowTexture, llGRPupupuMapWhispyMouthRightCloseTexture }
 };
 
 // 0x8012E8E8
 intptr_t dGRPupupuWhispyEyesTextures[/* */][nGRPupupuWhispyEyesTextureEnumCount] =
 {
-    { &llGRPupupuMapWhispyEyesLeft0Texture, &llGRPupupuMapWhispyEyesLeft1Texture, &llGRPupupuMapWhispyEyesLeft2Texture },
-    { &llGRPupupuMapWhispyEyesRight0Texture, &llGRPupupuMapWhispyEyesRight1Texture, &llGRPupupuMapWhispyEyesRight2Texture }
+    { llGRPupupuMapWhispyEyesLeft0Texture, llGRPupupuMapWhispyEyesLeft1Texture, llGRPupupuMapWhispyEyesLeft2Texture },
+    { llGRPupupuMapWhispyEyesRight0Texture, llGRPupupuMapWhispyEyesRight1Texture, llGRPupupuMapWhispyEyesRight2Texture }
 };
 
 // 0x8012E900
@@ -662,11 +662,11 @@ GObj* grPupupuMakeMapGObj(intptr_t o_dobjdesc, intptr_t o_mobjsub, void (*proc_d
 // 0x8010658C
 void grPupupuInitAll(void)
 {
-    gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)&llGRPupupuMapMapHead);
-    gGRCommonStruct.pupupu.map_gobj[0] = grPupupuMakeMapGObj(&llGRPupupuMapMapHead, &llGRPupupuMapWhispyEyesTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
-    gGRCommonStruct.pupupu.map_gobj[1] = grPupupuMakeMapGObj(&llGRPupupuMapWhispyMouthTransformKindsDObjDesc, &llGRPupupuMapWhispyMouthTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
-    gGRCommonStruct.pupupu.map_gobj[2] = grPupupuMakeMapGObj(&llGRPupupuMapFlowersBackTransformKindsDObjDesc, 0x0, grDisplayLayer0PriProcDisplay, 4);
-    gGRCommonStruct.pupupu.map_gobj[3] = grPupupuMakeMapGObj(&llGRPupupuMapFlowersFrontTransformKindsDObjDesc, 0x0, grDisplayLayer3PriProcDisplay, 16);
+    gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRPupupuMapMapHead);
+    gGRCommonStruct.pupupu.map_gobj[0] = grPupupuMakeMapGObj(llGRPupupuMapMapHead, llGRPupupuMapWhispyEyesTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
+    gGRCommonStruct.pupupu.map_gobj[1] = grPupupuMakeMapGObj(llGRPupupuMapWhispyMouthTransformKindsDObjDesc, llGRPupupuMapWhispyMouthTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
+    gGRCommonStruct.pupupu.map_gobj[2] = grPupupuMakeMapGObj(llGRPupupuMapFlowersBackTransformKindsDObjDesc, 0x0, grDisplayLayer0PriProcDisplay, 4);
+    gGRCommonStruct.pupupu.map_gobj[3] = grPupupuMakeMapGObj(llGRPupupuMapFlowersFrontTransformKindsDObjDesc, 0x0, grDisplayLayer3PriProcDisplay, 16);
 
     gGRCommonStruct.pupupu.whispy_eyes_status   =
     gGRCommonStruct.pupupu.whispy_mouth_status  =

@@ -14,7 +14,7 @@ ITDesc dITLizardonItemDesc =
 {
     nITKindLizardon,                        // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataLizardonItemAttributes,  // Offset of item attributes in file?
+    llITCommonDataLizardonItemAttributes,  // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -80,7 +80,7 @@ WPDesc dITLizardonWeaponFlameWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindLizardonFlame,                   // Weapon Kind
     &gITManagerCommonData,                    // Pointer to character's loaded files?
-    &llITCommonDataLizardonFlameWeaponAttributes,// Offset of weapon attributes in loaded files
+    llITCommonDataLizardonFlameWeaponAttributes,// Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -268,10 +268,10 @@ void itLizardonAttackInitVars(GObj *item_gobj)
 
     if (ip->kind == nITKindLizardon)
     {
-        addr = (void*) ((uintptr_t)ip->attr->data - (intptr_t)&llITCommonDataLizardonDataStart);
+        addr = (void*) ((uintptr_t)ip->attr->data - (intptr_t)llITCommonDataLizardonDataStart);
 
-        gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, addr, &llITCommonDataLizardonAnimJoint), 0.0F);
-        gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, addr, &llITCommonDataLizardonMatAnimJoint), 0.0F);
+        gcAddDObjAnimJoint(dobj, lbRelocGetFileData(AObjEvent32*, addr, llITCommonDataLizardonAnimJoint), 0.0F);
+        gcAddMObjMatAnimJoint(dobj->mobj, lbRelocGetFileData(AObjEvent32*, addr, llITCommonDataLizardonMatAnimJoint), 0.0F);
         gcPlayAnimAll(item_gobj);
     }
 }
@@ -341,7 +341,7 @@ GObj* itLizardonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         dobj->translate.vec.f.y -= ip->attr->map_coll_bottom;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, &llITCommonDataLizardonDataStart), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataLizardonDataStart), 0.0F);
     }
     return item_gobj;
 }

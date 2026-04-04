@@ -20,86 +20,86 @@ GRBonusTarget dSC1PBonusStageTargetDescs[/* */] =
 {
 	// Bonus1Mario
 	{ 
-		&llGRBonus1MarioMapTargetsStart,
-		&llGRBonus1MarioMapTargetsDObjDesc,
-		&llGRBonus1MarioMapTargetsAnimJoint
+		llGRBonus1MarioMapTargetsStart,
+		llGRBonus1MarioMapTargetsDObjDesc,
+		llGRBonus1MarioMapTargetsAnimJoint
 	},
 
 	// Bonus1Fox
 	{ 
-		&llGRBonus1FoxMapTargetsStart,
-		&llGRBonus1FoxMapTargetsDObjDesc,
-		&llGRBonus1FoxMapTargetsAnimJoint,
+		llGRBonus1FoxMapTargetsStart,
+		llGRBonus1FoxMapTargetsDObjDesc,
+		llGRBonus1FoxMapTargetsAnimJoint,
 	},
 
 	// Bonus1Donkey
 	{ 
-		&llGRBonus1DonkeyMapTargetsStart,
-		&llGRBonus1DonkeyMapTargetsDObjDesc,
-		&llGRBonus1DonkeyMapTargetsAnimJoint
+		llGRBonus1DonkeyMapTargetsStart,
+		llGRBonus1DonkeyMapTargetsDObjDesc,
+		llGRBonus1DonkeyMapTargetsAnimJoint
 	},
 
 	// Bonus1Samus
 	{ 
-		&llGRBonus1SamusMapTargetsStart,
-		&llGRBonus1SamusMapTargetsDObjDesc,
-		&llGRBonus1SamusMapTargetsAnimJoint
+		llGRBonus1SamusMapTargetsStart,
+		llGRBonus1SamusMapTargetsDObjDesc,
+		llGRBonus1SamusMapTargetsAnimJoint
 	},
 
 	// Bonus1Luigi
 	{ 
-		&llGRBonus1LuigiMapTargetsStart,
-		&llGRBonus1LuigiMapTargetsDObjDesc,
-		&llGRBonus1LuigiMapTargetsAnimJoint
+		llGRBonus1LuigiMapTargetsStart,
+		llGRBonus1LuigiMapTargetsDObjDesc,
+		llGRBonus1LuigiMapTargetsAnimJoint
 	},
 
 	// Bonus1Link
 	{ 
-		&llGRBonus1LinkMapTargetsStart,
-		&llGRBonus1LinkMapTargetsDObjDesc,
-		&llGRBonus1LinkMapTargetsAnimJoint
+		llGRBonus1LinkMapTargetsStart,
+		llGRBonus1LinkMapTargetsDObjDesc,
+		llGRBonus1LinkMapTargetsAnimJoint
 	},
 
 	// Bonus1Yoshi
 	{ 
-		&llGRBonus1YoshiMapTargetsStart,
-		&llGRBonus1YoshiMapTargetsDObjDesc,
-		&llGRBonus1YoshiMapTargetsAnimJoint
+		llGRBonus1YoshiMapTargetsStart,
+		llGRBonus1YoshiMapTargetsDObjDesc,
+		llGRBonus1YoshiMapTargetsAnimJoint
 	},
 
 	// Bonus1Captain
 	{ 
-		&llGRBonus1CaptainMapTargetsStart,
-		&llGRBonus1CaptainMapTargetsDObjDesc,
-		&llGRBonus1CaptainMapTargetsAnimJoint
+		llGRBonus1CaptainMapTargetsStart,
+		llGRBonus1CaptainMapTargetsDObjDesc,
+		llGRBonus1CaptainMapTargetsAnimJoint
 	},
 
 	// Bonus1Kirby
 	{ 
-		&llGRBonus1KirbyMapTargetsStart,
-		&llGRBonus1KirbyMapTargetsDObjDesc,
-		&llGRBonus1KirbyMapTargetsAnimJoint
+		llGRBonus1KirbyMapTargetsStart,
+		llGRBonus1KirbyMapTargetsDObjDesc,
+		llGRBonus1KirbyMapTargetsAnimJoint
 	},
 
 	// Bonus1Pikachu
 	{ 
-		&llGRBonus1PikachuMapTargetsStart,
-		&llGRBonus1PikachuMapTargetsDObjDesc,
-		&llGRBonus1PikachuMapTargetsAnimJoint
+		llGRBonus1PikachuMapTargetsStart,
+		llGRBonus1PikachuMapTargetsDObjDesc,
+		llGRBonus1PikachuMapTargetsAnimJoint
 	},
 
 	// Bonus1Purin
 	{ 
-		&llGRBonus1PurinMapTargetsStart,
-		&llGRBonus1PurinMapTargetsDObjDesc,
-		&llGRBonus1PurinMapTargetsAnimJoint
+		llGRBonus1PurinMapTargetsStart,
+		llGRBonus1PurinMapTargetsDObjDesc,
+		llGRBonus1PurinMapTargetsAnimJoint
 	},
 
 	// Bonus1Ness
 	{ 
-		&llGRBonus1NessMapTargetsStart,
-		&llGRBonus1NessMapTargetsDObjDesc,
-		&llGRBonus1NessMapTargetsAnimJoint
+		llGRBonus1NessMapTargetsStart,
+		llGRBonus1NessMapTargetsDObjDesc,
+		llGRBonus1NessMapTargetsAnimJoint
 	}
 };
 
@@ -114,8 +114,8 @@ intptr_t dSC1PBonusStageBumperDescs[/* */][2] =
 
 	// Fox
 	{
-		&llGRBonus2FoxMapBumpersDObjDesc,
-		&llGRBonus2FoxMapBumpersAnimJoint
+		llGRBonus2FoxMapBumpersDObjDesc,
+		llGRBonus2FoxMapBumpersAnimJoint
 	},
 
 	// Donkey
@@ -126,8 +126,8 @@ intptr_t dSC1PBonusStageBumperDescs[/* */][2] =
 
 	// Samus
 	{
-		&llGRBonus2SamusMapBumpersDObjDesc,
-		&llGRBonus2SamusMapBumpersAnimJoint
+		llGRBonus2SamusMapBumpersDObjDesc,
+		llGRBonus2SamusMapBumpersAnimJoint
 	},
 
 	// Luigi
@@ -156,8 +156,8 @@ intptr_t dSC1PBonusStageBumperDescs[/* */][2] =
 
 	// Kirby
 	{
-		&llGRBonus2KirbyMapBumpersDObjDesc,
-		&llGRBonus2KirbyMapBumpersAnimJoint
+		llGRBonus2KirbyMapBumpersDObjDesc,
+		llGRBonus2KirbyMapBumpersAnimJoint
 	},
 
 	// Pikachu
@@ -168,14 +168,14 @@ intptr_t dSC1PBonusStageBumperDescs[/* */][2] =
 
 	// Purin
 	{
-		&llGRBonus2PurinMapBumpersDObjDesc,
-		&llGRBonus2PurinMapBumpersAnimJoint
+		llGRBonus2PurinMapBumpersDObjDesc,
+		llGRBonus2PurinMapBumpersAnimJoint
 	},
 
 	// Ness
 	{
-		&llGRBonus2NessMapBumpersDObjDesc,
-		&llGRBonus2NessMapBumpersAnimJoint
+		llGRBonus2NessMapBumpersDObjDesc,
+		llGRBonus2NessMapBumpersAnimJoint
 	}
 };
 
@@ -184,26 +184,26 @@ intptr_t dSC1PBonusStagePlatformDescs[/* */][4] =
 {
 	// Small
 	{
-		&llBonus2CommonPlatformSmallDObjDesc,
-		&llBonus2CommonPlatformSmallAnimJoint,
-		&llBonus2CommonPlatformSmallMObjSub,
-		&llBonus2CommonPlatformSmallMatAnimJoint
+		llBonus2CommonPlatformSmallDObjDesc,
+		llBonus2CommonPlatformSmallAnimJoint,
+		llBonus2CommonPlatformSmallMObjSub,
+		llBonus2CommonPlatformSmallMatAnimJoint
 	},
 
 	// Medium
 	{
-		&llBonus2CommonPlatformMediumDObjDesc,
-		&llBonus2CommonPlatformMediumAnimJoint,
-		&llBonus2CommonPlatformMediumMObjSub,
-		&llBonus2CommonPlatformMediumMatAnimJoint
+		llBonus2CommonPlatformMediumDObjDesc,
+		llBonus2CommonPlatformMediumAnimJoint,
+		llBonus2CommonPlatformMediumMObjSub,
+		llBonus2CommonPlatformMediumMatAnimJoint
 	},
 
 	// Large
 	{
-		&llBonus2CommonPlatformLargeDObjDesc,
-		&llBonus2CommonPlatformLargeAnimJoint,
-		&llBonus2CommonPlatformLargeMObjSub,
-		&llBonus2CommonPlatformLargeMatAnimJoint
+		llBonus2CommonPlatformLargeDObjDesc,
+		llBonus2CommonPlatformLargeAnimJoint,
+		llBonus2CommonPlatformLargeMObjSub,
+		llBonus2CommonPlatformLargeMatAnimJoint
 	}
 };
 
@@ -212,20 +212,20 @@ intptr_t dSC1PBonusStageBoardedPlatformDescs[/* */][2] =
 {
 	// Small
 	{
-		&llBonus2CommonBoardedPlatformSmallDObjDesc,
-		&llBonus2CommonBoardedPlatformSmallAnimJoint
+		llBonus2CommonBoardedPlatformSmallDObjDesc,
+		llBonus2CommonBoardedPlatformSmallAnimJoint
 	},
 
 	// Medium
 	{
-		&llBonus2CommonBoardedPlatformMediumDObjDesc,
-		&llBonus2CommonBoardedPlatformMediumAnimJoint
+		llBonus2CommonBoardedPlatformMediumDObjDesc,
+		llBonus2CommonBoardedPlatformMediumAnimJoint
 	},
 
 	// Large
 	{
-		&llBonus2CommonBoardedPlatformLargeDObjDesc,
-		&llBonus2CommonBoardedPlatformLargeAnimJoint
+		llBonus2CommonBoardedPlatformLargeDObjDesc,
+		llBonus2CommonBoardedPlatformLargeAnimJoint
 	}
 };
 
@@ -427,7 +427,7 @@ void sc1PBonusStageInitVars(void)
 // 0x8018D330
 void sc1PBonusStageBonus1LoadFile(void)
 {
-	gSC1PBonusStageItemFile = lbRelocGetExternHeapFile((u32)&ll_253_FileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&ll_253_FileID), 0x10));
+	gSC1PBonusStageItemFile = lbRelocGetExternHeapFile((u32)ll_253_FileID, syTaskmanMalloc(lbRelocGetFileSize((u32)ll_253_FileID), 0x10));
 }
 
 // 0x8018D374
@@ -512,7 +512,7 @@ void sc1PBonusStageMakeBonus1Ground(void)
 // 0x8018D5E8
 void sc1PBonusStageBonus2LoadFile(void)
 {
-	gGRCommonStruct.bonus2.file = lbRelocGetExternHeapFile((u32)&llBonus2CommonFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&llBonus2CommonFileID), 0x10));
+	gGRCommonStruct.bonus2.file = lbRelocGetExternHeapFile((u32)llBonus2CommonFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)llBonus2CommonFileID), 0x10));
 }
 
 // 0x8018D62C
@@ -798,14 +798,14 @@ void sc1PBonusStageMakeTargetSprites(void)
 	void *file;
 	s32 i;
 
-	file = lbRelocGetExternHeapFile(&llSC1PStageClear3FileID, syTaskmanMalloc(lbRelocGetFileSize(&llSC1PStageClear3FileID), 0x10));
+	file = lbRelocGetExternHeapFile(llSC1PStageClear3FileID, syTaskmanMalloc(lbRelocGetFileSize(llSC1PStageClear3FileID), 0x10));
 
 	gGRCommonStruct.bonus1.interface_gobj = interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
 
 	for (i = 0; i < gGRCommonStruct.bonus1.target_count; i++)
 	{
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, &llSC1PStageClear3TargetSprite));
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, llSC1PStageClear3TargetSprite));
 		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 
 		sobj->pos.x = -(sobj->sprite.width / 2) + (((sobj->sprite.width + 3) * i) + 30);
@@ -821,14 +821,14 @@ void sc1PBonusStageMakePlatformSprites(void)
 	void *file;
 	s32 i;
 
-	file = lbRelocGetExternHeapFile(&llSC1PStageClear3FileID, syTaskmanMalloc(lbRelocGetFileSize(&llSC1PStageClear3FileID), 0x10));
+	file = lbRelocGetExternHeapFile(llSC1PStageClear3FileID, syTaskmanMalloc(lbRelocGetFileSize(llSC1PStageClear3FileID), 0x10));
 
 	gGRCommonStruct.bonus2.interface_gobj = interface_gobj = gcMakeGObjSPAfter(nGCCommonKindInterface, NULL, nGCCommonLinkIDInterface, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(interface_gobj, lbCommonDrawSObjAttr, 23, GOBJ_PRIORITY_DEFAULT, ~0);
 
 	for (i = 0; i < gGRCommonStruct.bonus2.platform_count; i++)
 	{
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, &llSC1PStageClear3PlatformSprite));
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, file, llSC1PStageClear3PlatformSprite));
 		sobj->sprite.attr = SP_TEXSHUF | SP_TRANSPARENT;
 
 		sobj->pos.x = -(sobj->sprite.width / 2) + (((sobj->sprite.width + 3) * i) + 30);
@@ -955,7 +955,7 @@ void sc1PBonusStageMakeTimer(void)
 
 		for (i = 0; i < ARRAY_COUNT(sSC1PBonusStageTimerDigits); i++)
 		{
-			sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], &llIFCommonTimerDigit0Sprite));
+			sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerDigit0Sprite));
 
 			sobj->pos.x = dSC1PBonusStageTimerDigitPositions[i] - (sobj->sprite.width * 0.5F);
 			sobj->pos.y = 30.0F - (sobj->sprite.height * 0.5F);
@@ -966,11 +966,11 @@ void sc1PBonusStageMakeTimer(void)
 
 		sobj->sprite.attr |= SP_HIDDEN;
 
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], &llIFCommonTimerSymbolSecSprite));
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolSecSprite));
 		sobj->pos.x = (s32) (231.0F - (sobj->sprite.width * 0.5F));
 		sobj->pos.y = (s32) (20.0F - (sobj->sprite.height * 0.5F));
 
-		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], &llIFCommonTimerSymbolCSecSprite));
+		sobj = lbCommonMakeSObjForGObj(interface_gobj, lbRelocGetFileData(Sprite*, gGMCommonFiles[3], llIFCommonTimerSymbolCSecSprite));
 		sobj->pos.x = (s32) (264.0F - (sobj->sprite.width * 0.5F));
 		sobj->pos.y = (s32) (20.0F - (sobj->sprite.height * 0.5F));
 

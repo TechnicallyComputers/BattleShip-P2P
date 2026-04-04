@@ -13,7 +13,7 @@ WPDesc dWPLinkSpinAttackWeaponDesc =
     0x03,                                   // Render flags?
     nWPKindSpinAttack,                      // Weapon Kind
     &gFTDataLinkMain,                       // Pointer to character's loaded files?
-    &llLinkMainSpinAttackWeaponAttributes,  // Offset of weapon attributes in loaded files
+    llLinkMainSpinAttackWeaponAttributes,  // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

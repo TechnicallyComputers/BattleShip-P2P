@@ -96,25 +96,25 @@ s32 D_ovl1_80391C64[] =
 
 FTMotionDesc dFTYoshiSubMotionDescs[] =
 {
-    &ll_1815_FileID, D_ovl1_80391BC4, 0x00000000,
-    &ll_443_FileID,  D_ovl1_80391BF0, 0x00000000,
-    &ll_444_FileID,  D_ovl1_80391C08, 0x00000000,
-    &ll_445_FileID,  D_ovl1_80391C28, 0x00000000,
-    &ll_445_FileID,  D_ovl1_80391C28, 0x00000000,
-    &ll_446_FileID,  D_ovl1_80391C60, 0x00000000,
-    &ll_1821_FileID, 0x80000000,      0x00000000,
+    ll_1815_FileID, D_ovl1_80391BC4, 0x00000000,
+    ll_443_FileID,  D_ovl1_80391BF0, 0x00000000,
+    ll_444_FileID,  D_ovl1_80391C08, 0x00000000,
+    ll_445_FileID,  D_ovl1_80391C28, 0x00000000,
+    ll_445_FileID,  D_ovl1_80391C28, 0x00000000,
+    ll_446_FileID,  D_ovl1_80391C60, 0x00000000,
+    ll_1821_FileID, 0x80000000,      0x00000000,
     0x00000000,      0x80000000,      0x00000000,
-    &ll_447_FileID,  0x80000000,      0x80000000,
-    &ll_448_FileID,  0x80000000,      0x40000000,
-    &ll_449_FileID,  0x80000000,      0x40000000,
-    &ll_454_FileID,  0x80000000,      0x00000000,
-    &ll_455_FileID,  0x80000000,      0x00000000,
-    &ll_456_FileID,  0x80000000,      0x00000000,
-    &ll_457_FileID,  0x80000000,      0x00000000,
-    &ll_450_FileID,  D_ovl1_80391C64, 0x00000000,
-    &ll_451_FileID,  0x80000000,      0x00000000,
-    &ll_452_FileID,  0x80000000,      0x00000000,
-    &ll_453_FileID,  0x80000000,      0x00000000
+    ll_447_FileID,  0x80000000,      0x80000000,
+    ll_448_FileID,  0x80000000,      0x40000000,
+    ll_449_FileID,  0x80000000,      0x40000000,
+    ll_454_FileID,  0x80000000,      0x00000000,
+    ll_455_FileID,  0x80000000,      0x00000000,
+    ll_456_FileID,  0x80000000,      0x00000000,
+    ll_457_FileID,  0x80000000,      0x00000000,
+    ll_450_FileID,  D_ovl1_80391C64, 0x00000000,
+    ll_451_FileID,  0x80000000,      0x00000000,
+    ll_452_FileID,  0x80000000,      0x00000000,
+    ll_453_FileID,  0x80000000,      0x00000000
 };
 
 s32 dFTYoshiSubMotionDescsCount = sizeof(dFTYoshiSubMotionDescs)/sizeof(FTMotionDesc); // 0x00000013

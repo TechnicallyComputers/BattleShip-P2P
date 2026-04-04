@@ -31,7 +31,7 @@ FTKeyEvent dMVOpeningYoshiKeyEvents[/* */] =
 };
 
 // 0x8018E108
-u32 dMVOpeningYoshiFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningYoshiFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -96,7 +96,7 @@ void mvOpeningYoshiSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningYoshiStatusBuffer;
@@ -131,11 +131,11 @@ void mvOpeningYoshiMakeName(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterYSprite,
-		&llIFCommonAnnounceCommonLetterOSprite,
-		&llIFCommonAnnounceCommonLetterSSprite,
-		&llIFCommonAnnounceCommonLetterHSprite,
-		&llIFCommonAnnounceCommonLetterISprite,
+		llIFCommonAnnounceCommonLetterYSprite,
+		llIFCommonAnnounceCommonLetterOSprite,
+		llIFCommonAnnounceCommonLetterSSprite,
+		llIFCommonAnnounceCommonLetterHSprite,
+		llIFCommonAnnounceCommonLetterISprite,
 		0x0
 	};
 	f32 pos_x[/* */] =
@@ -417,7 +417,7 @@ void mvOpeningYoshiMakePosedFighterCamera(void)
 	
 	cobj->projection.persp.aspect = 26.25F / 7.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningYoshiFiles[1], &llMVOpeningCommonYoshiCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningYoshiFiles[1], llMVOpeningCommonYoshiCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

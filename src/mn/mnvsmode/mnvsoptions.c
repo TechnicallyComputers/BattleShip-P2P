@@ -36,7 +36,7 @@ mnCommonSetOptionChangeWaitN(sMNVSOptionsOptionChangeWait, is_button, stick_rang
 // // // // // // // // // // // //
 
 // 0x801346C0
-u32 dMNVSOptionsFileIDs[/* */] = { &llMNCommonFileID, &llMNVSOptionsFileID };
+u32 dMNVSOptionsFileIDs[/* */] = { llMNCommonFileID, llMNVSOptionsFileID };
 
 // 0x801346C8
 Lights1 dMNVSOptionsLights1 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x3C, 0x3C, 0x3C);
@@ -186,16 +186,16 @@ void mnVSOptionsMakeDamageDigitSObjs(GObj *gobj, s32 damage, f32 pos_x, f32 pos_
     // 0x80134708
     intptr_t digit_offsets[/* */] =
     {
-        &llMNCommonDigit0Sprite,
-        &llMNCommonDigit1Sprite,
-        &llMNCommonDigit2Sprite,
-        &llMNCommonDigit3Sprite,
-        &llMNCommonDigit4Sprite,
-        &llMNCommonDigit5Sprite,
-        &llMNCommonDigit6Sprite,
-        &llMNCommonDigit7Sprite,
-        &llMNCommonDigit8Sprite,
-        &llMNCommonDigit9Sprite
+        llMNCommonDigit0Sprite,
+        llMNCommonDigit1Sprite,
+        llMNCommonDigit2Sprite,
+        llMNCommonDigit3Sprite,
+        llMNCommonDigit4Sprite,
+        llMNCommonDigit5Sprite,
+        llMNCommonDigit6Sprite,
+        llMNCommonDigit7Sprite,
+        llMNCommonDigit8Sprite,
+        llMNCommonDigit9Sprite
     };
 
     // 0x80134730 - unused
@@ -301,7 +301,7 @@ void mnVSOptionsSetToggleSpriteColors(GObj *gobj, s32 status)
 // 0x80132078
 void mnVSOptionsMakeOnOffToggle(GObj *gobj, f32 pos_x, f32 pos_y)
 {
-    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOnTextSprite));
+    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOnTextSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -309,7 +309,7 @@ void mnVSOptionsMakeOnOffToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->pos.x = pos_x;
     sobj->pos.y = pos_y;
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOffTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOffTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -317,7 +317,7 @@ void mnVSOptionsMakeOnOffToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->pos.x = pos_x + 25.0F + 7.0F;
     sobj->pos.y = pos_y;
 
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonSlashSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonSlashSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -384,7 +384,7 @@ void mnVSOptionsSetHandicapSpriteColors(GObj *gobj, s32 setting)
 // 0x801322B8
 void mnVSOptionsMakeHandicapToggle(GObj *gobj, f32 pos_x, f32 pos_y)
 {
-    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOnTextSprite));
+    SObj *sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOnTextSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -392,7 +392,7 @@ void mnVSOptionsMakeHandicapToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->pos.x = pos_x;
     sobj->pos.y = pos_y;
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonAutoTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonAutoTextSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -400,7 +400,7 @@ void mnVSOptionsMakeHandicapToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->pos.x = pos_x + 25.0F + 5.0F;
     sobj->pos.y = pos_y + 1.0F;
 
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOffTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOffTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -408,7 +408,7 @@ void mnVSOptionsMakeHandicapToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->pos.x = pos_x + 25.0F + 5.0F + 30.0F + 6.0F;
     sobj->pos.y = pos_y;
 
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonSlashSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonSlashSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -420,7 +420,7 @@ void mnVSOptionsMakeHandicapToggle(GObj *gobj, f32 pos_x, f32 pos_y)
     sobj->sprite.green = 0x32;
     sobj->sprite.blue = 0x32;
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonSlashSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonSlashSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -474,7 +474,7 @@ void mnVSOptionsMakeDamageOption(void)
     sMNVSOptionsOptionGObjs[nMNVSOptionsOptionDamage] = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsBubbleSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsBubbleSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -484,7 +484,7 @@ void mnVSOptionsMakeDamageOption(void)
     
     mnVSOptionsSetOptionSpriteColors(gobj, sMNVSOptionsOption == nMNVSOptionsOptionDamage);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsDamageTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsDamageTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -496,7 +496,7 @@ void mnVSOptionsMakeDamageOption(void)
     sobj->sprite.green = 0x00;
     sobj->sprite.blue = 0x00;
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonPercentageSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonPercentageSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -521,7 +521,7 @@ void mnVSOptionsMakeItemSwitchOption(void)
     sMNVSOptionsOptionGObjs[nMNVSOptionsOptionItemSwitch] = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
 
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsBubbleSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsBubbleSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -535,7 +535,7 @@ void mnVSOptionsMakeItemSwitchOption(void)
     
     mnVSOptionsSetOptionSpriteColors(gobj, sMNVSOptionsOption == nMNVSOptionsOptionItemSwitch);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsItemSwitchTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsItemSwitchTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -568,7 +568,7 @@ void mnVSOptionsMakeStageSelectOption(void)
     sMNVSOptionsOptionGObjs[nMNVSOptionsOptionStageSelect] = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsBubbleSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsBubbleSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -577,7 +577,7 @@ void mnVSOptionsMakeStageSelectOption(void)
     sobj->pos.y = pos_y;
     
     mnVSOptionsSetOptionSpriteColors(gobj, sMNVSOptionsOption == nMNVSOptionsOptionStageSelect);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsStageSelectTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsStageSelectTextSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -609,7 +609,7 @@ void mnVSOptionsMakeTeamAttackOption(void)
     sMNVSOptionsOptionGObjs[nMNVSOptionsOptionTeamAttack] = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsBubbleSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsBubbleSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -619,7 +619,7 @@ void mnVSOptionsMakeTeamAttackOption(void)
     
     mnVSOptionsSetOptionSpriteColors(gobj, sMNVSOptionsOption == nMNVSOptionsOptionTeamAttack);
 
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsTeamAttackTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsTeamAttackTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -651,7 +651,7 @@ void mnVSOptionsMakeHandicapOption(void)
     sMNVSOptionsOptionGObjs[nMNVSOptionsOptionHandicap] = gobj = gcMakeGObjSPAfter(0, NULL, 4, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 2, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsBubbleSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsBubbleSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -660,7 +660,7 @@ void mnVSOptionsMakeHandicapOption(void)
     sobj->pos.y = pos_y;
     
     mnVSOptionsSetOptionSpriteColors(gobj, sMNVSOptionsOption == nMNVSOptionsOptionHandicap);
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsHandicapTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsHandicapTextSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -702,7 +702,7 @@ void mnVSOptionsMakeLabel(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, mnVSOptionsLabelProcDisplay, 1, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsVSOptionsTextSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsVSOptionsTextSprite));
 
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -743,9 +743,9 @@ void mnVSOptionsMakeSubtitle(void)
     // 0x80134780
     intptr_t sp1C[/* */] =
     {
-        &llMNCommonOffTextSprite,
-        &llMNCommonOnTextSprite,
-        &llMNCommonAutoTextJapSprite
+        llMNCommonOffTextSprite,
+        llMNCommonOnTextSprite,
+        llMNCommonAutoTextJapSprite
     };
     
     sMNVSOptionsSubtitlesGObj = gobj = gcMakeGObjSPAfter(0, NULL, 3, GOBJ_PRIORITY_DEFAULT);
@@ -753,7 +753,7 @@ void mnVSOptionsMakeSubtitle(void)
 #if defined(REGION_JP)
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonFrameSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonFrameSprite));
 
     sobj->pos.x = 93.0F;
     sobj->pos.y = 189.0F;
@@ -763,7 +763,7 @@ void mnVSOptionsMakeSubtitle(void)
     switch (sMNVSOptionsOption)
     {
         case nMNVSOptionsOptionHandicap:
-            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsHandicapTextJapSprite));
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsHandicapTextJapSprite));
             
             sobj->pos.x = 120.0F;
             sobj->pos.y = 195.0F;
@@ -774,19 +774,19 @@ void mnVSOptionsMakeSubtitle(void)
             {
                 case nSCBattleHandicapOff:
 
-                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOffTextJapSprite));
+                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOffTextJapSprite));
                     
                     sobj->pos.x = 177.0F;
                     sobj->pos.y = 196.0F;
                     break;
                 case nSCBattleHandicapOn:
-                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOnTextJapSprite));
+                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOnTextJapSprite));
                     
                     sobj->pos.x = 177.0F;
                     sobj->pos.y = 196.0F;
                     break;
                 case nSCBattleHandicapAuto:
-                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonAutoTextJapSprite));
+                    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonAutoTextJapSprite));
                     
                     sobj->pos.x = 177.0F;
                     sobj->pos.y = 195.0F;
@@ -798,7 +798,7 @@ void mnVSOptionsMakeSubtitle(void)
             return;
 
         case nMNVSOptionsOptionTeamAttack:
-            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsTeamAttackTextJapSprite));
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsTeamAttackTextJapSprite));
             
             sobj->pos.x = 96.0F;
             sobj->pos.y = 195.0F;
@@ -807,11 +807,11 @@ void mnVSOptionsMakeSubtitle(void)
 
             if (sMNVSOptionsTeamAttackStatus == nMNOptionTabStatusOn)
             {
-                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOnTextJapSprite));
+                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOnTextJapSprite));
             }
             else
             {
-                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOffTextJapSprite));
+                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOffTextJapSprite));
             }
                     
             sobj->pos.x = 200.0F;
@@ -821,7 +821,7 @@ void mnVSOptionsMakeSubtitle(void)
             return;
 
         case nMNVSOptionsOptionStageSelect:
-            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsStageSelectTextJapSprite));
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsStageSelectTextJapSprite));
             
             sobj->pos.x = 104.0F;
             sobj->pos.y = 195.0F;
@@ -830,11 +830,11 @@ void mnVSOptionsMakeSubtitle(void)
 
             if (sMNVSOptionsStageSelectStatus == nMNOptionTabStatusOn)
             {
-                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOnTextJapSprite));
+                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOnTextJapSprite));
             }
             else
             {
-                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonOffTextJapSprite));
+                sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonOffTextJapSprite));
             }
             
             sobj->pos.x = 192.0F;
@@ -844,7 +844,7 @@ void mnVSOptionsMakeSubtitle(void)
             return;
 
         case nMNVSOptionsOptionItemSwitch:
-            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsItemSwitchTextJapSprite));
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsItemSwitchTextJapSprite));
             
             sobj->pos.x = 109.0F;
             sobj->pos.y = 195.0F;
@@ -853,7 +853,7 @@ void mnVSOptionsMakeSubtitle(void)
             return;
 
         case nMNVSOptionsOptionDamage:
-            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsDamageTextJapSprite));
+            sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsDamageTextJapSprite));
             
             sobj->pos.x = 109.0F;
             sobj->pos.y = 194.0F;
@@ -873,7 +873,7 @@ void mnVSOptionsMakeWallpaper(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 2, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 0, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], &llMNCommonSmashBrosCollageSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[0], llMNCommonSmashBrosCollageSprite));
     
     sobj->pos.x = 10.0F;
     sobj->pos.y = 10.0F;
@@ -1029,7 +1029,7 @@ void mnVSOptionsMakeDecal(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 6, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 4, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], &llMNVSOptionsConsoleIconDarkSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSOptionsFiles[1], llMNVSOptionsConsoleIconDarkSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1539,7 +1539,7 @@ void mnVSOptionsFuncStart(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMNVSOptionsStatusBuffer;

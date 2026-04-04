@@ -13,7 +13,7 @@ WPDesc dWPPikachuThunderHeadWeaponDesc =
     0x02,                                      // Render flags?
     nWPKindThunderHead,                        // Weapon Kind
     &gFTDataPikachuMain,                       // Pointer to character's loaded files?
-    &llPikachuMainThunderHeadWeaponAttributes, // Offset of weapon attributes in loaded files
+    llPikachuMainThunderHeadWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -37,7 +37,7 @@ WPDesc dWPPikachuThunderTrailWeaponDesc =
     0x02,                                       // Render flags?
     nWPKindThunderTrail,                       // Weapon Kind
     &gFTDataPikachuMain,                        // Pointer to character's loaded files?
-    &llPikachuMainThunderTrailWeaponAttributes,    // Offset of weapon attributes in loaded files
+    llPikachuMainThunderTrailWeaponAttributes,    // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

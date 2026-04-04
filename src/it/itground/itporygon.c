@@ -12,7 +12,7 @@ ITDesc dITPorygonItemDesc =
 {
     nITKindPorygon,                         // Item Kind
     &gGRCommonStruct.yamabuki.item_head,    // Pointer to item file data?
-    &llGRYamabukiMapPorygonItemAttributes,   // Offset of item attributes in file?
+    llGRYamabukiMapPorygonItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -42,7 +42,7 @@ ITDesc dITPorygonItemDesc =
 void itPorygonCommonUpdateMonsterEvent(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITMonsterEvent *ev = itGetMonsterEvent(dITPorygonItemDesc, &llGRYamabukiMapPorygonHitParties); // (ITMonsterEvent*) ((uintptr_t)*dITPorygonItemDesc.p_file + (intptr_t)&Porygon_Event);
+    ITMonsterEvent *ev = itGetMonsterEvent(dITPorygonItemDesc, llGRYamabukiMapPorygonHitParties); // (ITMonsterEvent*) ((uintptr_t)*dITPorygonItemDesc.p_file + (intptr_t)&Porygon_Event);
 
     if (ip->multi == ev[ip->event_id].timer)
     {

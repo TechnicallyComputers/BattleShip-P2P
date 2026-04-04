@@ -14,7 +14,7 @@ extern u32 sySchedulerGetTicCount();
 // // // // // // // // // // // //
 
 // 0x801328A0
-u32 dMVOpeningPortraitsFileIDs[/* */] = { &llMVOpeningPortraitsSet1FileID, &llMVOpeningPortraitsSet2FileID };
+u32 dMVOpeningPortraitsFileIDs[/* */] = { llMVOpeningPortraitsSet1FileID, llMVOpeningPortraitsSet2FileID };
 
 // 0x801328A8
 Lights1 dMVOpeningPortraitsLights11 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x14, 0x14, 0x14);
@@ -74,10 +74,10 @@ void mvOpeningPortraitsMakeSet1(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llMVOpeningPortraitsSet1SamusSprite,
-		&llMVOpeningPortraitsSet1MarioSprite,
-		&llMVOpeningPortraitsSet1FoxSprite,
-		&llMVOpeningPortraitsSet1PikachuSprite
+		llMVOpeningPortraitsSet1SamusSprite,
+		llMVOpeningPortraitsSet1MarioSprite,
+		llMVOpeningPortraitsSet1FoxSprite,
+		llMVOpeningPortraitsSet1PikachuSprite
 	};
 	Vec2f pos[/* */] =
 	{
@@ -110,10 +110,10 @@ void mvOpeningPortraitsMakeSet2(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llMVOpeningPortraitsSet2LinkSprite,
-		&llMVOpeningPortraitsSet2KirbySprite,
-		&llMVOpeningPortraitsSet2DonkeySprite,
-		&llMVOpeningPortraitsSet2YoshiSprite
+		llMVOpeningPortraitsSet2LinkSprite,
+		llMVOpeningPortraitsSet2KirbySprite,
+		llMVOpeningPortraitsSet2DonkeySprite,
+		llMVOpeningPortraitsSet2YoshiSprite
 	};
 	Vec2f pos[/* */] =
 	{
@@ -318,7 +318,7 @@ void mvOpeningPortraitsMakeCover(void)
 	gobj = gcMakeGObjSPAfter(0, NULL, 18, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, mvOpeningPortraitsCoverProcDisplay, 28, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMVOpeningPortraitsFiles[0], &llMVOpeningPortraitsSet1CoverSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMVOpeningPortraitsFiles[0], llMVOpeningPortraitsSet1CoverSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -436,7 +436,7 @@ void mvOpeningPortraitsFuncStart(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningPortraitsStatusBuffer;

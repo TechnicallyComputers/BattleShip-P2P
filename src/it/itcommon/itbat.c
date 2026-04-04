@@ -12,7 +12,7 @@ ITDesc dITBatItemDesc =
 {
     nITKindBat,                             // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataBatItemAttributes,       // Offset of item attributes in file?
+    llITCommonDataBatItemAttributes,       // Offset of item attributes in file?
 
     // DObj transformation struct
     {

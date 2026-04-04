@@ -1,6 +1,17 @@
 #ifndef STDARG_H
 #define STDARG_H
 
+// On MSVC, define va_list etc. using MSVC intrinsics
+#ifdef _MSC_VER
+#include <vadefs.h>
+#ifndef va_start
+#define va_start __crt_va_start
+#define va_arg __crt_va_arg
+#define va_end __crt_va_end
+#define va_copy __crt_va_copy
+#endif
+#else
+
 // When not building with IDO, use the builtin vaarg macros for portability.
 #ifndef __sgi
 #define va_list __builtin_va_list
@@ -36,4 +47,5 @@ typedef char* va_list;
 #define va_end(__list)
 
 #endif
+#endif /* _MSC_VER */
 #endif

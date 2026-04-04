@@ -110,7 +110,7 @@ void mnNoControllerMakeImage(void)
 	gobj = gcMakeGObjSPAfter(1001, NULL, 1, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 0, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, gMNNoControllerFiles[0], &llMNNoControllerSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, gMNNoControllerFiles[0], llMNNoControllerSprite));
 
 	sobj->pos.x = 10.0F;
 	sobj->pos.y = 10.0F;

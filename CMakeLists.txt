@@ -33,11 +33,13 @@ set(INCLUDE_MPQ_SUPPORT OFF CACHE BOOL "" FORCE)
 set(GBI_UCODE "F3DEX_GBI_2" CACHE STRING "" FORCE)
 
 ################################################################################
-# Subdirectories: libultraship and Torch
+# Subdirectories: libultraship
 ################################################################################
 
 add_subdirectory(libultraship ${CMAKE_BINARY_DIR}/libultraship)
-add_subdirectory(torch ${CMAKE_BINARY_DIR}/torch)
+
+# Note: Torch is built as a standalone tool via ExternalProject (see bottom of file).
+# It is NOT added as a subdirectory since it builds as an executable, not a library.
 
 ################################################################################
 # Collect game sources
@@ -137,7 +139,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 ################################################################################
 
 add_dependencies(${PROJECT_NAME} libultraship)
-target_link_libraries(${PROJECT_NAME} PRIVATE libultraship torch)
+target_link_libraries(${PROJECT_NAME} PRIVATE libultraship)
 
 ################################################################################
 # Platform-specific settings

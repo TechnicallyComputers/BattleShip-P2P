@@ -23,7 +23,7 @@ ITDesc dITFushigibanaItemDesc =
 {
     nITKindFushigibana,                         // Item Kind
     &gGRCommonStruct.yamabuki.item_head,        // Pointer to item file data?
-    &llGRYamabukiMapFushigibanaItemAttributes,  // Offset of item attributes in file?
+    llGRYamabukiMapFushigibanaItemAttributes,  // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -48,7 +48,7 @@ WPDesc dITFushigibanaWeaponRazorWeaponDesc =
     0x03,                                       // Render flags?
     nWPKindFushigibanaRazor,                    // Weapon Kind
     &gGRCommonStruct.yamabuki.item_head,        // Pointer to item's loaded files?
-    &llGRYamabukiMapFushigibanaRazorWeaponAttributes, // Offset of weapon attributes in loaded files
+    llGRYamabukiMapFushigibanaRazorWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -77,7 +77,7 @@ WPDesc dITFushigibanaWeaponRazorWeaponDesc =
 void itFushigibanaCommonUpdateMonsterEvent(GObj *item_gobj)
 {
     ITStruct *ip = itGetStruct(item_gobj);
-    ITMonsterEvent *ev = itGetMonsterEvent(dITFushigibanaItemDesc, &llGRYamabukiMapFushigibanaHitParties); // (ITMonsterEvent*) ((uintptr_t)*dITFushigibanaItemDesc.p_file + (intptr_t)&Fushigibana_Event);
+    ITMonsterEvent *ev = itGetMonsterEvent(dITFushigibanaItemDesc, llGRYamabukiMapFushigibanaHitParties); // (ITMonsterEvent*) ((uintptr_t)*dITFushigibanaItemDesc.p_file + (intptr_t)&Fushigibana_Event);
 
     if (ip->multi == ev[ip->event_id].timer)
     {

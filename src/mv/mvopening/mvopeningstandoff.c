@@ -15,7 +15,7 @@ extern u32 sySchedulerGetTicCount();
 // // // // // // // // // // // //
 
 // 0x801328D0
-u32 dMVOpeningStandoffFileIDs[/* */] = { &llMVOpeningStandoffFileID, &llMVOpeningStandoffWallpaperFileID };
+u32 dMVOpeningStandoffFileIDs[/* */] = { llMVOpeningStandoffFileID, llMVOpeningStandoffWallpaperFileID };
 
 // 0x801328D8
 Lights1 dMVOpeningStandoffLights11 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x14, 0x14, 0x14);
@@ -124,7 +124,7 @@ void mvOpeningStandoffFuncLights(Gfx **dls)
 void mvOpeningStandoffMakeGround(void)
 {
     GObj *gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
-    gcAddDObjForGObj(gobj, lbRelocGetFileData(void*, sMVOpeningStandoffFiles[0], &llMVOpeningStandoffGroundDisplayList));
+    gcAddDObjForGObj(gobj, lbRelocGetFileData(void*, sMVOpeningStandoffFiles[0], llMVOpeningStandoffGroundDisplayList));
     gcAddXObjForDObjFixed(DObjGetStruct(gobj), nGCMatrixKindTraRotRpyRSca, 0);
     gcAddGObjDisplay(gobj, gcDrawDObjDLHead0, 26, GOBJ_PRIORITY_DEFAULT, ~0);
 
@@ -279,7 +279,7 @@ void mvOpeningStandoffMakeWallpaper(void)
     gcAddGObjDisplay(wallpaper_gobj, lbCommonDrawSObjAttr, 27, GOBJ_PRIORITY_DEFAULT, ~0);
     gcAddGObjProcess(wallpaper_gobj, mvOpeningStandoffWallpaperProcUpdate, nGCProcessKindFunc, 1);
 
-    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMVOpeningStandoffFiles[1], &llMVOpeningStandoffWallpaperSprite));
+    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMVOpeningStandoffFiles[1], llMVOpeningStandoffWallpaperSprite));
     wallpaper_sobj->sprite.attr &= ~SP_FASTCOPY;
 
     wallpaper_sobj->sprite.scalex = 2.0F;
@@ -288,7 +288,7 @@ void mvOpeningStandoffMakeWallpaper(void)
     wallpaper_sobj->pos.x = 0.0F;
     wallpaper_sobj->pos.y = 0.0F;
 
-    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMVOpeningStandoffFiles[1], &llMVOpeningStandoffWallpaperSprite));
+    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, lbRelocGetFileData(Sprite*, sMVOpeningStandoffFiles[1], llMVOpeningStandoffWallpaperSprite));
     wallpaper_sobj->sprite.attr &= ~SP_FASTCOPY;
 
     wallpaper_sobj->sprite.scalex = 2.0F;
@@ -311,7 +311,7 @@ void mvOpeningStandoffMakeLightning(void)
         (
             DObjDesc*,
             sMVOpeningStandoffFiles[0],
-            &llMVOpeningStandoffLightningDObjDesc
+            llMVOpeningStandoffLightningDObjDesc
         ),
         NULL,
         nGCMatrixKindTraRotRpyRSca,
@@ -325,7 +325,7 @@ void mvOpeningStandoffMakeLightning(void)
         (
             MObjSub***,
             sMVOpeningStandoffFiles[0],
-            &llMVOpeningStandoffLightningMObjSub
+            llMVOpeningStandoffLightningMObjSub
         )
     );
     gcAddMatAnimJointAll
@@ -335,7 +335,7 @@ void mvOpeningStandoffMakeLightning(void)
         (
             AObjEvent32***,
             sMVOpeningStandoffFiles[0],
-            &llMVOpeningStandoffLightningMatAnimJoint
+            llMVOpeningStandoffLightningMatAnimJoint
         ),
         0.0F
     );
@@ -352,7 +352,7 @@ void mvOpeningStandoffMakeLightning(void)
         (
             AObjEvent32**,
             sMVOpeningStandoffFiles[0],
-            &llMVOpeningStandoffLightningAnimJoint
+            llMVOpeningStandoffLightningAnimJoint
         ),
         0.0F
     );
@@ -473,7 +473,7 @@ void mvOpeningStandoffMakeMainCamera(void)
         (
             AObjEvent32*,
             sMVOpeningStandoffFiles[0],
-            &llMVOpeningStandoffCamAnimJoint
+            llMVOpeningStandoffCamAnimJoint
         ),
         0.0F
     );
@@ -554,7 +554,7 @@ void mvOpeningStandoffFuncStart(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMVOpeningStandoffStatusBuffer;

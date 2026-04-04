@@ -78,9 +78,9 @@ u8 dSC1PTrainingModeLagIntervals[/* */][2] =
 // 0x80190824
 SC1PTrainingModeFiles dSC1PTrainingModeWallpaperDescs[/* */] =
 {
-	{ &llGRWallpaperTrainingBlackFileID,  &llGRWallpaperTrainingBlackSprite,  { 0x00, 0x00, 0x00 } },
-	{ &llGRWallpaperTrainingYellowFileID, &llGRWallpaperTrainingYellowSprite, { 0xEE, 0x9E, 0x06 } },
-	{ &llGRWallpaperTrainingBlueFileID,   &llGRWallpaperTrainingBlueSprite,   { 0xAF, 0xF5, 0xFF } }
+	{ llGRWallpaperTrainingBlackFileID,  llGRWallpaperTrainingBlackSprite,  { 0x00, 0x00, 0x00 } },
+	{ llGRWallpaperTrainingYellowFileID, llGRWallpaperTrainingYellowSprite, { 0xEE, 0x9E, 0x06 } },
+	{ llGRWallpaperTrainingBlueFileID,   llGRWallpaperTrainingBlueSprite,   { 0xAF, 0xF5, 0xFF } }
 };
 
 // 0x80190848
@@ -638,14 +638,14 @@ void sc1PTrainingModeInitVars(void)
 // 0x8018DD0C
 void sc1PTrainingModeLoadSprites(void)
 {
-	void *file = lbRelocGetExternHeapFile((u32)&llSC1PTrainingModeFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)&llSC1PTrainingModeFileID), 0x10));
+	void *file = lbRelocGetExternHeapFile((u32)llSC1PTrainingModeFileID, syTaskmanMalloc(lbRelocGetFileSize((u32)llSC1PTrainingModeFileID), 0x10));
 
-	sSC1PTrainingModeMenu.display_label_sprites = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingModeDisplayLabelPosSpriteArray);
-	sSC1PTrainingModeMenu.display_option_sprites = lbRelocGetFileData(Sprite**, file, &llSC1PTrainingModeDisplayOptionSpriteArray);
-	sSC1PTrainingModeMenu.menu_label_sprites = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingModeMenuLabelPosSpriteArray);
-	sSC1PTrainingModeMenu.menu_option_sprites = lbRelocGetFileData(Sprite**, file, &llSC1PTrainingModeMenuOptionSpriteArray);
-	sSC1PTrainingModeMenu.unk_trainmenu_0x34 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingMode0x10CPosSpriteArray);
-	sSC1PTrainingModeMenu.unk_trainmenu_0x38 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, &llSC1PTrainingMode0x1B8PosSpriteArray);
+	sSC1PTrainingModeMenu.display_label_sprites = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingModeDisplayLabelPosSpriteArray);
+	sSC1PTrainingModeMenu.display_option_sprites = lbRelocGetFileData(Sprite**, file, llSC1PTrainingModeDisplayOptionSpriteArray);
+	sSC1PTrainingModeMenu.menu_label_sprites = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingModeMenuLabelPosSpriteArray);
+	sSC1PTrainingModeMenu.menu_option_sprites = lbRelocGetFileData(Sprite**, file, llSC1PTrainingModeMenuOptionSpriteArray);
+	sSC1PTrainingModeMenu.unk_trainmenu_0x34 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingMode0x10CPosSpriteArray);
+	sSC1PTrainingModeMenu.unk_trainmenu_0x38 = lbRelocGetFileData(SC1PTrainingModeSprites*, file, llSC1PTrainingMode0x1B8PosSpriteArray);
 }
 
 // 0x8018DDB0
@@ -1889,7 +1889,7 @@ void sc1PTrainingModeSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sSC1PTrainingModeStatusBuffer;

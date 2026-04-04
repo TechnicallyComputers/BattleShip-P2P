@@ -31,7 +31,7 @@ ITDesc dITPippiItemDesc =
 {
     nITKindPippi,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataPippiItemAttributes,     // Offset of item attributes in file?
+    llITCommonDataPippiItemAttributes,     // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -222,7 +222,7 @@ GObj* itPippiMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
 
         dobj->translate.vec.f.y -= ip->attr->map_coll_bottom;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, &llITCommonDataPippiDataStart), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataPippiDataStart), 0.0F);
         func_800269C0_275C0(nSYAudioVoiceMBallPippiAppear);
 
         item_gobj->proc_display = itPippiCommonProcDisplay;

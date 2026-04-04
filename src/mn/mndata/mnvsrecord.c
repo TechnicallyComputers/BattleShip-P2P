@@ -39,10 +39,10 @@ s32 dMNVSRecordRankingColumnWidths[/* */] = { 33, 33, 33, 33, 46, 35, 34 };
 // 0x8013664C
 u32 dMNVSRecordFileIDs[/* */] =
 {
-	&llMNVSRecordMainFileID,
-	&llMNDataCommonFileID,
-	&llMNPlayersPortraitsFileID,
-	&llMNCommonFontsFileID
+	llMNVSRecordMainFileID,
+	llMNDataCommonFileID,
+	llMNPlayersPortraitsFileID,
+	llMNCommonFontsFileID
 };
 
 // 0x80136660
@@ -256,11 +256,11 @@ void mnVSRecordMakeDigits(GObj *gobj, s32 number, f32 x, f32 y, u32 *colors, sb3
 {
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainDigit0Sprite, &llMNVSRecordMainDigit1Sprite,
-		&llMNVSRecordMainDigit2Sprite, &llMNVSRecordMainDigit3Sprite,
-		&llMNVSRecordMainDigit4Sprite, &llMNVSRecordMainDigit5Sprite,
-		&llMNVSRecordMainDigit6Sprite, &llMNVSRecordMainDigit7Sprite,
-		&llMNVSRecordMainDigit8Sprite, &llMNVSRecordMainDigit9Sprite
+		llMNVSRecordMainDigit0Sprite, llMNVSRecordMainDigit1Sprite,
+		llMNVSRecordMainDigit2Sprite, llMNVSRecordMainDigit3Sprite,
+		llMNVSRecordMainDigit4Sprite, llMNVSRecordMainDigit5Sprite,
+		llMNVSRecordMainDigit6Sprite, llMNVSRecordMainDigit7Sprite,
+		llMNVSRecordMainDigit8Sprite, llMNVSRecordMainDigit9Sprite
 	};
 	SObj *sobj;
 	f32 calc_x = x;
@@ -294,7 +294,7 @@ void mnVSRecordMakeDigits(GObj *gobj, s32 number, f32 x, f32 y, u32 *colors, sb3
 		sobj->pos.x = calc_x;
 		sobj->pos.y = y;
 
-		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainSymbolPointSprite));
+		sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainSymbolPointSprite));
 		mnVSRecordSetSpriteColors(sobj, colors);
 
 		if (is_wide != FALSE)
@@ -435,23 +435,23 @@ void mnVSRecordMakeString(GObj *gobj, const char *str, f32 x, f32 y, u32 *color)
 {
 	intptr_t offsets[/* */] =
 	{
-		&llMNCommonFontsLetterASprite, &llMNCommonFontsLetterBSprite,
-		&llMNCommonFontsLetterCSprite, &llMNCommonFontsLetterDSprite,
-		&llMNCommonFontsLetterESprite, &llMNCommonFontsLetterFSprite,
-		&llMNCommonFontsLetterGSprite, &llMNCommonFontsLetterHSprite,
-		&llMNCommonFontsLetterISprite, &llMNCommonFontsLetterJSprite,
-		&llMNCommonFontsLetterKSprite, &llMNCommonFontsLetterLSprite,
-		&llMNCommonFontsLetterMSprite, &llMNCommonFontsLetterNSprite,
-		&llMNCommonFontsLetterOSprite, &llMNCommonFontsLetterPSprite,
-		&llMNCommonFontsLetterQSprite, &llMNCommonFontsLetterRSprite,
-		&llMNCommonFontsLetterSSprite, &llMNCommonFontsLetterTSprite,
-		&llMNCommonFontsLetterUSprite, &llMNCommonFontsLetterVSprite,
-		&llMNCommonFontsLetterWSprite, &llMNCommonFontsLetterXSprite,
-		&llMNCommonFontsLetterYSprite, &llMNCommonFontsLetterZSprite,
+		llMNCommonFontsLetterASprite, llMNCommonFontsLetterBSprite,
+		llMNCommonFontsLetterCSprite, llMNCommonFontsLetterDSprite,
+		llMNCommonFontsLetterESprite, llMNCommonFontsLetterFSprite,
+		llMNCommonFontsLetterGSprite, llMNCommonFontsLetterHSprite,
+		llMNCommonFontsLetterISprite, llMNCommonFontsLetterJSprite,
+		llMNCommonFontsLetterKSprite, llMNCommonFontsLetterLSprite,
+		llMNCommonFontsLetterMSprite, llMNCommonFontsLetterNSprite,
+		llMNCommonFontsLetterOSprite, llMNCommonFontsLetterPSprite,
+		llMNCommonFontsLetterQSprite, llMNCommonFontsLetterRSprite,
+		llMNCommonFontsLetterSSprite, llMNCommonFontsLetterTSprite,
+		llMNCommonFontsLetterUSprite, llMNCommonFontsLetterVSprite,
+		llMNCommonFontsLetterWSprite, llMNCommonFontsLetterXSprite,
+		llMNCommonFontsLetterYSprite, llMNCommonFontsLetterZSprite,
 
-		&llMNCommonFontsSymbolApostropheSprite,
-		&llMNCommonFontsSymbolPercentSprite,
-		&llMNCommonFontsSymbolPeriodSprite
+		llMNCommonFontsSymbolApostropheSprite,
+		llMNCommonFontsSymbolPercentSprite,
+		llMNCommonFontsSymbolPeriodSprite
 	};
 	SObj *sobj;
 	f32 start_x = x;
@@ -529,7 +529,7 @@ void mnVSRecordMakeLabels(void)
 	gobj = gcMakeGObjSPAfter(0, NULL, 2, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], &llMNDataCommonDataHeaderSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], llMNDataCommonDataHeaderSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -541,7 +541,7 @@ void mnVSRecordMakeLabels(void)
 	sobj->pos.x = 24.0F;
 	sobj->pos.y = 17.0F;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainLabelSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainLabelSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -564,7 +564,7 @@ void mnVSRecordSubtitleProcUpdate(GObj *gobj)
 	SObj *sobj;
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainBattleScoreSprite,
+		llMNVSRecordMainBattleScoreSprite,
 		0x1458,
 		0x1318,
 		0x0
@@ -598,7 +598,7 @@ void mnVSRecordMakeSubtitle(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnVSRecordSubtitleProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainBattleScoreSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainBattleScoreSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -627,7 +627,7 @@ void mnVSRecordMakePortraitStatsArrows(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnVSRecordPortraitArrowsProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], &llMNDataCommonArrowLSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], llMNDataCommonArrowLSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -639,7 +639,7 @@ void mnVSRecordMakePortraitStatsArrows(void)
 	sobj->pos.x = 40.0F;
 	sobj->pos.y = 78.0F;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], &llMNDataCommonArrowRSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[1], llMNDataCommonArrowRSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -673,7 +673,7 @@ void mnVSRecordMakeResortArrows(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnVSRecordResortArrowsProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainDownArrowsSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainDownArrowsSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -702,7 +702,7 @@ void mnVSRecordMakeColumnArrows(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 1, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, mnVSRecordColumnArrowsProcUpdate, nGCProcessKindFunc, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainSideArrowsSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainSideArrowsSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -879,7 +879,7 @@ SObj* mnVSRecordMakeLockedIcon(GObj *gobj)
 {
 	SObj *sobj;
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainQuestionSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainQuestionSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -896,12 +896,12 @@ void mnVSRecordMakeColumnIcons(GObj *gobj)
 {
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainMarioIconBWSprite,  &llMNVSRecordMainFoxIconBWSprite,
-		&llMNVSRecordMainDonkeyIconBWSprite, &llMNVSRecordMainSamusIconBWSprite,
-		&llMNVSRecordMainLuigiIconBWSprite,  &llMNVSRecordMainLinkIconBWSprite,
-		&llMNVSRecordMainYoshiIconBWSprite,  &llMNVSRecordMainCaptainIconBWSprite,
-		&llMNVSRecordMainKirbyIconBWSprite,  &llMNVSRecordMainPikachuIconBWSprite,
-		&llMNVSRecordMainPurinIconBWSprite,  &llMNVSRecordMainNessIconBWSprite
+		llMNVSRecordMainMarioIconBWSprite,  llMNVSRecordMainFoxIconBWSprite,
+		llMNVSRecordMainDonkeyIconBWSprite, llMNVSRecordMainSamusIconBWSprite,
+		llMNVSRecordMainLuigiIconBWSprite,  llMNVSRecordMainLinkIconBWSprite,
+		llMNVSRecordMainYoshiIconBWSprite,  llMNVSRecordMainCaptainIconBWSprite,
+		llMNVSRecordMainKirbyIconBWSprite,  llMNVSRecordMainPikachuIconBWSprite,
+		llMNVSRecordMainPurinIconBWSprite,  llMNVSRecordMainNessIconBWSprite
 	};
 	s32 i;
 	SObj *sobj;
@@ -975,12 +975,12 @@ void mnVSRecordMakeRowIcons(GObj *gobj)
 {
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainMarioIconColorSprite,  &llMNVSRecordMainFoxIconColorSprite,
-		&llMNVSRecordMainDonkeyIconColorSprite, &llMNVSRecordMainSamusIconColorSprite,
-		&llMNVSRecordMainLuigiIconColorSprite,  &llMNVSRecordMainLinkIconColorSprite,
-		&llMNVSRecordMainYoshiIconColorSprite,  &llMNVSRecordMainCaptainIconColorSprite,
-		&llMNVSRecordMainKirbyIconColorSprite,  &llMNVSRecordMainPikachuIconColorSprite,
-		&llMNVSRecordMainPurinIconColorSprite,  &llMNVSRecordMainNessIconColorSprite
+		llMNVSRecordMainMarioIconColorSprite,  llMNVSRecordMainFoxIconColorSprite,
+		llMNVSRecordMainDonkeyIconColorSprite, llMNVSRecordMainSamusIconColorSprite,
+		llMNVSRecordMainLuigiIconColorSprite,  llMNVSRecordMainLinkIconColorSprite,
+		llMNVSRecordMainYoshiIconColorSprite,  llMNVSRecordMainCaptainIconColorSprite,
+		llMNVSRecordMainKirbyIconColorSprite,  llMNVSRecordMainPikachuIconColorSprite,
+		llMNVSRecordMainPurinIconColorSprite,  llMNVSRecordMainNessIconColorSprite
 	};
 	s32 i;
 	SObj *sobj;
@@ -1070,17 +1070,17 @@ void mnVSRecordMakePortraitStats(GObj *gobj, s32 fkind)
 	SObj *sobj;
 	intptr_t offsets[/* */] =
 	{
-		&llMNPlayersPortraitsMarioSprite,   &llMNPlayersPortraitsFoxSprite,
-		&llMNPlayersPortraitsDonkeySprite,  &llMNPlayersPortraitsSamusSprite,
-		&llMNPlayersPortraitsLuigiSprite,   &llMNPlayersPortraitsLinkSprite,
-		&llMNPlayersPortraitsYoshiSprite,   &llMNPlayersPortraitsCaptainSprite,
-		&llMNPlayersPortraitsKirbySprite,   &llMNPlayersPortraitsPikachuSprite,
-		&llMNPlayersPortraitsPurinSprite,   &llMNPlayersPortraitsNessSprite
+		llMNPlayersPortraitsMarioSprite,   llMNPlayersPortraitsFoxSprite,
+		llMNPlayersPortraitsDonkeySprite,  llMNPlayersPortraitsSamusSprite,
+		llMNPlayersPortraitsLuigiSprite,   llMNPlayersPortraitsLinkSprite,
+		llMNPlayersPortraitsYoshiSprite,   llMNPlayersPortraitsCaptainSprite,
+		llMNPlayersPortraitsKirbySprite,   llMNPlayersPortraitsPikachuSprite,
+		llMNPlayersPortraitsPurinSprite,   llMNPlayersPortraitsNessSprite
 	};
 	u32 string_colors[/* */] = { 0x8A, 0x88, 0x92 };
 	u32 digit_colors[/* */] = { 0x00, 0x00, 0x00, 0x8A, 0x88, 0x92 };
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainPortraitWallpaperSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainPortraitWallpaperSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1099,7 +1099,7 @@ void mnVSRecordMakePortraitStats(GObj *gobj, s32 fkind)
 	mnVSRecordMakeString(gobj, "RANKING", 150, 60, string_colors);
 	mnVSRecordMakeDigits(gobj, 12, 265, 58, digit_colors, FALSE, TRUE, 2, FALSE);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainSymbolSlashSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainSymbolSlashSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1285,7 +1285,7 @@ GObj* mnVSRecordMakeBattleScoreTableHeaders(void)
 	gobj = gcMakeGObjSPAfter(0, NULL, 5, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 4, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainLabelTotalSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainLabelTotalSprite));
 
 	sobj->sprite.attr &= ~SP_FASTCOPY;
 	sobj->sprite.attr |= SP_TRANSPARENT;
@@ -1494,7 +1494,7 @@ GObj* mnVSRecordMakeRankingTableValues(s32 column)
 						2,
 						TRUE
 					);
-					sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], &llMNVSRecordMainSymbolColonSprite));
+					sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNVSRecordFiles[0], llMNVSRecordMainSymbolColonSprite));
 					mnVSRecordSetSpriteColors(sobj, colors);
 
 					sobj->pos.x = col_widths[column_order[j]] + x - 11;
@@ -1558,13 +1558,13 @@ GObj* mnVSRecordMakeRankingTableHeaders(s32 column)
 	SObj *sobj;
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainLabelWinPercentSprite,
-		&llMNVSRecordMainLabelKOsSprite,
-		&llMNVSRecordMainLabelTKOSprite,
-		&llMNVSRecordMainLabelSDPercentSprite,
-		&llMNVSRecordMainLabelTimeSprite,
-		&llMNVSRecordMainLabelUsePercentSprite,
-		&llMNVSRecordMainLabelAvgSprite
+		llMNVSRecordMainLabelWinPercentSprite,
+		llMNVSRecordMainLabelKOsSprite,
+		llMNVSRecordMainLabelTKOSprite,
+		llMNVSRecordMainLabelSDPercentSprite,
+		llMNVSRecordMainLabelTimeSprite,
+		llMNVSRecordMainLabelUsePercentSprite,
+		llMNVSRecordMainLabelAvgSprite
 	};
 #if defined(REGION_US)
 	s32 x_padding[/* */] = { 2, 2, 2, 4, 4, 3, 1 };
@@ -1722,10 +1722,10 @@ GObj* mnVSRecordMakeIndivPortraitAll(void)
 	SObj *sobj;
 	intptr_t offsets[/* */] =
 	{
-		&llMNVSRecordMainLabelWinPercentSprite,
-		&llMNVSRecordMainLabelKOsSprite,
-		&llMNVSRecordMainLabelKOdSprite,
-		&llMNVSRecordMainLabelAvgSprite
+		llMNVSRecordMainLabelWinPercentSprite,
+		llMNVSRecordMainLabelKOsSprite,
+		llMNVSRecordMainLabelKOdSprite,
+		llMNVSRecordMainLabelAvgSprite
 	};
 	Vec2f positions[/* */] =
 	{
@@ -2170,7 +2170,7 @@ void mnVSRecordFuncStart(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMNVSRecordStatusBuffer;

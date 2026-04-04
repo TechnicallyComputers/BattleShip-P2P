@@ -10,7 +10,7 @@ void ftCommonCaptureCaptainUpdatePositions(GObj *fighter_gobj, GObj *capture_gob
 
     FTStruct *this_fp = ftGetStruct(fighter_gobj);
     FTStruct *capture_fp = ftGetStruct(capture_gobj);
-    Vec2h *offset_add = lbRelocGetFileData(Vec2h*, gFTDataCaptainMainMotion, &llCaptainMainMotionSpecialHiVec2h);
+    Vec2h *offset_add = lbRelocGetFileData(Vec2h*, gFTDataCaptainMainMotion, llCaptainMainMotionSpecialHiVec2h);
     s32 unused;
 
     pos->x = 0.0F;

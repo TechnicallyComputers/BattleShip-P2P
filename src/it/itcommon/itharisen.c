@@ -17,7 +17,7 @@ ITDesc dITHarisenItemDesc =
 {
     nITKindHarisen,                         // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataHarisenItemAttributes,   // Offset of item attributes in file?
+    llITCommonDataHarisenItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -243,7 +243,7 @@ void func_ovl3_80175408(GObj *item_gobj, s32 index) // Unused
 {
     ITStruct *ip = itGetStruct(item_gobj);
 
-    gcAddAnimJointAll(item_gobj, (((uintptr_t)ip->attr->data + dITHarisenAnimJoint[index]) - (intptr_t)&llITCommonDataHarisenDataStart), 0.0F);
+    gcAddAnimJointAll(item_gobj, (((uintptr_t)ip->attr->data + dITHarisenAnimJoint[index]) - (intptr_t)llITCommonDataHarisenDataStart), 0.0F);
     gcPlayAnimAll(item_gobj);
 }
 

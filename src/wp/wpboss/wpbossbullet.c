@@ -13,7 +13,7 @@ WPDesc dWPBossBulletNormalWeaponDesc =
     0x01,                                          // Render flags?
     nWPKindBulletNormal,                           // Weapon Kind
     &gFTDataBossMainMotion,                        // Pointer to character's loaded files?
-    &llBossMainMotionBulletNormalWeaponAttributes, // Offset of weapon attributes in loaded files
+    llBossMainMotionBulletNormalWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -37,7 +37,7 @@ WPDesc dWPBossBulletHardWeaponDesc =
     0x01,                                        // Render flags?
     nWPKindBulletHard,                           // Weapon Kind
     &gFTDataBossMainMotion,                      // Pointer to character's loaded files?
-    &llBossMainMotionBulletHardWeaponAttributes, // Offset of weapon attributes in loaded files
+    llBossMainMotionBulletHardWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

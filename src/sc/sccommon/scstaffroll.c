@@ -326,149 +326,149 @@ s32 dSCStaffrollCompanyIDs[/* */] =
 };
 
 // 0x8013A184
-u32 dSCStaffrollFileIDs[/* */] = { &llSCStaffrollFileID };
+u32 dSCStaffrollFileIDs[/* */] = { llSCStaffrollFileID };
 
 // 0x8013A188
 SCStaffrollSprite dSCStaffrollNameAndJobSpriteInfo[/* */] =
 {
-	{ 20, 22, &llSCStaffrollNameAndJobAUpperImage },
-	{ 15, 22, &llSCStaffrollNameAndJobBUpperImage },
-	{ 15, 22, &llSCStaffrollNameAndJobCUpperImage },
-	{ 18, 22, &llSCStaffrollNameAndJobDUpperImage },
-	{ 13, 22, &llSCStaffrollNameAndJobEUpperImage },
-	{ 13, 22, &llSCStaffrollNameAndJobFUpperImage },
-	{ 19, 22, &llSCStaffrollNameAndJobGUpperImage },
-	{ 18, 22, &llSCStaffrollNameAndJobHUpperImage },
-	{  7, 22, &llSCStaffrollNameAndJobIUpperImage },
-	{ 11, 22, &llSCStaffrollNameAndJobJUpperImage },
-	{ 18, 22, &llSCStaffrollNameAndJobKUpperImage },
-	{ 13, 22, &llSCStaffrollNameAndJobLUpperImage },
-	{ 23, 22, &llSCStaffrollNameAndJobMUpperImage },
-	{ 19, 22, &llSCStaffrollNameAndJobNUpperImage },
-	{ 22, 22, &llSCStaffrollNameAndJobOUpperImage },
-	{ 15, 22, &llSCStaffrollNameAndJobPUpperImage },
-	{ 23, 22, &llSCStaffrollNameAndJobQUpperImage },
-	{ 16, 22, &llSCStaffrollNameAndJobRUpperImage },
-	{ 15, 22, &llSCStaffrollNameAndJobSUpperImage },
-	{ 15, 22, &llSCStaffrollNameAndJobTUpperImage },
-	{ 16, 22, &llSCStaffrollNameAndJobUUpperImage },
-	{ 18, 22, &llSCStaffrollNameAndJobVUpperImage },
-	{ 25, 22, &llSCStaffrollNameAndJobWUpperImage },
-	{ 19, 22, &llSCStaffrollNameAndJobXUpperImage },
-	{ 16, 22, &llSCStaffrollNameAndJobYUpperImage },
-	{ 19, 22, &llSCStaffrollNameAndJobZUpperImage },
-	{ 14, 18, &llSCStaffrollNameAndJobALowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobBLowerImage },
-	{ 14, 18, &llSCStaffrollNameAndJobCLowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobDLowerImage },
-	{ 16, 18, &llSCStaffrollNameAndJobELowerImage },
-	{ 11, 22, &llSCStaffrollNameAndJobFLowerImage },
-	{ 15, 22, &llSCStaffrollNameAndJobGLowerImage },
-	{ 15, 22, &llSCStaffrollNameAndJobHLowerImage },
-	{  6, 22, &llSCStaffrollNameAndJobILowerImage },
-	{  8, 26, &llSCStaffrollNameAndJobJLowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobKLowerImage },
-	{  6, 22, &llSCStaffrollNameAndJobLLowerImage },
-	{ 20, 18, &llSCStaffrollNameAndJobMLowerImage },
-	{ 15, 18, &llSCStaffrollNameAndJobNLowerImage },
-	{ 18, 18, &llSCStaffrollNameAndJobOLowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobPLowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobQLowerImage },
-	{ 11, 18, &llSCStaffrollNameAndJobRLowerImage },
-	{ 13, 18, &llSCStaffrollNameAndJobSLowerImage },
-	{ 11, 22, &llSCStaffrollNameAndJobTLowerImage },
-	{ 15, 18, &llSCStaffrollNameAndJobULowerImage },
-	{ 14, 18, &llSCStaffrollNameAndJobVLowerImage },
-	{ 21, 18, &llSCStaffrollNameAndJobWLowerImage },
-	{ 15, 18, &llSCStaffrollNameAndJobXLowerImage },
-	{ 16, 22, &llSCStaffrollNameAndJobYLowerImage },
-	{ 14, 17, &llSCStaffrollNameAndJobZLowerImage },
-	{  7,  7, &llSCStaffrollNameAndJobPeriodImage },
-	{  8, 11, &llSCStaffrollNameAndJobCommaImage },
-	{  8, 11, &llSCStaffrollNameAndJobApostropheImage },
+	{ 20, 22, llSCStaffrollNameAndJobAUpperImage },
+	{ 15, 22, llSCStaffrollNameAndJobBUpperImage },
+	{ 15, 22, llSCStaffrollNameAndJobCUpperImage },
+	{ 18, 22, llSCStaffrollNameAndJobDUpperImage },
+	{ 13, 22, llSCStaffrollNameAndJobEUpperImage },
+	{ 13, 22, llSCStaffrollNameAndJobFUpperImage },
+	{ 19, 22, llSCStaffrollNameAndJobGUpperImage },
+	{ 18, 22, llSCStaffrollNameAndJobHUpperImage },
+	{  7, 22, llSCStaffrollNameAndJobIUpperImage },
+	{ 11, 22, llSCStaffrollNameAndJobJUpperImage },
+	{ 18, 22, llSCStaffrollNameAndJobKUpperImage },
+	{ 13, 22, llSCStaffrollNameAndJobLUpperImage },
+	{ 23, 22, llSCStaffrollNameAndJobMUpperImage },
+	{ 19, 22, llSCStaffrollNameAndJobNUpperImage },
+	{ 22, 22, llSCStaffrollNameAndJobOUpperImage },
+	{ 15, 22, llSCStaffrollNameAndJobPUpperImage },
+	{ 23, 22, llSCStaffrollNameAndJobQUpperImage },
+	{ 16, 22, llSCStaffrollNameAndJobRUpperImage },
+	{ 15, 22, llSCStaffrollNameAndJobSUpperImage },
+	{ 15, 22, llSCStaffrollNameAndJobTUpperImage },
+	{ 16, 22, llSCStaffrollNameAndJobUUpperImage },
+	{ 18, 22, llSCStaffrollNameAndJobVUpperImage },
+	{ 25, 22, llSCStaffrollNameAndJobWUpperImage },
+	{ 19, 22, llSCStaffrollNameAndJobXUpperImage },
+	{ 16, 22, llSCStaffrollNameAndJobYUpperImage },
+	{ 19, 22, llSCStaffrollNameAndJobZUpperImage },
+	{ 14, 18, llSCStaffrollNameAndJobALowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobBLowerImage },
+	{ 14, 18, llSCStaffrollNameAndJobCLowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobDLowerImage },
+	{ 16, 18, llSCStaffrollNameAndJobELowerImage },
+	{ 11, 22, llSCStaffrollNameAndJobFLowerImage },
+	{ 15, 22, llSCStaffrollNameAndJobGLowerImage },
+	{ 15, 22, llSCStaffrollNameAndJobHLowerImage },
+	{  6, 22, llSCStaffrollNameAndJobILowerImage },
+	{  8, 26, llSCStaffrollNameAndJobJLowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobKLowerImage },
+	{  6, 22, llSCStaffrollNameAndJobLLowerImage },
+	{ 20, 18, llSCStaffrollNameAndJobMLowerImage },
+	{ 15, 18, llSCStaffrollNameAndJobNLowerImage },
+	{ 18, 18, llSCStaffrollNameAndJobOLowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobPLowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobQLowerImage },
+	{ 11, 18, llSCStaffrollNameAndJobRLowerImage },
+	{ 13, 18, llSCStaffrollNameAndJobSLowerImage },
+	{ 11, 22, llSCStaffrollNameAndJobTLowerImage },
+	{ 15, 18, llSCStaffrollNameAndJobULowerImage },
+	{ 14, 18, llSCStaffrollNameAndJobVLowerImage },
+	{ 21, 18, llSCStaffrollNameAndJobWLowerImage },
+	{ 15, 18, llSCStaffrollNameAndJobXLowerImage },
+	{ 16, 22, llSCStaffrollNameAndJobYLowerImage },
+	{ 14, 17, llSCStaffrollNameAndJobZLowerImage },
+	{  7,  7, llSCStaffrollNameAndJobPeriodImage },
+	{  8, 11, llSCStaffrollNameAndJobCommaImage },
+	{  8, 11, llSCStaffrollNameAndJobApostropheImage },
 #if defined(REGION_US)
-	{ 16, 22, &llSCStaffrollNameAndJob4Image }
+	{ 16, 22, llSCStaffrollNameAndJob4Image }
 #endif
 };
 
 // 0x8013A348
 SCStaffrollSprite dSCStaffrollTextBoxSpriteInfo[/* */] =
 {
-	{ 12, 14, &llSCStaffrollTextBoxAUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxBUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxCUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxDUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxEUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxFUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxGUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxHUpperSprite },
-	{  5, 14, &llSCStaffrollTextBoxIUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxJUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxKUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxLUpperSprite },
-	{ 14, 14, &llSCStaffrollTextBoxMUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxNUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxOUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxPUpperSprite },
-	{ 13, 14, &llSCStaffrollTextBoxQUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxRUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxSUpperSprite },
-	{ 13, 14, &llSCStaffrollTextBoxTUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxUUpperSprite },
-	{ 14, 14, &llSCStaffrollTextBoxVUpperSprite },
-	{ 14, 14, &llSCStaffrollTextBoxWUpperSprite },
-	{ 12, 14, &llSCStaffrollTextBoxXUpperSprite },
-	{ 13, 14, &llSCStaffrollTextBoxYUpperSprite },
-	{ 14, 14, &llSCStaffrollTextBoxZUpperSprite },
-	{ 10, 11, &llSCStaffrollTextBoxALowerSprite },
-	{ 10, 13, &llSCStaffrollTextBoxBLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxCLowerSprite },
-	{ 10, 13, &llSCStaffrollTextBoxDLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxELowerSprite },
-	{  9, 13, &llSCStaffrollTextBoxFLowerSprite },
-	{ 10, 12, &llSCStaffrollTextBoxGLowerSprite },
-	{ 10, 13, &llSCStaffrollTextBoxHLowerSprite },
-	{ 04, 13, &llSCStaffrollTextBoxILowerSprite },
-	{ 06, 14, &llSCStaffrollTextBoxJLowerSprite },
-	{ 10, 13, &llSCStaffrollTextBoxKLowerSprite },
-	{ 04, 13, &llSCStaffrollTextBoxLLowerSprite },
-	{ 12, 11, &llSCStaffrollTextBoxMLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxNLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxOLowerSprite },
-	{ 10, 12, &llSCStaffrollTextBoxPLowerSprite },
-	{ 10, 12, &llSCStaffrollTextBoxQLowerSprite },
-	{  9, 11, &llSCStaffrollTextBoxRLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxSLowerSprite },
-	{  9, 13, &llSCStaffrollTextBoxTLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxULowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxVLowerSprite },
-	{ 12, 11, &llSCStaffrollTextBoxWLowerSprite },
-	{ 12, 11, &llSCStaffrollTextBoxXLowerSprite },
-	{ 10, 12, &llSCStaffrollTextBoxYLowerSprite },
-	{ 10, 11, &llSCStaffrollTextBoxZLowerSprite },
-	{  5, 11, &llSCStaffrollTextBoxColonSprite },
-	{ 13, 14, &llSCStaffrollTextBox9Sprite },
-	{ 13, 14, &llSCStaffrollTextBox8Sprite },
-	{ 13, 14, &llSCStaffrollTextBox7Sprite },
-	{ 13, 14, &llSCStaffrollTextBox6Sprite },
-	{ 13, 14, &llSCStaffrollTextBox5Sprite },
-	{ 13, 14, &llSCStaffrollTextBox4Sprite },
-	{ 13, 14, &llSCStaffrollTextBox3Sprite },
-	{ 13, 14, &llSCStaffrollTextBox2Sprite },
-	{  9, 14, &llSCStaffrollTextBox1Sprite },
-	{ 13, 14, &llSCStaffrollTextBox0Sprite },
-	{  5,  5, &llSCStaffrollTextBoxPeriodSprite },
-	{  9, 04, &llSCStaffrollTextBoxDashSprite },
-	{  5,  5, &llSCStaffrollTextBoxCommaSprite },
-	{ 16, 14, &llSCStaffrollTextBoxAmpersSprite },
-	{  5,  5, &llSCStaffrollTextBoxQuoteSprite },
-	{ 06, 12, &llSCStaffrollTextBoxSlashSprite },
-	{  5,  5, &llSCStaffrollTextBoxApostropheSprite },
-	{ 12, 14, &llSCStaffrollTextBoxQuestionSprite },
-	{  7, 14, &llSCStaffrollTextBoxBracketOpenSprite },
-	{  7, 14, &llSCStaffrollTextBoxBracketCloseSprite },
+	{ 12, 14, llSCStaffrollTextBoxAUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxBUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxCUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxDUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxEUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxFUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxGUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxHUpperSprite },
+	{  5, 14, llSCStaffrollTextBoxIUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxJUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxKUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxLUpperSprite },
+	{ 14, 14, llSCStaffrollTextBoxMUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxNUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxOUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxPUpperSprite },
+	{ 13, 14, llSCStaffrollTextBoxQUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxRUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxSUpperSprite },
+	{ 13, 14, llSCStaffrollTextBoxTUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxUUpperSprite },
+	{ 14, 14, llSCStaffrollTextBoxVUpperSprite },
+	{ 14, 14, llSCStaffrollTextBoxWUpperSprite },
+	{ 12, 14, llSCStaffrollTextBoxXUpperSprite },
+	{ 13, 14, llSCStaffrollTextBoxYUpperSprite },
+	{ 14, 14, llSCStaffrollTextBoxZUpperSprite },
+	{ 10, 11, llSCStaffrollTextBoxALowerSprite },
+	{ 10, 13, llSCStaffrollTextBoxBLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxCLowerSprite },
+	{ 10, 13, llSCStaffrollTextBoxDLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxELowerSprite },
+	{  9, 13, llSCStaffrollTextBoxFLowerSprite },
+	{ 10, 12, llSCStaffrollTextBoxGLowerSprite },
+	{ 10, 13, llSCStaffrollTextBoxHLowerSprite },
+	{ 04, 13, llSCStaffrollTextBoxILowerSprite },
+	{ 06, 14, llSCStaffrollTextBoxJLowerSprite },
+	{ 10, 13, llSCStaffrollTextBoxKLowerSprite },
+	{ 04, 13, llSCStaffrollTextBoxLLowerSprite },
+	{ 12, 11, llSCStaffrollTextBoxMLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxNLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxOLowerSprite },
+	{ 10, 12, llSCStaffrollTextBoxPLowerSprite },
+	{ 10, 12, llSCStaffrollTextBoxQLowerSprite },
+	{  9, 11, llSCStaffrollTextBoxRLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxSLowerSprite },
+	{  9, 13, llSCStaffrollTextBoxTLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxULowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxVLowerSprite },
+	{ 12, 11, llSCStaffrollTextBoxWLowerSprite },
+	{ 12, 11, llSCStaffrollTextBoxXLowerSprite },
+	{ 10, 12, llSCStaffrollTextBoxYLowerSprite },
+	{ 10, 11, llSCStaffrollTextBoxZLowerSprite },
+	{  5, 11, llSCStaffrollTextBoxColonSprite },
+	{ 13, 14, llSCStaffrollTextBox9Sprite },
+	{ 13, 14, llSCStaffrollTextBox8Sprite },
+	{ 13, 14, llSCStaffrollTextBox7Sprite },
+	{ 13, 14, llSCStaffrollTextBox6Sprite },
+	{ 13, 14, llSCStaffrollTextBox5Sprite },
+	{ 13, 14, llSCStaffrollTextBox4Sprite },
+	{ 13, 14, llSCStaffrollTextBox3Sprite },
+	{ 13, 14, llSCStaffrollTextBox2Sprite },
+	{  9, 14, llSCStaffrollTextBox1Sprite },
+	{ 13, 14, llSCStaffrollTextBox0Sprite },
+	{  5,  5, llSCStaffrollTextBoxPeriodSprite },
+	{  9, 04, llSCStaffrollTextBoxDashSprite },
+	{  5,  5, llSCStaffrollTextBoxCommaSprite },
+	{ 16, 14, llSCStaffrollTextBoxAmpersSprite },
+	{  5,  5, llSCStaffrollTextBoxQuoteSprite },
+	{ 06, 12, llSCStaffrollTextBoxSlashSprite },
+	{  5,  5, llSCStaffrollTextBoxApostropheSprite },
+	{ 12, 14, llSCStaffrollTextBoxQuestionSprite },
+	{  7, 14, llSCStaffrollTextBoxBracketOpenSprite },
+	{  7, 14, llSCStaffrollTextBoxBracketCloseSprite },
 #if defined(REGION_US)
-	{ 10, 13, &llSCStaffrollTextBoxEAccentSprite }
+	{ 10, 13, llSCStaffrollTextBoxEAccentSprite }
 #endif
 };
 
@@ -1914,7 +1914,7 @@ void scStaffrollMakeCrosshairGObj(void)
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 4, GOBJ_PRIORITY_DEFAULT, ~0);
 	gcAddGObjProcess(gobj, scStaffrollCrosshairThreadUpdate, nGCProcessKindThread, 1);
 
-	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], &llSCStaffrollCrosshairSprite));
+	sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], llSCStaffrollCrosshairSprite));
 
 	sSCStaffrollCrosshairGObj = gobj;
 
@@ -1939,13 +1939,13 @@ void scStaffrollMakeTextBoxBracketSObjs(void)
 
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 7, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	left_sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], &llSCStaffrollTextBoxBracketLeftSprite));
+	left_sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], llSCStaffrollTextBoxBracketLeftSprite));
 
 	gobj = gcMakeGObjSPAfter(3, NULL, 8, GOBJ_PRIORITY_DEFAULT);
 
 	gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 7, GOBJ_PRIORITY_DEFAULT, ~0);
 
-	right_sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], &llSCStaffrollTextBoxBracketRightSprite));
+	right_sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sSCStaffrollFiles[0], llSCStaffrollTextBoxBracketRightSprite));
 
 	left_sobj->sprite.attr = right_sobj->sprite.attr = SP_TRANSPARENT;
 
@@ -2037,7 +2037,7 @@ void scStaffrollSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sSCStaffrollStatusBuffer;
@@ -2109,9 +2109,9 @@ void scStaffrollInitVars(void)
 	sSCStaffrollRollSpeed = 0.0037500001F;
 	sSCStaffrollNameAllocFree = NULL;
 	sSCStaffrollIsPaused = FALSE;
-	sSCStaffrollNameInterpolation = lbRelocGetFileData(SYInterpDesc*, sSCStaffrollFiles[0], &llSCStaffrollInterpolation);
-	sSCStaffrollNameAnimJoint = lbRelocGetFileData(AObjEvent32*, sSCStaffrollFiles[0], &llSCStaffrollAnimJoint);
-	sSCStaffrollDObjDesc = lbRelocGetFileData(DObjDesc*, sSCStaffrollFiles[0], &llSCStaffrollDObjDesc);
+	sSCStaffrollNameInterpolation = lbRelocGetFileData(SYInterpDesc*, sSCStaffrollFiles[0], llSCStaffrollInterpolation);
+	sSCStaffrollNameAnimJoint = lbRelocGetFileData(AObjEvent32*, sSCStaffrollFiles[0], llSCStaffrollAnimJoint);
+	sSCStaffrollDObjDesc = lbRelocGetFileData(DObjDesc*, sSCStaffrollFiles[0], llSCStaffrollDObjDesc);
 	sSCStaffrollRollBeginWait = 0;
 	sSCStaffrollPlayer = gSCManagerSceneData.player;
 	sSCStaffrollRollEndWait = 60;

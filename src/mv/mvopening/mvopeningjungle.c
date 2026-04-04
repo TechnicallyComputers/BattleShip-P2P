@@ -88,7 +88,7 @@ FTKeyEvent dMVOpeningJungleSamusKeyEvents[/* */] =
 };
 
 // 0x8018D934
-u32 dMVOpeningJungleFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningJungleFileID };
+u32 dMVOpeningJungleFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningJungleFileID };
 
 // 0x8018D93C
 SYVideoSetup dMVOpeningJungleVideoSetup = SYVIDEO_SETUP_DEFAULT();
@@ -195,7 +195,7 @@ void mvOpeningJungleSetupFiles(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMVOpeningJungleStatusBuffer;
@@ -234,7 +234,7 @@ void mvOpeningJungleMakeGroundViewport(Vec3f unused)
     cobj->projection.persp.near = 50.0F;
     cobj->projection.persp.far = 15000.0F;
 
-    gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningJungleFiles[1], &llMVOpeningJungleCamAnimJoint), 0.0F);
+    gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningJungleFiles[1], llMVOpeningJungleCamAnimJoint), 0.0F);
     gcAddGObjProcess(sMVOpeningJungleStageCameraGObj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 
     gcPlayCamAnim(sMVOpeningJungleStageCameraGObj);

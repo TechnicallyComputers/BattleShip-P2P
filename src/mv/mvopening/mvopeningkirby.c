@@ -30,7 +30,7 @@ FTKeyEvent dMVOpeningKirbyKeyEvents[/* */] =
 };
 
 // 0x8018E0F4
-u32 dMVOpeningKirbyFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningKirbyFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -95,7 +95,7 @@ void mvOpeningKirbySetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningKirbyStatusBuffer;
@@ -131,11 +131,11 @@ void mvOpeningKirbyMakeName(void)
 	// 0x8018E0FC
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterKSprite,
-		&llIFCommonAnnounceCommonLetterISprite,
-		&llIFCommonAnnounceCommonLetterRSprite,
-		&llIFCommonAnnounceCommonLetterBSprite,
-		&llIFCommonAnnounceCommonLetterYSprite,
+		llIFCommonAnnounceCommonLetterKSprite,
+		llIFCommonAnnounceCommonLetterISprite,
+		llIFCommonAnnounceCommonLetterRSprite,
+		llIFCommonAnnounceCommonLetterBSprite,
+		llIFCommonAnnounceCommonLetterYSprite,
 		0x0
 	};
 
@@ -425,7 +425,7 @@ void mvOpeningKirbyMakePosedFighterCamera(void)
 	
 	cobj->projection.persp.aspect = 5.0F / 11.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningKirbyFiles[1], &llMVOpeningCommonKirbyCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningKirbyFiles[1], llMVOpeningCommonKirbyCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

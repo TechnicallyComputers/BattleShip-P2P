@@ -13,7 +13,7 @@ ITDesc dITKabigonItemDesc =
 {
     nITKindKabigon,                         // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataKabigonItemAttributes,   // Offset of item attributes in file?
+    llITCommonDataKabigonItemAttributes,   // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -294,7 +294,7 @@ GObj* itKabigonMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
         ip->physics.vel_air.x = ip->physics.vel_air.z = 0.0F;
         ip->physics.vel_air.y = ITMONSTER_RISE_VEL_Y;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, &llITCommonDataKabigonAnimJoint), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(ip, llITCommonDataKabigonAnimJoint), 0.0F);
 
         if (ip->kind == nITKindKabigon)
         {

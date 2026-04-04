@@ -13,7 +13,7 @@ WPDesc dWPSamusBombWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindSamusBomb,                       // Weapon Kind
     &gFTDataSamusMain,                      // Pointer to character's loaded files?
-    &llSamusMainBombWeaponAttributes,       // Offset of weapon attributes in loaded files
+    llSamusMainBombWeaponAttributes,       // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

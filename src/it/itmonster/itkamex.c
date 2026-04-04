@@ -14,7 +14,7 @@ ITDesc dITKamexItemDesc =
 {
     nITKindKamex,                           // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataKamexItemAttributes,     // Offset of item attributes in file?
+    llITCommonDataKamexItemAttributes,     // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -80,7 +80,7 @@ WPDesc dITKamexWeaponHydroWeaponDesc =
     0x01,                                      // Render flags?
     nWPKindKamexHydro,                         // Weapon Kind
     &gITManagerCommonData,                     // Pointer to weapon's loaded files?
-    &llITCommonDataKamexHydroWeaponAttributes, // Offset of weapon attributes in loaded files
+    llITCommonDataKamexHydroWeaponAttributes, // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {
@@ -286,7 +286,7 @@ void itKamexAttackInitVars(GObj *item_gobj, sb32 is_ignore_setup)
 
         if (ip->kind == nITKindKamex)
         {
-            Gfx *dl = (Gfx*) itGetPData(ip, &llITCommonDataKamexDataStart, &llITCommonDataKamexDisplayList);
+            Gfx *dl = (Gfx*) itGetPData(ip, llITCommonDataKamexDataStart, llITCommonDataKamexDisplayList);
 
             dobj->dl = dl;
 
@@ -427,7 +427,7 @@ GObj* itKamexMakeItem(GObj *parent_gobj, Vec3f *pos, Vec3f *vel, u32 flags)
         }
         dobj->translate.vec.f.y -= kamex_ip->attr->map_coll_bottom;
 
-        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(kamex_ip, &llITCommonDataKamexDataStart), 0.0F);
+        gcAddDObjAnimJoint(dobj, itGetMonsterAnimNode(kamex_ip, llITCommonDataKamexDataStart), 0.0F);
     }
     return item_gobj;
 }

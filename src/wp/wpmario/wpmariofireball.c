@@ -23,7 +23,7 @@ wpMarioFireballAttributes dWPMarioFireballWeaponAttributes[/* */] =
         F_CLC_DTOR32(-5.0F),                      // Aerial launch angle (-0.0872664675117F)
         50.0F,                                    // Base velocity
         &gFTMarioFileSpecial1,                    // Pointer to ???
-        &llMarioSpecial1FireballWeaponAttributes, // Offset of hitbox/attributes?
+        llMarioSpecial1FireballWeaponAttributes, // Offset of hitbox/attributes?
         0.0F                                      // Animation starting frame?
     },
 
@@ -43,7 +43,7 @@ wpMarioFireballAttributes dWPMarioFireballWeaponAttributes[/* */] =
         F_CLC_DTOR32(0.0F),                       // Aerial launch angle (0.0F)
         36.0F,                                    // Base velocity
         &gFTDataLuigiSpecial1,                    // Pointer to ???
-        &llLuigiSpecial1FireballWeaponAttributes, // Offset of hitbox/attributes?
+        llLuigiSpecial1FireballWeaponAttributes, // Offset of hitbox/attributes?
         1.0F                                      // Animation starting frame?
     }
 };
@@ -54,7 +54,7 @@ WPDesc dWPMarioFireballWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindFireball,                        // Weapon Kind
     &gFTMarioFileMain,                      // Pointer to character's loaded files?
-    &llMarioMainFireballWeaponAttributes,   // Offset of weapon attributes in loaded files
+    llMarioMainFireballWeaponAttributes,   // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

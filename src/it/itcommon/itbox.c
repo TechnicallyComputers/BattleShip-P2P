@@ -24,7 +24,7 @@ ITDesc dITBoxItemDesc =
 {
     nITKindBox,                             // Item Kind
     &gITManagerCommonData,                  // Pointer to item file data?
-    &llITCommonDataBoxItemAttributes,       // Offset of item attributes in file?
+    llITCommonDataBoxItemAttributes,       // Offset of item attributes in file?
 
     // DObj transformation struct
     {
@@ -189,7 +189,7 @@ void itBoxContainerSmashMakeEffect(Vec3f *pos)
         {
             gcAddGObjDisplay(effect_gobj, gcDrawDObjTreeForGObj, 11, GOBJ_PRIORITY_DEFAULT, ~0);
 
-            dl = (Gfx*) ((*(uintptr_t*) ((uintptr_t)*dITBoxItemDesc.p_file + dITBoxItemDesc.o_attributes) - (intptr_t)&llITCommonDataBoxDataStart) + (intptr_t)&llITCommonDataBoxEffectDisplayList);
+            dl = (Gfx*) ((*(uintptr_t*) ((uintptr_t)*dITBoxItemDesc.p_file + dITBoxItemDesc.o_attributes) - (intptr_t)llITCommonDataBoxDataStart) + (intptr_t)llITCommonDataBoxEffectDisplayList);
 
             for (i = 0; i < ITCONTAINER_EFFECT_COUNT; i++)
             {
@@ -437,7 +437,7 @@ sb32 itBoxExplodeProcUpdate(GObj *item_gobj)
     {
         return TRUE;
     }
-    else itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITBoxItemDesc, &llITCommonDataBoxAttackEvents));
+    else itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITBoxItemDesc, llITCommonDataBoxAttackEvents));
 
     return FALSE;
 }
@@ -484,7 +484,7 @@ void itBoxExplodeInitVars(GObj *item_gobj)
 
     itMainClearOwnerStats(item_gobj);
     itMainRefreshAttackColl(item_gobj);
-    itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITBoxItemDesc, &llITCommonDataBoxAttackEvents));
+    itMainUpdateAttackEvent(item_gobj, itGetAttackEvent(dITBoxItemDesc, llITCommonDataBoxAttackEvents));
 }
 
 // 0x80179AD4

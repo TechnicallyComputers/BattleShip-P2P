@@ -13,7 +13,7 @@ WPDesc dWPYoshiStarWeaponDesc =
     0x00,                                   // Render flags?
     nWPKindYoshiStar,                       // Weapon Kind
     &gFTDataYoshiMain,                      // Pointer to character's loaded files?
-    &llYoshiMainStarWeaponAttributes,       // Offset of weapon attributes in loaded files
+    llYoshiMainStarWeaponAttributes,       // Offset of weapon attributes in loaded files
 
     // DObj transformation struct
     {

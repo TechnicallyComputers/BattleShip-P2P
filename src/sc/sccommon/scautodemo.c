@@ -105,18 +105,18 @@ f32 dSCAutoDemoZoomEyeY[/* */] = { 2.0F, 0.0F, -6.0F, -9.0F, -30.0F };
 // 0x8018E200
 intptr_t dSCAutoDemoFighterNameSpriteOffsets[/* */] =
 {
-	&llCharacterNamesMarioSprite,      // Mario
-	&llCharacterNamesFoxSprite,        // Fox
-	&llCharacterNamesDonkeySprite,     // Donkey Kong
-	&llCharacterNamesSamusSprite,      // Samus
-	&llCharacterNamesLuigiSprite,      // Luigi
-	&llCharacterNamesLinkSprite,       // Link
-	&llCharacterNamesYoshiSprite,      // Yoshi
-	&llCharacterNamesCaptainSprite,    // Captain Falcon
-	&llCharacterNamesKirbySprite,      // Kirby
-	&llCharacterNamesPikachuSprite,    // Pikachu
-	&llCharacterNamesPurinSprite,      // Jigglypuff
-	&llCharacterNamesNessSprite        // Ness
+	llCharacterNamesMarioSprite,      // Mario
+	llCharacterNamesFoxSprite,        // Fox
+	llCharacterNamesDonkeySprite,     // Donkey Kong
+	llCharacterNamesSamusSprite,      // Samus
+	llCharacterNamesLuigiSprite,      // Luigi
+	llCharacterNamesLinkSprite,       // Link
+	llCharacterNamesYoshiSprite,      // Yoshi
+	llCharacterNamesCaptainSprite,    // Captain Falcon
+	llCharacterNamesKirbySprite,      // Kirby
+	llCharacterNamesPikachuSprite,    // Pikachu
+	llCharacterNamesPurinSprite,      // Jigglypuff
+	llCharacterNamesNessSprite        // Ness
 };
 
 // 0x8018E230
@@ -587,10 +587,10 @@ void scAutoDemoInitSObjs(void)
 
 	file = lbRelocGetExternHeapFile
 	(
-		(uintptr_t)&llCharacterNamesFileID,
+		(uintptr_t)llCharacterNamesFileID,
 		syTaskmanMalloc
 		(
-			lbRelocGetFileSize((uintptr_t)&llCharacterNamesFileID),
+			lbRelocGetFileSize((uintptr_t)llCharacterNamesFileID),
 			0x10
 		)
 	);

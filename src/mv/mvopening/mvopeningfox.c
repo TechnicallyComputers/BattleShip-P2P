@@ -35,7 +35,7 @@ FTKeyEvent dMVOpeningFoxKeyEvents[/* */] =
 };
 
 // 0x8018E0E0
-u32 dMVOpeningFoxFileIDs[/* */] = { &llIFCommonAnnounceCommonFileID, &llMVOpeningCommonFileID };
+u32 dMVOpeningFoxFileIDs[/* */] = { llIFCommonAnnounceCommonFileID, llMVOpeningCommonFileID };
 
 // // // // // // // // // // // //
 //                               //
@@ -100,7 +100,7 @@ void mvOpeningFoxSetupFiles(void)
 	LBRelocSetup rl_setup;
 
 	rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-	rl_setup.table_files_num = (u32)&llRelocFileCount;
+	rl_setup.table_files_num = (u32)llRelocFileCount;
 	rl_setup.file_heap = NULL;
 	rl_setup.file_heap_size = 0;
 	rl_setup.status_buffer = sMVOpeningFoxStatusBuffer;
@@ -135,9 +135,9 @@ void mvOpeningFoxMakeName(void)
 
 	intptr_t offsets[/* */] =
 	{
-		&llIFCommonAnnounceCommonLetterFSprite,
-		&llIFCommonAnnounceCommonLetterOSprite,
-		&llIFCommonAnnounceCommonLetterXSprite,
+		llIFCommonAnnounceCommonLetterFSprite,
+		llIFCommonAnnounceCommonLetterOSprite,
+		llIFCommonAnnounceCommonLetterXSprite,
 		0x0
 	};
 	Vec2f pos[/* */] =
@@ -417,7 +417,7 @@ void mvOpeningFoxMakePosedFighterCamera(void)
 	
 	cobj->projection.persp.aspect = 5.0F / 11.0F;
 
-	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningFoxFiles[1], &llMVOpeningCommonFoxCamAnimJoint), 0.0F);
+	gcAddCObjCamAnimJoint(cobj, lbRelocGetFileData(AObjEvent32*, sMVOpeningFoxFiles[1], llMVOpeningCommonFoxCamAnimJoint), 0.0F);
 	gcAddGObjProcess(camera_gobj, gcPlayCamAnim, nGCProcessKindFunc, 1);
 }
 

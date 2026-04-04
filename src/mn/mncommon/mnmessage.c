@@ -12,7 +12,7 @@
 // // // // // // // // // // // //
 
 // 0x80132500
-u32 dMNMessageFileIDs[/* */] = { &llMNCommonFileID, &llMNMessageFileID };
+u32 dMNMessageFileIDs[/* */] = { llMNCommonFileID, llMNMessageFileID };
 
 // 0x80132508
 Lights1 dMNMessageLights1 = gdSPDefLights1(0x20, 0x20, 0x20, 0xFF, 0xFF, 0xFF, 0x3C, 0x3C, 0x3C);
@@ -73,7 +73,7 @@ void mnMessageMakeWallpaper(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 2, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 0, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMessageFiles[0], &llMNCommonSmashBrosCollageSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMessageFiles[0], llMNCommonSmashBrosCollageSprite));
     
     sobj->pos.x = 10.0F;
     sobj->pos.y = 10.0F;
@@ -109,7 +109,7 @@ void mnMessageMakeExclaim(void)
     gobj = gcMakeGObjSPAfter(0, NULL, 5, GOBJ_PRIORITY_DEFAULT);
     gcAddGObjDisplay(gobj, lbCommonDrawSObjAttr, 3, GOBJ_PRIORITY_DEFAULT, ~0);
     
-    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMessageFiles[1], &llMNMessageDecalExclaimSprite));
+    sobj = lbCommonMakeSObjForGObj(gobj, lbRelocGetFileData(Sprite*, sMNMessageFiles[1], llMNMessageDecalExclaimSprite));
     
     sobj->sprite.attr &= ~SP_FASTCOPY;
     sobj->sprite.attr |= SP_TRANSPARENT;
@@ -127,13 +127,13 @@ void mnMessageMakeMessage(s32 message)
     // 0x80132548
     intptr_t message_offsets[/* */] =
     {
-        &llMNMessageUnlockLuigiSprite,
-        &llMNMessageUnlockNessSprite,
-        &llMNMessageUnlockCaptainSprite,
-        &llMNMessageUnlockPurinSprite,
-        &llMNMessageUnlockInishieSprite,
-        &llMNMessageUnlockSoundTestSprite,
-        &llMNMessageUnlockItemSwitchSprite
+        llMNMessageUnlockLuigiSprite,
+        llMNMessageUnlockNessSprite,
+        llMNMessageUnlockCaptainSprite,
+        llMNMessageUnlockPurinSprite,
+        llMNMessageUnlockInishieSprite,
+        llMNMessageUnlockSoundTestSprite,
+        llMNMessageUnlockItemSwitchSprite
     };
 
     // 0x80132564
@@ -330,7 +330,7 @@ void mnMessageFuncStart(void)
     LBRelocSetup rl_setup;
 
     rl_setup.table_addr = (uintptr_t)&lLBRelocTableAddr;
-    rl_setup.table_files_num = (u32)&llRelocFileCount;
+    rl_setup.table_files_num = (u32)llRelocFileCount;
     rl_setup.file_heap = NULL;
     rl_setup.file_heap_size = 0;
     rl_setup.status_buffer = sMNMessageStatusBuffer;

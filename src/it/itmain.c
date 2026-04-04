@@ -587,7 +587,7 @@ sb32 itMainMakeContainerItem(GObj *parent_gobj)
             vel.x = 0.0F;
 
             // Quite ridiculous especially since llITCommonDataContainerVelocitiesY is 0
-            vel.y = *(f32*) ((intptr_t)&llITCommonDataContainerVelocitiesY + ((uintptr_t) &((f32*)gITManagerCommonData)[kind]));
+            vel.y = *(f32*) ((intptr_t)llITCommonDataContainerVelocitiesY + ((uintptr_t) &((f32*)gITManagerCommonData)[kind]));
             vel.z = 0;
 
             if
