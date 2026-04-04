@@ -414,16 +414,21 @@ def generate_yaml_header():
         "\n"
     )
 
-def generate_blob_entry(name, rom_offset, rom_size, file_id, is_compressed, decompressed_size):
-    """Generate a single BLOB YAML entry."""
+def generate_reloc_entry(name, rom_offset, rom_size, file_id, is_compressed, decompressed_size):
+    """Generate a single SSB64:RELOC YAML entry.
+
+    The Torch SSB64:RELOC factory reads the relocation table from ROM directly
+    using the file_id, so offset/size are kept for documentation but the factory
+    derives all metadata from the table entry.
+    """
     lines = []
     lines.append(f"{name}:")
-    lines.append(f"  type: BLOB")
+    lines.append(f"  type: SSB64:RELOC")
     lines.append(f"  offset: 0x{rom_offset:X}")
     lines.append(f"  size: 0x{rom_size:X}")
     lines.append(f"  symbol: {name}")
-    # Store metadata as YAML comments for the resource factory
-    lines.append(f"  # file_id: {file_id} (0x{file_id:X})")
+    lines.append(f"  file_id: {file_id}")
+    # Keep these as comments for human reference
     lines.append(f"  # compressed: {is_compressed}")
     lines.append(f"  # decompressed_size: 0x{decompressed_size:X}")
     return "\n".join(lines)
@@ -453,7 +458,7 @@ def write_yaml_files(files, id_to_name, output_dir):
             for i, (f, name) in enumerate(file_list):
                 if i > 0:
                     yf.write("\n\n")
-                yf.write(generate_blob_entry(
+                yf.write(generate_reloc_entry(
                     name=name,
                     rom_offset=f['rom_offset'],
                     rom_size=f['rom_size'],
