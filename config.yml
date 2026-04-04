@@ -1,0 +1,15 @@
+# Torch asset extraction config for Super Smash Bros. 64 (NTSC-U v1.0)
+# ROM: baserom.us.z64 (Z64 big-endian)
+
+e2929e10fccc0aa84e5776227e798abc07cedabf:
+  name: "Super Smash Bros. (U) (V1.0)"
+  path: yamls/us
+  config:
+    gbi: F3DEX2
+    sort: OFFSET
+    logging: INFO
+    output:
+      binary: ssb64.o2r
+      headers: include/assets
+      code: src/assets
+      modding: src/assets

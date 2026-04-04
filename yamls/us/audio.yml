@@ -1,0 +1,63 @@
+# SSB64 audio ROM segments
+# ROM addresses from splat config (smashbrothers.us.yaml)
+# These are outside the LBReloc file table and must be extracted separately.
+
+:config:
+  segments:
+    - [0x00, 0x000000]
+
+S1_music_sbk:
+  type: BLOB
+  offset: 0xB277B0
+  size: 0x26E10
+  symbol: S1_music_sbk
+  # Music sequence bank
+
+B1_sounds1_ctl:
+  type: BLOB
+  offset: 0xB4E5C0
+  size: 0x6720
+  symbol: B1_sounds1_ctl
+  # Sound bank 1 control (SFX instrument definitions)
+
+B1_sounds1_tbl:
+  type: BLOB
+  offset: 0xB54CE0
+  size: 0x116970
+  symbol: B1_sounds1_tbl
+  # Sound bank 1 table (SFX ADPCM sample data)
+
+B1_sounds2_ctl:
+  type: BLOB
+  offset: 0xC6B650
+  size: 0xFBA0
+  symbol: B1_sounds2_ctl
+  # Sound bank 2 control (music instrument definitions)
+
+B1_sounds2_tbl:
+  type: BLOB
+  offset: 0xC7B1F0
+  size: 0x2DC1E0
+  symbol: B1_sounds2_tbl
+  # Sound bank 2 table (music ADPCM sample data)
+
+fgm_unk:
+  type: BLOB
+  offset: 0xF573D0
+  size: 0x820
+  symbol: fgm_unk
+  # FGM unknown data block
+
+fgm_tbl:
+  type: BLOB
+  offset: 0xF57BF0
+  size: 0x2DD0
+  symbol: fgm_tbl
+  # FGM lookup table
+
+fgm_ucd:
+  type: BLOB
+  offset: 0xF5A9C0
+  size: 0x4B20
+  symbol: fgm_ucd
+  # FGM microcode data

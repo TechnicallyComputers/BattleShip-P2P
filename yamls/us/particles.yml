@@ -1,0 +1,57 @@
+# SSB64 particle data ROM segments
+# ROM addresses from splat config (smashbrothers.us.yaml)
+# These are outside the LBReloc file table and must be extracted separately.
+#
+# Each particle bank has two parts:
+#   - scb (script bank): particle bytecode scripts
+#   - txb (texture bank): particle texture data
+
+:config:
+  segments:
+    - [0x00, 0x000000]
+
+# ============================================================================
+#  Global particle banks (from linker script segments)
+# ============================================================================
+
+particles_unk0_scb:
+  type: BLOB
+  offset: 0xB16C80
+  size: 0x3E0
+  symbol: particles_unk0_scb
+  # Particle bank 0 script data
+
+particles_unk0_txb:
+  type: BLOB
+  offset: 0xB17060
+  size: 0x440
+  symbol: particles_unk0_txb
+  # Particle bank 0 texture data
+
+particles_unk1_scb:
+  type: BLOB
+  offset: 0xB174A0
+  size: 0x200
+  symbol: particles_unk1_scb
+  # Particle bank 1 script data
+
+particles_unk1_txb:
+  type: BLOB
+  offset: 0xB176A0
+  size: 0x2060
+  symbol: particles_unk1_txb
+  # Particle bank 1 texture data
+
+particles_unk2_scb:
+  type: BLOB
+  offset: 0xB19700
+  size: 0x150
+  symbol: particles_unk2_scb
+  # Particle bank 2 script data
+
+particles_unk2_txb:
+  type: BLOB
+  offset: 0xB19850
+  size: 0x2450
+  symbol: particles_unk2_txb
+  # Particle bank 2 texture data
