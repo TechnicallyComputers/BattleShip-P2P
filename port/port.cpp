@@ -1,3 +1,4 @@
+#define SDL_MAIN_HANDLED
 #include "port.h"
 
 #include <libultraship/libultraship.h>
@@ -37,3 +38,13 @@ int PortIsRunning(void) {
 }
 
 } // extern "C"
+
+int main(int argc, char* argv[]) {
+	// We handle SDL initialization ourselves through libultraship.
+	// SDL_MAIN_HANDLED is defined above to prevent SDL from hijacking main().
+
+	// TODO: Initialize port, start game loop.
+	// This will eventually call PortInit() followed by syMainLoop()
+	// once the boot sequence is restructured for single-threaded PC execution.
+	return PortInit(argc, argv);
+}

@@ -61,8 +61,9 @@ file(GLOB_RECURSE SSB64_SRC_SC      "src/sc/*.c"      "src/sc/*.h")
 file(GLOB_RECURSE SSB64_SRC_SYS     "src/sys/*.c"     "src/sys/*.h")
 file(GLOB_RECURSE SSB64_SRC_WP      "src/wp/*.c"      "src/wp/*.h")
 
-# Port layer (C++ glue)
+# Port layer (C++ glue) — excludes port/stubs/ which is compiled as part of ssb64_game
 file(GLOB_RECURSE SSB64_SRC_PORT "port/*.cpp" "port/*.c" "port/*.h")
+list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "port/stubs/")
 
 set(SSB64_DECOMP_SOURCES
     ${SSB64_SRC_CREDITS}
@@ -120,6 +121,22 @@ set(SSB64_COMPILE_DEFS
 ################################################################################
 
 add_library(ssb64_game OBJECT ${SSB64_DECOMP_SOURCES})
+
+# Port stub definitions (C code that satisfies N64 linker symbols)
+file(GLOB SSB64_STUBS "port/stubs/*.c")
+target_sources(ssb64_game PRIVATE ${SSB64_STUBS})
+
+# Selectively include decomp libultra files that provide needed functionality.
+# These are pure C implementations that work on any platform.
+set(SSB64_LIBULTRA_PORT
+    src/libultra/gu/mtxcatf.c       # guMtxCatF
+    src/libultra/gu/mtxutil.c        # guMtxF2L, guMtxL2F, guMtxIdentF
+    src/libultra/gu/mtxxfmf.c        # guMtxXFMF
+    src/libultra/gu/normalize.c      # guNormalize
+    # NOTE: sprite.c is NOT included — drawbitmap is assembly-only (MIPS).
+    # Sprite functions are stubbed in port/stubs/n64_stubs.c instead.
+)
+target_sources(ssb64_game PRIVATE ${SSB64_LIBULTRA_PORT})
 
 target_compile_definitions(ssb64_game PRIVATE ${SSB64_COMPILE_DEFS})
 
