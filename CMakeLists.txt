@@ -64,7 +64,7 @@ file(GLOB_RECURSE SSB64_SRC_WP      "src/wp/*.c"      "src/wp/*.h")
 # Port layer (C++ glue)
 file(GLOB_RECURSE SSB64_SRC_PORT "port/*.cpp" "port/*.c" "port/*.h")
 
-set(SSB64_ALL_SOURCES
+set(SSB64_DECOMP_SOURCES
     ${SSB64_SRC_CREDITS}
     ${SSB64_SRC_EF}
     ${SSB64_SRC_FT}
@@ -79,11 +79,10 @@ set(SSB64_ALL_SOURCES
     ${SSB64_SRC_SC}
     ${SSB64_SRC_SYS}
     ${SSB64_SRC_WP}
-    ${SSB64_SRC_PORT}
 )
 
 # Exclude .inc.c files (inline data included by other .c files)
-list(FILTER SSB64_ALL_SOURCES EXCLUDE REGEX "\\.inc\\.c$")
+list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "\\.inc\\.c$")
 
 ################################################################################
 # Excluded directories (not compiled):
@@ -92,17 +91,9 @@ list(FILTER SSB64_ALL_SOURCES EXCLUDE REGEX "\\.inc\\.c$")
 #   src/libultra/ - Replaced by libultraship
 ################################################################################
 
-################################################################################
-# Executable target
-################################################################################
-
-add_executable(${PROJECT_NAME} ${SSB64_ALL_SOURCES})
-
-################################################################################
-# Compile definitions
-################################################################################
-
-target_compile_definitions(${PROJECT_NAME} PRIVATE
+# Shared compile definitions used by both the decomp object library and the
+# main executable.
+set(SSB64_COMPILE_DEFS
     # Region
     REGION_US=1
     VERSION_US=1
@@ -125,11 +116,35 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 )
 
 ################################################################################
-# Include paths
+# Decomp C code — OBJECT library with custom include/ shadowing system headers
+################################################################################
+
+add_library(ssb64_game OBJECT ${SSB64_DECOMP_SOURCES})
+
+target_compile_definitions(ssb64_game PRIVATE ${SSB64_COMPILE_DEFS})
+
+target_include_directories(ssb64_game PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include    # Custom C headers (shadows system headers)
+    ${CMAKE_CURRENT_SOURCE_DIR}/src        # Game headers
+)
+
+################################################################################
+# Executable target — port C++ code + decomp object library
+################################################################################
+
+add_executable(${PROJECT_NAME} ${SSB64_SRC_PORT} $<TARGET_OBJECTS:ssb64_game>)
+
+################################################################################
+# Compile definitions
+################################################################################
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE ${SSB64_COMPILE_DEFS})
+
+################################################################################
+# Include paths (no include/ here — port code uses system headers)
 ################################################################################
 
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/src
     ${CMAKE_CURRENT_SOURCE_DIR}/port
 )
