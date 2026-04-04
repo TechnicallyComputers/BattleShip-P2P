@@ -1326,8 +1326,17 @@ void mnPlayers1PGameMakeStock(s32 stock, s32 fkind)
 		else
 		{
 			FTStruct *fp = ftGetStruct(sMNPlayers1PGameSlot.player);
+#ifdef PORT
+			{
+				FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
+				sobj = lbCommonMakeSObjForGObj(gobj, (Sprite*)PORT_RESOLVE(_spr->stock_sprite));
+				u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
+				sobj->sprite.LUT = _luts[fp->costume];
+			}
+#else
 			sobj = lbCommonMakeSObjForGObj(gobj, fp->attr->sprites->stock_sprite);
 			sobj->sprite.LUT = fp->attr->sprites->stock_luts[fp->costume];
+#endif
 			sobj->pos.y = 178.0F;
 		}
 		sobj->pos.x = (stock - 1) * 12 + 207.0F;

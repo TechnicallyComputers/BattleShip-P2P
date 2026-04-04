@@ -750,7 +750,7 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     fp->is_playertag_bossend = FALSE;
     fp->is_limit_map_bounds = FALSE;
 
-    fp->is_have_translate_scale = (attr->translate_scales != NULL) ? TRUE : FALSE;
+    fp->is_have_translate_scale = ((Vec3f*)PORT_RESOLVE(attr->translate_scales) != NULL) ? TRUE : FALSE;
 
     for (i = 0; i < ARRAY_COUNT(fp->joints); i++)
     {
@@ -766,10 +766,10 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
     lbCommonSetupFighterPartsDObjs
     (
         DObjGetStruct(fighter_gobj),
-        attr->commonparts_container,
+        (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container),
         fp->detail_curr,
         &fp->joints[nFTPartsJointCommonStart],
-        attr->setup_parts,
+        (u32*)PORT_RESOLVE(attr->setup_parts),
         0x4B,
         nGCMatrixKindNull,
         nGCMatrixKindNull,
@@ -783,14 +783,14 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
             fp->joints[i]->user_data.p = ftManagerGetNextPartsAlloc();
 
             parts = fp->joints[i]->user_data.p;
-            parts->flags = attr->commonparts_container->commonparts[fp->detail_curr - nFTPartsDetailStart].flags;
+            parts->flags = ((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[fp->detail_curr - nFTPartsDetailStart].flags;
             parts->joint_id = i;
 
             if (fp->costume != 0)
             {
-                if ((attr->accesspart != NULL) && (i == attr->accesspart->joint_id))
+                if (((FTAccessPart*)PORT_RESOLVE(attr->accesspart) != NULL) && (i == ((FTAccessPart*)PORT_RESOLVE(attr->accesspart))->joint_id))
                 {
-                    accesspart = attr->accesspart;
+                    accesspart = (FTAccessPart*)PORT_RESOLVE(attr->accesspart);
 
                     parts->gobj = gcMakeGObjSPAfter(nGCCommonKindFighterParts, NULL, nGCCommonLinkIDFighterParts, GOBJ_PRIORITY_DEFAULT);
 

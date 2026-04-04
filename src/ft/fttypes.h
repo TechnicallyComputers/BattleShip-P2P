@@ -738,10 +738,20 @@ struct FTCamera
 
 struct FTSprites
 {
+#ifdef PORT
+    u32 stock_sprite;   // Relocation token — use PORT_RESOLVE()
+    u32 stock_luts;     // Relocation token — resolves to array of u32 LUT tokens
+    u32 emblem;         // Relocation token
+#else
     Sprite *stock_sprite;
     int **stock_luts;
     Sprite *emblem;
+#endif
 };
+
+#ifdef PORT
+_Static_assert(sizeof(FTSprites) == 12, "FTSprites must be 12 bytes to match file data layout");
+#endif
 
 struct FTComputer
 {
@@ -945,15 +955,27 @@ struct FTAttributes
     ub32 is_have_voice       : 1;                   // Whether fighter can play FGMs marked "voice"
     FTDamageCollDesc damage_coll_descs[11];         // Hurtbox array setup
     Vec3f hit_detect_range;                         // This is a radius around the fighter within which hitbox detection can occur
+#ifdef PORT
+    u32 setup_parts;                                // Relocation token — use PORT_RESOLVE()
+    u32 animlock;                                   // Relocation token
+#else
     u32 *setup_parts;                               // Pointer to two sets of flags marking joints that should be initialized on fighter creation
     u32 *animlock;                                  // Pointer to two sets of flags marking joints that should not be animated; ignores joints 0 through 3
+#endif
     s32 effect_joint_ids[5];                        // The game will cycle through these joints when applying certain particles such as electricity and flames
     sb32 cliff_status_ga[5];                        // Bool for whether fighter is grounded or airborne during each cliff state
     s32 unused_0x2CC;                               // ???
+#ifdef PORT
+    u32 hiddenparts;                                // Relocation token
+    u32 commonparts_container;                      // Relocation token
+    u32 dobj_lookup;                                // Relocation token
+    u32 shield_anim_joints[8];                      // Relocation tokens — one for each ordinal direction
+#else
     FTHiddenPart *hiddenparts;                      // Hidden fighter body parts?
     FTCommonPartContainer *commonparts_container;   // Base fighter body parts
     DObjDesc *dobj_lookup;                          // I don't actually know how this works at the moment
     AObjEvent32 **shield_anim_joints[8];            // One for each ordinal direction
+#endif
     s32 joint_rfoot_id;                             // Right foot joint
     f32 joint_rfoot_rotate;                         // Amount of bend applied to right foot on slope contour?
     s32 joint_lfoot_id;                             // Left foot joint
@@ -961,16 +983,36 @@ struct FTAttributes
     u8 filler_0x30C[0x31C - 0x30C];
     f32 unk_0x31C;
     f32 unk_0x320;
+#ifdef PORT
+    u32 translate_scales;                           // Relocation token
+    u32 modelparts_container;                       // Relocation token
+    u32 accesspart;                                 // Relocation token
+    u32 textureparts_container;                     // Relocation token
+#else
     Vec3f *translate_scales;                        // A set of scaling vectors to modify the translation vector of a given joint?
     FTModelPartContainer *modelparts_container;     // Passive model parts controlled via motion events or code
     FTAccessPart *accesspart;                       // Headgear accessory (Pikachu wizard hat or Jigglypuff bow)
     FTTexturePartContainer *textureparts_container; // These are generally facial expressions, controlled via motion events
+#endif
     s32 joint_itemheavy_id;                         // Joint for holding heavy items
+#ifdef PORT
+    u32 thrown_status;                              // Relocation token
+#else
     FTThrownStatusArray *thrown_status;             // Array of thrown status IDs (forward- and back throw) to use for thrown fighters
+#endif
     s32 joint_itemlight_id;                         // Joint for holding light items
+#ifdef PORT
+    u32 sprites;                                    // Relocation token
+    u32 skeleton;                                   // Relocation token
+#else
     FTSprites *sprites;                             // Stock sprites, stock palettes and emblem sprites
     FTSkeleton **skeleton;                          // Electric damage skeleton model data
+#endif
 };
+
+#ifdef PORT
+_Static_assert(sizeof(FTAttributes) == 0x348, "FTAttributes must be 0x348 bytes to match file data layout");
+#endif
 
 // Main fighter struct
 struct FTStruct

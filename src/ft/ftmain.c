@@ -4095,19 +4095,19 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
     FTParts *parts;
 
     attr = fp->attr;
-    hiddenpart = &attr->hiddenparts[hiddenpart_id];
+    hiddenpart = &((FTHiddenPart*)PORT_RESOLVE(attr->hiddenparts))[hiddenpart_id];
 
     if (hiddenpart->root_joint_id >= nFTPartsJointCommonStart)
     {
         if (fp->detail_curr == nFTPartsDetailHigh)
         {
-            commonpart = &fp->attr->commonparts_container->commonparts[0];
+            commonpart = &((FTCommonPartContainer*)PORT_RESOLVE(fp->attr->commonparts_container))->commonparts[0];
         }
-        else if (attr->commonparts_container->commonparts[1].dobjdesc[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl != NULL)
+        else if (((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[1].dobjdesc[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl != NULL)
         {
-            commonpart = &attr->commonparts_container->commonparts[1];
+            commonpart = &((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[1];
         }
-        else commonpart = &attr->commonparts_container->commonparts[0];
+        else commonpart = &((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[0];
     }
     else commonpart = NULL;
 
@@ -4190,7 +4190,7 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
 
     root_joint->user_data.p = parts = ftManagerGetNextPartsAlloc();
 
-    parts->flags = attr->commonparts_container->commonparts[fp->detail_curr - nFTPartsDetailStart].flags;
+    parts->flags = ((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[fp->detail_curr - nFTPartsDetailStart].flags;
     parts->joint_id = hiddenpart->root_joint_id;
 
     if (hiddenpart->partindex_0x8 != 0)
@@ -4210,7 +4210,7 @@ void ftMainAddHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
     DObj *new_child_joint;
     DObj *parent_joint;
 
-    hiddenpart = &fp->attr->hiddenparts[hiddenpart_id];
+    hiddenpart = &((FTHiddenPart*)PORT_RESOLVE(fp->attr->hiddenparts))[hiddenpart_id];
     root_joint = fp->joints[hiddenpart->root_joint_id];
 
     if (hiddenpart->root_joint_id == nFTPartsJointTransN)
@@ -4298,7 +4298,7 @@ void ftMainAddHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
 // 0x800E6E00
 void ftMainEjectHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
 {
-    FTHiddenPart *hiddenpart = &fp->attr->hiddenparts[hiddenpart_id];
+    FTHiddenPart *hiddenpart = &((FTHiddenPart*)PORT_RESOLVE(fp->attr->hiddenparts))[hiddenpart_id];
     DObj *root_joint = fp->joints[hiddenpart->root_joint_id];
     DObj *parent_joint;
     DObj *child_joint;
@@ -4650,7 +4650,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 }
                 else ftMainEjectHiddenPartID(fp, i);
             }
-            dobjdesc = attr->commonparts_container->commonparts[fp->detail_curr - nFTPartsDetailStart].dobjdesc;
+            dobjdesc = ((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[fp->detail_curr - nFTPartsDetailStart].dobjdesc;
 
             for (i = nFTPartsJointCommonStart; dobjdesc->id != DOBJ_ARRAY_MAX; i++, dobjdesc++)
             {
@@ -4734,7 +4734,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
             }
             fp->is_use_animlocks = fp->anim_desc.flags.is_use_animlocks;
 
-            if (attr->translate_scales != NULL)
+            if (PORT_RESOLVE(attr->translate_scales) != NULL)
             {
                 if (fp->anim_desc.flags.is_have_translate_scale)
                 {

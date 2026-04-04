@@ -1694,13 +1694,23 @@ void sc1PGameTeamStockDisplayProcDisplay(GObj *interface_gobj)
                     switch (gSCManagerSceneData.spgame_stage)
                     {
                     case nSC1PGameStageYoshi:
+#ifdef PORT
+                        sobj->sprite = *(Sprite*)PORT_RESOLVE(sSC1PGameEnemyTeamSprites->stock_sprite);
+                        sobj->sprite.LUT = ((u32*)PORT_RESOLVE(sSC1PGameEnemyTeamSprites->stock_luts))[sSC1PGameEnemyVariations[stock_num]];
+#else
                         sobj->sprite = *sSC1PGameEnemyTeamSprites->stock_sprite;
                         sobj->sprite.LUT = sSC1PGameEnemyTeamSprites->stock_luts[sSC1PGameEnemyVariations[stock_num]];
+#endif
                         break;
 
                     case nSC1PGameStageKirby:
+#ifdef PORT
+                        sobj->sprite = *(Sprite*)PORT_RESOLVE(sSC1PGameEnemyTeamSprites->stock_sprite);
+                        sobj->sprite.LUT = ((u32*)PORT_RESOLVE(sSC1PGameEnemyTeamSprites->stock_luts))[sSC1PGameEnemyKirbyCostume];
+#else
                         sobj->sprite = *sSC1PGameEnemyTeamSprites->stock_sprite;
                         sobj->sprite.LUT = sSC1PGameEnemyTeamSprites->stock_luts[sSC1PGameEnemyKirbyCostume];
+#endif
                         break;
 
                     case nSC1PGameStageZako:
@@ -1744,9 +1754,17 @@ void sc1PGameInitTeamStockDisplay(void)
                 break;
             }
         }
+#ifdef PORT
+        sSC1PGameEnemyTeamSprites = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
+#else
         sSC1PGameEnemyTeamSprites = fp->attr->sprites;
+#endif
 
+#ifdef PORT
+        sprite = (Sprite*)PORT_RESOLVE(sSC1PGameEnemyTeamSprites->stock_sprite);
+#else
         sprite = sSC1PGameEnemyTeamSprites->stock_sprite;
+#endif
         sprite->attr = SP_TEXSHUF | SP_TRANSPARENT;
 
         goto make_gobj;

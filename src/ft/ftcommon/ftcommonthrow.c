@@ -69,12 +69,12 @@ void ftCommonThrowSetStatus(GObj *fighter_gobj, sb32 is_throwf)
             mpCommonSetFighterAir(this_fp);
         }
         else status_id = nFTCommonStatusThrowF;
-        thrown_status = &this_fp->attr->thrown_status[catch_fp->fkind].ft_thrown[0];
+        thrown_status = &((FTThrownStatusArray*)PORT_RESOLVE(this_fp->attr->thrown_status))[catch_fp->fkind].ft_thrown[0];
     }
     else
     {
         status_id = nFTCommonStatusThrowB;
-        thrown_status = &this_fp->attr->thrown_status[catch_fp->fkind].ft_thrown[1];
+        thrown_status = &((FTThrownStatusArray*)PORT_RESOLVE(this_fp->attr->thrown_status))[catch_fp->fkind].ft_thrown[1];
     }
     ftMainSetStatus(fighter_gobj, status_id, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);

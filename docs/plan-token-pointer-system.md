@@ -75,7 +75,9 @@ See Phase 1 section below for details.
 
 ### Phase 3a: COMPLETE — Sprite/Bitmap struct changes + PORT_REGISTER (2026-04-04)
 
-### Phases 3b-5: TODO — Remaining struct changes + PORT_RESOLVE at access sites
+### Phase 3b: COMPLETE — FTAttributes + FTSprites + stock_luts (2026-04-04)
+
+### Phases 4-5: TODO — Remaining struct changes + PORT_RESOLVE at access sites
 
 ## Affected Struct Types
 
@@ -173,15 +175,30 @@ resolved through two PORT_RESOLVE steps.
 
 Build passes clean on MSVC.
 
-### Phase 3b: FTSprites + stock_luts access sites — TODO
+### Phase 3b: FTAttributes + FTSprites + stock_luts — COMPLETE (2026-04-04)
 
-`FTSprites` struct (`fttypes.h`) has 3 pointer fields (`stock_sprite`, `stock_luts`,
-`emblem`) in file data that need the `#ifdef PORT` u32 treatment. The `stock_luts`
-array elements are also reloc'd pointer slots.
+**FTAttributes** (`fttypes.h:870-973`) — 840-byte file-data struct with 21 pointer-
+sized slots (13 distinct pointer fields + 8 `shield_anim_joints[]` elements). All
+changed to `u32` under `#ifdef PORT`. `_Static_assert(sizeof(FTAttributes) == 0x348)`.
 
-~10 sites across ifcommon.c, sc1pgame.c, mnvsresults.c, mnplayers1pgame.c assign
-`sobj->sprite.LUT = fp->attr->sprites->stock_luts[costume]` — these require FTSprites
-changes to work correctly on 64-bit (array element size mismatch without token type).
+Changed fields: `setup_parts`, `animlock`, `hiddenparts`, `commonparts_container`,
+`dobj_lookup`, `shield_anim_joints[8]`, `translate_scales`, `modelparts_container`,
+`accesspart`, `textureparts_container`, `thrown_status`, `sprites`, `skeleton`.
+
+~45 access sites wrapped with `PORT_RESOLVE()` across 8 files:
+- `ftparam.c` (16), `ftmain.c` (9), `ftmanager.c` (6), `ftcommonguard1.c` (8)
+- `ftdisplaymain.c` (4 — skeleton double-deref with nested PORT_RESOLVE)
+- `ftcommonthrow.c` (2)
+
+**FTSprites** (`fttypes.h:739-744`) — 3 pointer fields changed to u32:
+`stock_sprite`, `stock_luts`, `emblem`. `_Static_assert(sizeof(FTSprites) == 12)`.
+
+~16 sprites/stock_luts access sites wrapped in 4 files using `#ifdef PORT` blocks:
+- `ifcommon.c` (12 — stock_sprite deref, stock_luts[costume] via u32* cast, NULL checks)
+- `sc1pgame.c` (4 — sSC1PGameEnemyTeamSprites resolved at assignment)
+- `mnvsresults.c` (2), `mnplayers1pgame.c` (2)
+
+Build passes clean on MSVC.
 
 ### Phase 4: MObjSub (23+ call sites)
 

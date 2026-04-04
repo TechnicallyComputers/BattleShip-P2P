@@ -864,7 +864,7 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
 
         if ((parts != NULL) && (parts->joint_id >= nFTPartsJointCommonStart))
         {
-            skeleton = &fp->attr->skeleton[fp->colanim.skeleton_id][parts->joint_id - nFTPartsJointCommonStart];
+            skeleton = &((FTSkeleton*)PORT_RESOLVE(((FTSkeleton**)PORT_RESOLVE(fp->attr->skeleton))[fp->colanim.skeleton_id]))[parts->joint_id - nFTPartsJointCommonStart];
 
             switch (skeleton->flags & 0xF)
             {
@@ -933,11 +933,11 @@ void ftDisplayMainDrawAll(GObj *fighter_gobj)
 
     if
     (
-        (fp->colanim.skeleton_id)                           &&
-        (attr->skeleton != NULL)                            &&
-        (attr->skeleton[fp->colanim.skeleton_id] != NULL)   &&
-        (fp->joints[(s32)(attr->skeleton[0])] != NULL)      &&  // ???
-        (fp->joints[(s32)(attr->skeleton[0])]->dl != NULL)      // Hello???
+        (fp->colanim.skeleton_id)                                                                   &&
+        (attr->skeleton != 0)                                                                       &&
+        (((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[fp->colanim.skeleton_id] != NULL)             &&
+        (fp->joints[(s32)(((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[0])] != NULL)                &&  // ???
+        (fp->joints[(s32)(((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[0])]->dl != NULL)                // Hello???
     )
     {
         ftDisplayMainDrawSkeleton(DObjGetStruct(fighter_gobj));

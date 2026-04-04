@@ -375,7 +375,7 @@ void ftParamUpdateAnimKeys(GObj *fighter_gobj)
     {
         if (fp->is_have_translate_scale)
         {
-            Vec3f *translate_scales = fp->attr->translate_scales;
+            Vec3f *translate_scales = (Vec3f*)PORT_RESOLVE(fp->attr->translate_scales);
 
             for (i = 0; i < ARRAY_COUNT(fp->joints); i++, p_joint++, translate_scales++)
             {
@@ -388,7 +388,7 @@ void ftParamUpdateAnimKeys(GObj *fighter_gobj)
                         gcParseDObjAnimJoint(joint);
                     }
                     else ftAnimParseDObjFigatree(joint);
-                    
+
                     lbCommonPlayTranslateScaledDObjAnim(joint, translate_scales);
 
                     mobj = joint->mobj;
@@ -431,7 +431,7 @@ void ftParamUpdateAnimKeys(GObj *fighter_gobj)
     }
     else if (fp->is_have_translate_scale)
     {
-        Vec3f *translate_scales = fp->attr->translate_scales;
+        Vec3f *translate_scales = (Vec3f*)PORT_RESOLVE(fp->attr->translate_scales);
 
         for (i = 0; i < ARRAY_COUNT(fp->joints); i++, p_joint++, translate_scales++)
         {
@@ -759,7 +759,7 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
     MObjSub **mobjsubs;
 
     joint = fp->joints[joint_id];
-    commonparts_container = attr->commonparts_container;
+    commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
     modelpart_status = &fp->modelpart_status[joint_id - nFTPartsJointCommonStart];
     parts = ftGetParts(joint);
 
@@ -773,9 +773,9 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
 
             if (modelpart_id != -1)
             {
-                if (fp->attr->modelparts_container->modelparts_desc[joint_id - nFTPartsJointCommonStart] != NULL)
+                if (((FTModelPartContainer*)PORT_RESOLVE(fp->attr->modelparts_container))->modelparts_desc[joint_id - nFTPartsJointCommonStart] != NULL)
                 {
-                    modelpart = &fp->attr->modelparts_container->modelparts_desc[joint_id - nFTPartsJointCommonStart]->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
+                    modelpart = &((FTModelPartContainer*)PORT_RESOLVE(fp->attr->modelparts_container))->modelparts_desc[joint_id - nFTPartsJointCommonStart]->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
 
                     joint->dl = modelpart->dl;
 
@@ -842,7 +842,7 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
     MObjSub **mobjsubs;
     s32 i;
 
-    commonparts_container = attr->commonparts_container;
+    commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
 
     for (i = 0; i < ARRAY_COUNT(fp->joints) - nFTPartsJointCommonStart; i++)
     {
@@ -866,9 +866,9 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
                 {
                     parts = ftGetParts(joint);
 
-                    if (attr->modelparts_container->modelparts_desc[i] != NULL)
+                    if (((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i] != NULL)
                     {
-                        modelpart = &attr->modelparts_container->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+                        modelpart = &((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
 
                         joint->dl = modelpart->dl;
 
@@ -989,8 +989,8 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
     AObjEvent32 **costume_matanim_joints;
     s32 i;
 
-    commonparts_container = attr->commonparts_container;
-    accesspart = attr->accesspart;
+    commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
+    accesspart = (FTAccessPart*)PORT_RESOLVE(attr->accesspart);
 
     for (i = 0; i < ARRAY_COUNT(fp->joints) - nFTPartsJointCommonStart; i++)
     {
@@ -1004,9 +1004,9 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
 
             if (modelpart_status->modelpart_id_curr != -1)
             {
-                if (attr->modelparts_container->modelparts_desc[i] != NULL)
+                if (((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i] != NULL)
                 {
-                    modelpart = &attr->modelparts_container->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+                    modelpart = &((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
 
                     lbCommonAddMObjForFighterPartsDObj(joint, modelpart->mobjsubs, modelpart->costume_matanim_joints, modelpart->main_matanim_joints, costume);
                 }
@@ -1077,7 +1077,7 @@ void ftParamInitTexturePartAll(GObj *fighter_gobj)
     s32 detail;
     s32 i, j;
 
-    for (i = 0, texturepart_status = &fp->texturepart_status[i], texturepart = &fp->attr->textureparts_container->textureparts[i]; i < ARRAY_COUNT(fp->texturepart_status); i++, texturepart_status++, texturepart++)
+    for (i = 0, texturepart_status = &fp->texturepart_status[i], texturepart = &((FTTexturePartContainer*)PORT_RESOLVE(fp->attr->textureparts_container))->textureparts[i]; i < ARRAY_COUNT(fp->texturepart_status); i++, texturepart_status++, texturepart++)
     {
         if (texturepart_status->texture_id_curr != texturepart_status->texture_id_base)
         {
@@ -1113,7 +1113,7 @@ void ftParamInitTexturePartAll(GObj *fighter_gobj)
 void ftParamSetTexturePartID(GObj *fighter_gobj, s32 texturepart_id, s32 texture_id)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
-    FTTexturePart *texturepart = &fp->attr->textureparts_container->textureparts[texturepart_id];
+    FTTexturePart *texturepart = &((FTTexturePartContainer*)PORT_RESOLVE(fp->attr->textureparts_container))->textureparts[texturepart_id];
     s32 detail = texturepart->detail[fp->detail_curr - nFTPartsDetailStart];
     DObj *joint = fp->joints[texturepart->joint_id];
 
@@ -1154,7 +1154,7 @@ void ftParamResetTexturePartAll(GObj *fighter_gobj)
     s32 detail;
     s32 i, j;
 
-    for (i = 0, texturepart_status = &fp->texturepart_status[i], texturepart = &fp->attr->textureparts_container->textureparts[i]; i < ARRAY_COUNT(fp->texturepart_status); i++, texturepart_status++, texturepart++)
+    for (i = 0, texturepart_status = &fp->texturepart_status[i], texturepart = &((FTTexturePartContainer*)PORT_RESOLVE(fp->attr->textureparts_container))->textureparts[i]; i < ARRAY_COUNT(fp->texturepart_status); i++, texturepart_status++, texturepart++)
     {
         if (texturepart_status->texture_id_curr != texturepart_status->texture_id_base)
         {
@@ -2359,7 +2359,7 @@ void ftParamSetAnimLocks(FTStruct *fp)
     u32 *animlock;
     FTAttributes *attr = fp->attr;
 
-    animlock = attr->animlock;
+    animlock = (u32*)PORT_RESOLVE(attr->animlock);
     flags0 = animlock[0];
     flags1 = animlock[1];
 

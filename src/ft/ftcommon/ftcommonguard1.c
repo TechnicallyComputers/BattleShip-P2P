@@ -220,7 +220,7 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
     DObj **p_joint = &fp->joints[nFTPartsJointXRotN];
     s32 joint_num;
     s32 i;
-    Vec3f *scale = &fp->attr->translate_scales[nFTPartsJointYRotN];
+    Vec3f *scale = &((Vec3f*)PORT_RESOLVE(fp->attr->translate_scales))[nFTPartsJointYRotN];
 
     if (fp->is_shield)
     {
@@ -235,7 +235,7 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
         }
         joint_num--;
 
-        gcAddDObjAnimJoint(yrotn_joint, fp->attr->shield_anim_joints[fp->status_vars.common.guard.angle_i][joint_num], fp->status_vars.common.guard.angle_f);
+        gcAddDObjAnimJoint(yrotn_joint, ((AObjEvent32**)PORT_RESOLVE(fp->attr->shield_anim_joints[fp->status_vars.common.guard.angle_i]))[joint_num], fp->status_vars.common.guard.angle_f);
         gcParseDObjAnimJoint(yrotn_joint);
 
         if (fp->is_have_translate_scale)
@@ -246,9 +246,9 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
 
         if (fp->is_have_translate_scale)
         {
-            ftCommonGuardGetJointTransformScale(yrotn_joint, &fp->attr->dobj_lookup[joint_num], fp->status_vars.common.guard.shield_rotate_range, scale);
+            ftCommonGuardGetJointTransformScale(yrotn_joint, &((DObjDesc*)PORT_RESOLVE(fp->attr->dobj_lookup))[joint_num], fp->status_vars.common.guard.shield_rotate_range, scale);
         }
-        else ftCommonGuardGetJointTransform(yrotn_joint, &fp->attr->dobj_lookup[joint_num], fp->status_vars.common.guard.shield_rotate_range);
+        else ftCommonGuardGetJointTransform(yrotn_joint, &((DObjDesc*)PORT_RESOLVE(fp->attr->dobj_lookup))[joint_num], fp->status_vars.common.guard.shield_rotate_range);
 
         yrotn_joint->anim_wait = AOBJ_ANIM_NULL;
 
@@ -263,7 +263,7 @@ void ftCommonGuardInitJoints(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
     DObj **p_joint = &fp->joints[nFTPartsJointCommonStart];
-    DObjDesc *dobjdesc = &attr->dobj_lookup[1];
+    DObjDesc *dobjdesc = &((DObjDesc*)PORT_RESOLVE(attr->dobj_lookup))[1];
     DObj *joint;
     Vec3f *scale;
     s32 i;
@@ -277,14 +277,14 @@ void ftCommonGuardInitJoints(GObj *fighter_gobj)
     lbCommonAddDObjAnimJointAll
     (
         fp->joints[nFTPartsJointXRotN],
-        attr->shield_anim_joints[fp->status_vars.common.guard.angle_i],
+        (AObjEvent32**)PORT_RESOLVE(attr->shield_anim_joints[fp->status_vars.common.guard.angle_i]),
         fp->status_vars.common.guard.angle_f
     );
     ftMainPlayAnimEventsAll(fighter_gobj);
 
     if (fp->is_have_translate_scale)
     {
-        scale = &fp->attr->translate_scales[nFTPartsJointCommonStart];
+        scale = &((Vec3f*)PORT_RESOLVE(fp->attr->translate_scales))[nFTPartsJointCommonStart];
 
         for (i = nFTPartsJointCommonStart; i < ARRAY_COUNT(fp->joints); i++, p_joint++, scale++)
         {
@@ -315,7 +315,7 @@ void ftCommonGuardInitJoints(GObj *fighter_gobj)
                 joint,
                 dobjdesc,
                 fp->status_vars.common.guard.shield_rotate_range,
-                &fp->attr->translate_scales[nFTPartsJointYRotN]
+                &((Vec3f*)PORT_RESOLVE(fp->attr->translate_scales))[nFTPartsJointYRotN]
             );
             joint->anim_wait = AOBJ_ANIM_NULL;
         }

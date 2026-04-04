@@ -1878,8 +1878,17 @@ void mnVSResultsMakeHeader(void)
 
 			fp = ftGetStruct(sMNVSResultsFighterGObjs[i]);
 
+#ifdef PORT
+			{
+				FTSprites *_spr = (FTSprites*)PORT_RESOLVE(fp->attr->sprites);
+				stock_sobj = lbCommonMakeSObjForGObj(gobj, (Sprite*)PORT_RESOLVE(_spr->stock_sprite));
+				u32 *_luts = (u32*)PORT_RESOLVE(_spr->stock_luts);
+				stock_sobj->sprite.LUT = _luts[fp->costume];
+			}
+#else
 			stock_sobj = lbCommonMakeSObjForGObj(gobj, fp->attr->sprites->stock_sprite);
 			stock_sobj->sprite.LUT = fp->attr->sprites->stock_luts[fp->costume];
+#endif
 			stock_sobj->sprite.attr &= ~SP_FASTCOPY;
 			stock_sobj->sprite.attr |= SP_TRANSPARENT;
 			stock_sobj->pos.x = arrow_sobj->pos.x - 10.0F;
