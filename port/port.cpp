@@ -2,8 +2,12 @@
 #include "port.h"
 
 #include <libultraship/libultraship.h>
+#include <ship/resource/File.h>
 #include <string>
 #include <vector>
+
+#include "resource/ResourceType.h"
+#include "resource/RelocFileFactory.h"
 
 static std::shared_ptr<Ship::Context> sContext;
 
@@ -25,6 +29,16 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext) {
 		return 1;
 	}
+
+	// Register SSB64-specific resource factories
+	auto loader = sContext->GetResourceManager()->GetResourceLoader();
+	loader->RegisterResourceFactory(
+		std::make_shared<ResourceFactoryBinaryRelocFileV0>(),
+		RESOURCE_FORMAT_BINARY,
+		"SSB64Reloc",
+		static_cast<uint32_t>(SSB64::ResourceType::SSB64Reloc),
+		0
+	);
 
 	return 0;
 }
