@@ -22,6 +22,26 @@ extern "C" {
  */
 void portRelocByteSwapBlob(void *data, size_t size);
 
+/**
+ * Apply rotate16 fixup to a region of u16 fields within a ROM-overlay struct.
+ *
+ * After blanket u32 swap, adjacent u16 pairs within each u32 word are
+ * position-swapped. This function corrects them by rotating each u32 word
+ * by 16 bits. Tracks which regions have been fixed to prevent double-fixup
+ * (the same struct pointer may be loaded multiple times from the cached blob).
+ *
+ * @param base         Pointer to the struct base in game memory.
+ * @param byte_offset  Byte offset of the u16 region within the struct.
+ * @param num_words    Number of u32 words in the u16 region to fix.
+ */
+void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+
+/**
+ * Clear the u16 fixup tracking set. Call when file heaps are freed
+ * (e.g. on scene change) to prevent stale entries.
+ */
+void portResetStructFixups(void);
+
 #ifdef __cplusplus
 }
 #endif

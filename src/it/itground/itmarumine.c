@@ -2,6 +2,11 @@
 #include <gr/ground.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+#include <config.h>
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -101,9 +106,16 @@ void itMarumineExplodeUpdateAttackEvent(GObj *item_gobj)
 
     if (ip->multi == ev[ip->event_id].timer)
     {
+#ifdef PORT
+        ip->attack_coll.angle  = BITFIELD_SEXT10(ev[ip->event_id].angle);
+        ip->attack_coll.damage = ev[ip->event_id].damage;
+        portFixupStructU16(&ev[ip->event_id], 0x08, 1);
+        ip->attack_coll.size   = ev[ip->event_id].size;
+#else
         ip->attack_coll.angle  = ev[ip->event_id].angle;
         ip->attack_coll.damage = ev[ip->event_id].damage;
         ip->attack_coll.size   = ev[ip->event_id].size;
+#endif
 
         ip->attack_coll.can_reflect = FALSE;
         ip->attack_coll.can_shield = FALSE;

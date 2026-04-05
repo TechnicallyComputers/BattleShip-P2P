@@ -35,25 +35,60 @@ struct WPDesc
 
 struct WPAttributes                         // Moreso hitbox stuff
 {
+#ifdef PORT
+    u32 data;                               // Relocation token — use PORT_RESOLVE()
+    u32 p_mobjsubs;                         // Relocation token
+    u32 anim_joints;                        // Relocation token
+    u32 p_matanim_joints;                   // Relocation token
+#else
     void *data;                             // If WEAPON_FLAG_DOBJDESC is true, this is a DObjDesc*; else it's a display list
     MObjSub ***p_mobjsubs;                  // Triple pointer???
     AObjEvent32 **anim_joints;
     AObjEvent32 ***p_matanim_joints;
+#endif
     Vec3h attack_offsets[2];
     s16 map_coll_top;
     s16 map_coll_center;
     s16 map_coll_bottom;
     s16 map_coll_width;
     u16 size;
+
+    // --- Bitfield Word 1: attack parameters ---
+    // On LE (PORT), all fields use u32 base type to prevent MSVC from
+    // splitting allocation units at signed/unsigned type boundaries.
+    // angle is read-as-unsigned; use BITFIELD_SEXT10() at read sites.
+#if IS_BIG_ENDIAN
     s32 angle : 10;
     u32 knockback_scale : 10;
     u32 damage : 8;
     u32 element : 4;
+#else
+    u32 element : 4;
+    u32 damage : 8;
+    u32 knockback_scale : 10;
+    u32 angle : 10;
+#endif
+
+    // --- Bitfield Word 2: combat flags A ---
+    // shield_damage is read-as-unsigned on LE; use BITFIELD_SEXT8().
+#if IS_BIG_ENDIAN
     u32 knockback_weight : 10;
     s32 shield_damage : 8;
     u32 attack_count : 2;
     ub32 can_setoff : 1;
     u32 sfx : 10;
+    u32 : 1;
+#else
+    u32 : 1;
+    u32 sfx : 10;
+    u32 can_setoff : 1;
+    u32 attack_count : 2;
+    u32 shield_damage : 8;
+    u32 knockback_weight : 10;
+#endif
+
+    // --- Bitfield Word 3: combat flags B ---
+#if IS_BIG_ENDIAN
     u32 priority : 3;
     ub32 can_rehit_item : 1;
     ub32 can_rehit_fighter : 1;
@@ -64,7 +99,25 @@ struct WPAttributes                         // Moreso hitbox stuff
     ub32 unused_0x2F_b6 : 1;
     ub32 unused_0x2F_b7 : 1;
     u32 knockback_base : 10;
+    u32 : 11;
+#else
+    u32 : 11;
+    u32 knockback_base : 10;
+    u32 unused_0x2F_b7 : 1;
+    u32 unused_0x2F_b6 : 1;
+    u32 can_shield : 1;
+    u32 can_absorb : 1;
+    u32 can_reflect : 1;
+    u32 can_hop : 1;
+    u32 can_rehit_fighter : 1;
+    u32 can_rehit_item : 1;
+    u32 priority : 3;
+#endif
 };
+
+#ifdef PORT
+_Static_assert(sizeof(WPAttributes) == 0x34, "WPAttributes must be 52 bytes to match ROM data layout");
+#endif
 
 // Current and previous hitbox position are stored here
 struct WPAttackPos

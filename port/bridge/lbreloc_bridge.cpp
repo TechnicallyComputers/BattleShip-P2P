@@ -578,6 +578,9 @@ void lbRelocInitSetup(LBRelocSetup *setup)
 	// and stale tokens pointing to freed heap memory
 	portRelocResetPointerTable();
 
+	// Clear u16 struct fixup tracking — addresses from the old heap are stale
+	portResetStructFixups();
+
 	// ROM addresses (unused in port but stored for completeness)
 	sLBRelocInternBuffer.rom_table_lo = setup->table_addr;
 	sLBRelocInternBuffer.total_files_num = setup->table_files_num;

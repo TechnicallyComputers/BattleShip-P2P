@@ -6,6 +6,11 @@
 #include <lb/library.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+#include <config.h>
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -247,6 +252,11 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
         return NULL;
     }
     attr = lbRelocGetFileData(ITAttributes*, *item_desc->p_file, item_desc->o_attributes);
+#ifdef PORT
+    // Byte-swap u16/s16 non-bitfield fields: Vec3h[2](6) + s16[4](8) + u16(2) + pad(2) = 24 bytes = 6 words
+    // These fields start at offset 0x20 (after 4 pointer tokens at 0x00 and bitfield region A at 0x10).
+    portFixupStructU16(attr, 0x20, 6);
+#endif
 
     if (attr->is_display_colanim)
     {
@@ -312,19 +322,36 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     ip->attack_coll.throw_mul        = 1.0F;
     ip->attack_coll.stale            = 1.0F;
     ip->attack_coll.element          = attr->element;
+#ifdef PORT
+    ip->attack_coll.offsets[0].x     = BITFIELD_SEXT16(attr->attack_offset0_x);
+    ip->attack_coll.offsets[0].y     = BITFIELD_SEXT16(attr->attack_offset0_y);
+    ip->attack_coll.offsets[0].z     = BITFIELD_SEXT16(attr->attack_offset0_z);
+    ip->attack_coll.offsets[1].x     = BITFIELD_SEXT16(attr->attack_offset1_x);
+    ip->attack_coll.offsets[1].y     = BITFIELD_SEXT16(attr->attack_offset1_y);
+    ip->attack_coll.offsets[1].z     = BITFIELD_SEXT16(attr->attack_offset1_z);
+#else
     ip->attack_coll.offsets[0].x     = attr->attack_offset0_x;
     ip->attack_coll.offsets[0].y     = attr->attack_offset0_y;
     ip->attack_coll.offsets[0].z     = attr->attack_offset0_z;
     ip->attack_coll.offsets[1].x     = attr->attack_offset1_x;
     ip->attack_coll.offsets[1].y     = attr->attack_offset1_y;
     ip->attack_coll.offsets[1].z     = attr->attack_offset1_z;
+#endif
     ip->attack_coll.size             = attr->size * 0.5F;
+#ifdef PORT
+    ip->attack_coll.angle            = BITFIELD_SEXT10(attr->angle);
+#else
     ip->attack_coll.angle            = attr->angle;
+#endif
     ip->attack_coll.knockback_scale  = attr->knockback_scale;
     ip->attack_coll.knockback_weight = attr->knockback_weight;
     ip->attack_coll.knockback_base   = attr->knockback_base;
     ip->attack_coll.can_setoff       = attr->can_setoff;
+#ifdef PORT
+    ip->attack_coll.shield_damage    = BITFIELD_SEXT8(attr->shield_damage);
+#else
     ip->attack_coll.shield_damage    = attr->shield_damage;
+#endif
     ip->attack_coll.fgm_id           = attr->hit_sfx;
     ip->attack_coll.priority         = attr->priority;
     ip->attack_coll.can_rehit_item   = attr->can_rehit_item;
@@ -365,15 +392,15 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
 
     ip->reflect_gobj = NULL;
 
-    if (attr->data != NULL)
+    if (PORT_RESOLVE(attr->data) != NULL)
     {
         if (!(attr->is_item_dobjs))
         {
             gcSetupCustomDObjsWithMObj
             (
                 item_gobj,
-                attr->data,
-                attr->p_mobjsubs,
+                PORT_RESOLVE(attr->data),
+                (MObjSub***)PORT_RESOLVE(attr->p_mobjsubs),
                 NULL,
                 item_desc->transform_types.tk1,
                 item_desc->transform_types.tk2,
@@ -382,16 +409,16 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
         }
         else
         {
-            itManagerSetupItemDObjs(item_gobj, attr->data, NULL, item_desc->transform_types.tk1);
+            itManagerSetupItemDObjs(item_gobj, PORT_RESOLVE(attr->data), NULL, item_desc->transform_types.tk1);
 
-            if (attr->p_mobjsubs != NULL)
+            if (PORT_RESOLVE(attr->p_mobjsubs) != NULL)
             {
-                gcAddMObjAll(item_gobj, attr->p_mobjsubs);
+                gcAddMObjAll(item_gobj, (MObjSub***)PORT_RESOLVE(attr->p_mobjsubs));
             }
         }
-        if ((attr->anim_joints != NULL) || (attr->p_matanim_joints != NULL))
+        if ((PORT_RESOLVE(attr->anim_joints) != NULL) || (PORT_RESOLVE(attr->p_matanim_joints) != NULL))
         {
-            gcAddAnimAll(item_gobj, attr->anim_joints, attr->p_matanim_joints, 0.0F);
+            gcAddAnimAll(item_gobj, (AObjEvent32**)PORT_RESOLVE(attr->anim_joints), (AObjEvent32***)PORT_RESOLVE(attr->p_matanim_joints), 0.0F);
             gcPlayAnimAll(item_gobj);
         }
         lbCommonEjectTreeDObj(DObjGetStruct(item_gobj));

@@ -1160,7 +1160,11 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
                 {
                     fp = ftGetStruct(fighter_gobj);
 
+#ifdef PORT
+                    joint_id = ftParamGetJointID(fp, BITFIELD_SEXT(gmColEventCast(colanim->cs[i].p_script, GMColEventMakeEffect1)->joint_id, 7));
+#else
                     joint_id = ftParamGetJointID(fp, gmColEventCast(colanim->cs[i].p_script, GMColEventMakeEffect1)->joint_id);
+#endif
                     effect_id = gmColEventCast(colanim->cs[i].p_script, GMColEventMakeEffect1)->effect_id;
                     flag = gmColEventCast(colanim->cs[i].p_script, GMColEventMakeEffect1)->flag;
 
@@ -1189,8 +1193,13 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
             case nGMColEventSetLight:
                 colanim->is_use_light = TRUE;
 
+#ifdef PORT
+                colanim->light_angle_x = BITFIELD_SEXT13(gmColEventCast(colanim->cs[i].p_script, GMColEventSetLight)->light1);
+                colanim->light_angle_y = BITFIELD_SEXT13(gmColEventCast(colanim->cs[i].p_script, GMColEventSetLight)->light2);
+#else
                 colanim->light_angle_x = gmColEventCast(colanim->cs[i].p_script, GMColEventSetLight)->light1;
                 colanim->light_angle_y = gmColEventCast(colanim->cs[i].p_script, GMColEventSetLight)->light2;
+#endif
 
                 gmColEventAdvance(colanim->cs[i].p_script, GMColEventSetLight);
                 break;

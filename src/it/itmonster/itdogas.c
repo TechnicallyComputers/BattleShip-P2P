@@ -2,6 +2,10 @@
 #include <wp/weapon.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -302,6 +306,9 @@ GObj* itDogasWeaponSmogMakeWeapon(GObj *item_gobj, Vec3f *pos, Vec3f *vel)
     wp->lifetime = ITDOGAS_SMOG_LIFETIME;
 
     wp->weapon_vars.smog.attr = (WPAttributes*) ((uintptr_t)*weapon_desc->p_weapon + (intptr_t)weapon_desc->o_attributes); // Dude I had a stroke trying to match this
+#ifdef PORT
+    portFixupStructU16(wp->weapon_vars.smog.attr, 0x10, 6);
+#endif
 
     dobj = DObjGetStruct(weapon_gobj);
 

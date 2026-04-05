@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <unordered_set>
 #include <vector>
 
 // F3DEX2 GBI opcodes (from gbi.h with F3DEX_GBI_2 defined)
@@ -299,4 +300,33 @@ extern "C" void portRelocByteSwapBlob(void *data, size_t size)
 	{
 		apply_fixups(data, size, regions);
 	}
+}
+
+// ============================================================
+//  Struct u16 fixup — rotate16 for u16 fields in ROM structs
+// ============================================================
+
+// Tracks which (base + offset) regions have been fixed to prevent
+// double-fixup when the same struct pointer is loaded multiple times
+// from a cached file blob.
+static std::unordered_set<uintptr_t> sStructU16Fixups;
+
+extern "C" void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words)
+{
+	uintptr_t key = reinterpret_cast<uintptr_t>(base) + byte_offset;
+	if (sStructU16Fixups.count(key))
+		return;
+	sStructU16Fixups.insert(key);
+
+	uint32_t *words = reinterpret_cast<uint32_t *>(
+		static_cast<uint8_t *>(base) + byte_offset);
+	for (unsigned int i = 0; i < num_words; i++)
+	{
+		words[i] = (words[i] << 16) | (words[i] >> 16);
+	}
+}
+
+extern "C" void portResetStructFixups(void)
+{
+	sStructU16Fixups.clear();
 }

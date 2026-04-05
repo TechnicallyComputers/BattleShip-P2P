@@ -3,6 +3,11 @@
 #include <sc/scene.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+#include <config.h>
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       EXTERNAL VARIABLES      //
@@ -457,7 +462,7 @@ void itMainSetFighterHold(GObj *item_gobj, GObj *fighter_gobj)
 
     gmCollisionGetFighterPartsWorldPosition(fp->joints[joint_id], &pos);
     efManagerItemGetSwirlProcUpdate(&pos);
-    gcSetDObjTransformsForGObj(item_gobj, ip->attr->data);
+    gcSetDObjTransformsForGObj(item_gobj, PORT_RESOLVE(ip->attr->data));
 
     if (dITMainProcHoldList[ip->kind] != NULL)
     {
@@ -618,9 +623,16 @@ void itMainUpdateAttackEvent(GObj *item_gobj, ITAttackEvent *ev)
 
     if (ip->multi == ev[ip->event_id].timer)
     {
+#ifdef PORT
+        ip->attack_coll.angle  = BITFIELD_SEXT10(ev[ip->event_id].angle);
+        ip->attack_coll.damage = ev[ip->event_id].damage;
+        portFixupStructU16(&ev[ip->event_id], 0x08, 1);
+        ip->attack_coll.size   = ev[ip->event_id].size;
+#else
         ip->attack_coll.angle  = ev[ip->event_id].angle;
         ip->attack_coll.damage = ev[ip->event_id].damage;
         ip->attack_coll.size   = ev[ip->event_id].size;
+#endif
 
         ip->event_id++;
 

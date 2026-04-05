@@ -112,22 +112,48 @@ struct ITAttackColl
 struct ITAttackEvent 	// Miniature hitbox subaction event? Commonly Used by explosions.
 {
 	u8 timer;
+	// On LE (PORT), all fields use u32 base type to prevent MSVC from
+	// splitting allocation units at signed/unsigned type boundaries.
+	// angle is read-as-unsigned; use BITFIELD_SEXT10() at read sites.
+#if IS_BIG_ENDIAN
 	s32 angle : 10;
 	u32 damage : 8;
+	u32 : 14;
+#else
+	u32 : 14;
+	u32 damage : 8;
+	u32 angle : 10;
+#endif
 	u16 size;
 };
 
 struct ITMonsterEvent	// Full-scale hitbox subaction event? Used by Venusaur and Porygon.
 {
 	u8 timer;
+	// On LE (PORT), all fields use u32 base type to prevent MSVC from
+	// splitting allocation units at signed/unsigned type boundaries.
+	// angle is read-as-unsigned; use BITFIELD_SEXT10() at read sites.
+#if IS_BIG_ENDIAN
 	s32 angle : 10;
 	u32 damage : 8;
+	u32 : 14;
+#else
+	u32 : 14;
+	u32 damage : 8;
+	u32 angle : 10;
+#endif
 	u16 size;
 	u32 knockback_scale;
 	u32 knockback_weight;
 	u32 knockback_base;
 	s32 element;
+#if IS_BIG_ENDIAN
 	ub32 can_setoff : 1;
+	u32 : 31;
+#else
+	u32 : 31;
+	u32 can_setoff : 1;
+#endif
 	s32 shield_damage;
 	u16 fgm_id;
 };
@@ -142,21 +168,66 @@ struct ITDamageColl						// DamageColl struct
 
 struct ITAttributes
 {
+#ifdef PORT
+	u32 data;                           // Relocation token — use PORT_RESOLVE()
+	u32 p_mobjsubs;                     // Relocation token
+	u32 anim_joints;                    // Relocation token
+	u32 p_matanim_joints;               // Relocation token
+#else
 	void *data; 						// Either DObjDesc or displaylist?
 	MObjSub ***p_mobjsubs;				// Array of MObjSubs for each MObj on each DObj
 	AObjEvent32 **anim_joints;			// Array of AnimJoints for each DObj
 	AObjEvent32 ***p_matanim_joints;	// Array of MatAnimJoints for each MObj on each DObj
+#endif
+
+	// --- Bitfield Region A (Word A1): 5 flags + attack_offset0_x + 11-bit pad ---
+	// attack_offset0_* are signed 16-bit values; on LE use BITFIELD_SEXT16() at read sites.
+	// On LE path all fields use u32 base type to prevent MSVC splitting allocation units.
+#if IS_BIG_ENDIAN
 	ub32 is_display_xlu : 1;			// If TRUE, use transparency renderer
 	ub32 is_item_dobjs : 1;				// If TRUE, set up special item DObj node tree; otherwise set up common DObj node tree
 	ub32 is_display_colanim : 1;		// If TRUE, use ColAnim renderer
 	ub32 is_give_hitlag : 1;			// If TRUE, deal hitlag on contact
 	ub32 weight : 1; 					// Heavy = 0, Light = 1
 	s32 attack_offset0_x : 16;			// Hitbox ID0 offset X
-	s32 attack_offset0_y : 16; 			// Hitbox ID0 offset Y
+	u32 : 11;
+#else
+	u32 : 11;
+	u32 attack_offset0_x : 16;			// Hitbox ID0 offset X — use BITFIELD_SEXT16() at read sites
+	u32 weight : 1;						// Heavy = 0, Light = 1
+	u32 is_give_hitlag : 1;				// If TRUE, deal hitlag on contact
+	u32 is_display_colanim : 1;			// If TRUE, use ColAnim renderer
+	u32 is_item_dobjs : 1;				// If TRUE, set up special item DObj node tree; otherwise set up common DObj node tree
+	u32 is_display_xlu : 1;			// If TRUE, use transparency renderer
+#endif
+
+	// --- Bitfield Region A (Word A2): attack_offset0_y + attack_offset0_z ---
+#if IS_BIG_ENDIAN
+	s32 attack_offset0_y : 16;			// Hitbox ID0 offset Y
 	s32 attack_offset0_z : 16;			// Hitbox ID0 offset Z
+#else
+	u32 attack_offset0_z : 16;			// Hitbox ID0 offset Z — use BITFIELD_SEXT16() at read sites
+	u32 attack_offset0_y : 16;			// Hitbox ID0 offset Y — use BITFIELD_SEXT16() at read sites
+#endif
+
+	// --- Bitfield Region A (Word A3): attack_offset1_x + attack_offset1_y ---
+#if IS_BIG_ENDIAN
 	s32 attack_offset1_x : 16;			// Hitbox ID1 offset X
 	s32 attack_offset1_y : 16;			// Hitbox ID1 offset Y
+#else
+	u32 attack_offset1_y : 16;			// Hitbox ID1 offset Y — use BITFIELD_SEXT16() at read sites
+	u32 attack_offset1_x : 16;			// Hitbox ID1 offset X — use BITFIELD_SEXT16() at read sites
+#endif
+
+	// --- Bitfield Region A (Word A4): attack_offset1_z + 16-bit pad ---
+#if IS_BIG_ENDIAN
 	s32 attack_offset1_z : 16;			// Hitbox ID1 offset Z
+	u32 : 16;
+#else
+	u32 : 16;
+	u32 attack_offset1_z : 16;			// Hitbox ID1 offset Z — use BITFIELD_SEXT16() at read sites
+#endif
+
 	Vec3h damage_coll_offset;			// Hurtbox offset
 	Vec3h damage_coll_size;				// Hurtbox size
 	s16 map_coll_top;					// Map Collision Box top
@@ -164,15 +235,44 @@ struct ITAttributes
 	s16 map_coll_bottom;				// Map Collision Box bottom
 	s16 map_coll_width;					// Map Collision Box width
 	u16 size;							// Hitbox size
+	// Explicit 2-byte pad to align the following u32 bitfields to a 4-byte boundary.
+	// Covers 6 words (24 bytes) for portFixupStructU16.
+	u16 _pad_before_combat_bits;
+
+	// --- Bitfield Region B (Word B1): angle + knockback_scale + damage + element ---
+	// angle is stored as u32 on LE path; use BITFIELD_SEXT10() at read sites.
+#if IS_BIG_ENDIAN
 	s32 angle : 10;						// Hitbox launch angle
 	u32 knockback_scale : 10;			// Hitbox knockback scale
 	u32 damage : 8;						// Hitbox damage
 	u32 element : 4;					// Hitbox element
+#else
+	u32 element : 4;					// Hitbox element
+	u32 damage : 8;						// Hitbox damage
+	u32 knockback_scale : 10;			// Hitbox knockback scale
+	u32 angle : 10;						// Hitbox launch angle — use BITFIELD_SEXT10() at read sites
+#endif
+
+	// --- Bitfield Region B (Word B2): knockback_weight + shield_damage + attack_count + can_setoff + hit_sfx + 1 pad ---
+	// shield_damage is stored as u32 on LE path; use BITFIELD_SEXT8() at read sites.
+#if IS_BIG_ENDIAN
 	u32 knockback_weight : 10;			// Hitbox fixed knockback
 	s32 shield_damage : 8;				// Hitbox shield damage
 	u32 attack_count : 2;				// Number of hitboxes
 	ub32 can_setoff : 1;				// Whether hitbox can clang or not
 	u32 hit_sfx : 10;					// Hitbox FGM
+	u32 : 1;
+#else
+	u32 : 1;
+	u32 hit_sfx : 10;					// Hitbox FGM
+	u32 can_setoff : 1;					// Whether hitbox can clang or not
+	u32 attack_count : 2;				// Number of hitboxes
+	u32 shield_damage : 8;				// Hitbox shield damage — use BITFIELD_SEXT8() at read sites
+	u32 knockback_weight : 10;			// Hitbox fixed knockback
+#endif
+
+	// --- Bitfield Region B (Word B3): priority + rehit flags + knockback_base + 14 pad ---
+#if IS_BIG_ENDIAN
 	u32 priority : 3;					// Hitbox priority
 	ub32 can_rehit_item : 1;			// Whether hitbox can rehit items
 	ub32 can_rehit_fighter : 1;			// Whether hitbox can rehit fighters
@@ -180,16 +280,54 @@ struct ITAttributes
 	ub32 can_reflect : 1;				// Whether item can be reflected
 	ub32 can_shield : 1;				// Whether item can be shielded
 	u32 knockback_base : 10;			// Hitbox base knockback
+	u32 : 14;
+#else
+	u32 : 14;
+	u32 knockback_base : 10;			// Hitbox base knockback
+	u32 can_shield : 1;					// Whether item can be shielded
+	u32 can_reflect : 1;				// Whether item can be reflected
+	u32 can_hop : 1;					// Whether item can deflect off shields
+	u32 can_rehit_fighter : 1;			// Whether hitbox can rehit fighters
+	u32 can_rehit_item : 1;				// Whether hitbox can rehit items
+	u32 priority : 3;					// Hitbox priority
+#endif
+
+	// --- Bitfield Region B (Word B4): type + hitstatus + 2 unk flags + drop_sfx + throw_sfx + 2 pad ---
+#if IS_BIG_ENDIAN
 	u32 type : 4;						// Item's usage type
 	u32 hitstatus : 4;					// Item's base hurtbox collision state
 	ub32 unk_atca_0x3C_b6 : 1;			// Unused
 	ub32 unk_atca_0x3C_b7 : 1;			// Unused
 	u32 drop_sfx : 10;					// FGM to play when Item is dropped
 	u32 throw_sfx : 10;					// FGM to play when item is thrown lightly
+	u32 : 2;
+#else
+	u32 : 2;
+	u32 throw_sfx : 10;					// FGM to play when item is thrown lightly
+	u32 drop_sfx : 10;					// FGM to play when Item is dropped
+	u32 unk_atca_0x3C_b7 : 1;			// Unused
+	u32 unk_atca_0x3C_b6 : 1;			// Unused
+	u32 hitstatus : 4;					// Item's base hurtbox collision state
+	u32 type : 4;						// Item's usage type
+#endif
+
+	// --- Bitfield Region B (Word B5): smash_sfx + vel_scale + 13 pad ---
+#if IS_BIG_ENDIAN
 	u32 smash_sfx : 10;					// FGM to play when Item is smash-thrown
 	u32 vel_scale : 9;					// Item thrown velocity scale (percentage)
+	u32 : 13;
+#else
+	u32 : 13;
+	u32 vel_scale : 9;					// Item thrown velocity scale (percentage)
+	u32 smash_sfx : 10;					// FGM to play when Item is smash-thrown
+#endif
+
 	u16 spin_speed;						// Item model rotation speed (percentage)
 };
+
+#ifdef PORT
+_Static_assert(sizeof(ITAttributes) == 0x50, "ITAttributes must be 80 bytes to match ROM data layout");
+#endif
 
 struct ITStruct 						// Common items, stage hazards, fighter items and Pokémon
 {

@@ -164,7 +164,7 @@ typedef struct GMColEventMakeEffect1
 #else
 	u32 flag : 10;
 	u32 effect_id : 9;
-	s32 joint_id : 7;
+	u32 joint_id : 7;						// u32 for MSVC packing; sign-extend with BITFIELD_SEXT(x,7)
 	u32 opcode : 6;
 #endif
 } GMColEventMakeEffect1;
@@ -218,8 +218,8 @@ typedef struct GMColEventSetLight
 	s32 light1 : 13;
 	s32 light2 : 13;
 #else
-	s32 light2 : 13;
-	s32 light1 : 13;
+	u32 light2 : 13;						// u32 for MSVC packing; sign-extend with BITFIELD_SEXT13()
+	u32 light1 : 13;						// u32 for MSVC packing; sign-extend with BITFIELD_SEXT13()
 	u32 opcode : 6;
 #endif
 } GMColEventSetLight;
