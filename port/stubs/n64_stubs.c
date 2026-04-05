@@ -454,42 +454,13 @@ s32 osEPiLinkHandle(OSPiHandle *handle)
 }
 
 /*
- * DMA transfers — on PC, these are synchronous memcpy.
- * The original N64 code expects an async DMA that posts a completion
- * message to the return queue.  We do the copy immediately and post
- * the message so osRecvMesg(BLOCK) on the return queue doesn't hang.
+ * DMA transfers — osEPiStartDma and osPiStartDma are provided by
+ * libultraship (libultra/os.cpp, libultra/os_pi.cpp).  We no longer
+ * define them here to avoid duplicate symbol errors.
+ *
+ * The game's syDmaCopy/syDmaLoadOverlay are no-opped via #ifdef PORT
+ * in dma.c, so these LUS stubs are never called from game code.
  */
-s32 osEPiStartDma(OSPiHandle *pihandle, OSIoMesg *mb, s32 direction)
-{
-	/* On PC, ROM addresses are meaningless — DMA data comes from the
-	 * resource system, not from physical ROM.  For the boot-time RSP
-	 * microcode copy (syDmaReadRom of gSYMainRspBootCode), the data
-	 * is unused so we just zero-fill.  For overlay loading, the resource
-	 * system handles it before this point. */
-	if (mb->dramAddr != NULL && mb->size > 0) {
-		memset(mb->dramAddr, 0, mb->size);
-	}
-
-	/* Post completion message to the return queue so the caller's
-	 * osRecvMesg(BLOCK) unblocks. */
-	if (mb->hdr.retQueue != NULL) {
-		osSendMesg(mb->hdr.retQueue, NULL, OS_MESG_NOBLOCK);
-	}
-	return 0;
-}
-
-s32 osPiStartDma(OSIoMesg *mb, s32 priority, s32 direction,
-                 uintptr_t devAddr, void *vAddr, size_t nbytes,
-                 OSMesgQueue *mq)
-{
-	if (vAddr != NULL && nbytes > 0) {
-		memset(vAddr, 0, nbytes);
-	}
-	if (mq != NULL) {
-		osSendMesg(mq, NULL, OS_MESG_NOBLOCK);
-	}
-	return 0;
-}
 
 s32 osAfterPreNMI(void)
 {

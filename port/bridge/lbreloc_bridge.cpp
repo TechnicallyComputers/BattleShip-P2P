@@ -115,7 +115,7 @@ static std::shared_ptr<RelocFile> portLoadRelocResource(u32 file_id)
 {
 	if (file_id >= RELOC_FILE_COUNT || gRelocFileTable[file_id] == NULL)
 	{
-		spdlog::error("lbReloc bridge: invalid file_id {}", file_id);
+		spdlog::error("lbReloc bridge: invalid file_id {} (0x{:08X})", file_id, file_id);
 		return nullptr;
 	}
 

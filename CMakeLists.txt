@@ -180,10 +180,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE libultraship)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_options(${PROJECT_NAME} PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
-    # Our n64_stubs.c overrides some libultraship OS functions (osRecvMesg,
-    # osCreateViManager, etc.) with coroutine-aware versions.  MSVC's linker
-    # may pull in the LUS versions too — /FORCE:MULTIPLE lets ours win.
-    target_link_options(${PROJECT_NAME} PRIVATE /FORCE:MULTIPLE)
+    # DMA functions (osEPiStartDma, osPiStartDma) are provided by LUS.
+    # Game DMA code is no-opped via #ifdef PORT in dma.c, so no /FORCE needed.
     target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
 elseif (CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_options(${PROJECT_NAME} PRIVATE -Wl,-export-dynamic)
