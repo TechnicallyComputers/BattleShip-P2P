@@ -5,6 +5,10 @@
 #include <PR/rcp.h>
 #include <PR/gu.h>
 
+#ifdef PORT
+#include "audio/audio_playback.h"
+#endif
+
 extern SYAudioSettings dSYAudioPublicSettings2, dSYAudioPublicSettings3;
 
 // only temporarily here...
@@ -1021,6 +1025,7 @@ void syAudioThreadMain(void *arg)
     while (TRUE)
     {
         osRecvMesg(&sSYAudioTicMesgQueue, NULL, OS_MESG_BLOCK);
+        portAudioPushSilence();
     }
 #endif
 
