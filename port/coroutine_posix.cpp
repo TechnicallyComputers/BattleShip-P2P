@@ -120,9 +120,17 @@ void port_coroutine_resume(PortCoroutine *co)
 		return;
 	}
 
+	/* Save the current coroutine so nested resumes restore correctly.
+	 * Example: main resumes Thread5, Thread5 resumes a GObj coroutine.
+	 * When the GObj coroutine yields, sCurrentCoroutine must be restored
+	 * to Thread5 (not NULL) so Thread5 can still yield later. */
+	PortCoroutine *prev = sCurrentCoroutine;
+
 	sCurrentCoroutine = co;
 	swapcontext(&co->caller_ctx, &co->ctx);
-	/* Returns here when coroutine yields or finishes. */
+
+	/* Restore the previous coroutine context for the caller. */
+	sCurrentCoroutine = prev;
 }
 
 void port_coroutine_yield(void)
