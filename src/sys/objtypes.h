@@ -81,13 +81,21 @@ union AObjEvent16
     s16 s;
     u16 u;
 
+#if IS_BIG_ENDIAN
     struct
     {
         u16 opcode : 5;
         u16 flags : 10;
         u16 toggle : 1;
-
     } command;
+#else
+    struct
+    {
+        u16 toggle : 1;
+        u16 flags : 10;
+        u16 opcode : 5;
+    } command;
+#endif
 };
 
 // Normal-sized AObj event struct for common animation scripts
@@ -102,13 +110,21 @@ union AObjEvent32
     void *p;
 #endif
 
+#if IS_BIG_ENDIAN
     struct
     {
         u32 opcode : 7;
         u32 flags : 10;
         u32 payload : 15;
-
     } command;
+#else
+    struct
+    {
+        u32 payload : 15;
+        u32 flags : 10;
+        u32 opcode : 7;
+    } command;
+#endif
 };
 
 /*

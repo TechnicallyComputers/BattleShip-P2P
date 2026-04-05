@@ -64,6 +64,7 @@ struct GMAttackRecord
 
 union GMStatFlags
 {
+#if IS_BIG_ENDIAN
 	struct
 	{
 		u16 unused : 3;
@@ -72,6 +73,16 @@ union GMStatFlags
 		ub16 is_projectile : 1;
 		u16 attack_id : 10;
 	};
+#else
+	struct
+	{
+		u16 attack_id : 10;
+		ub16 is_projectile : 1;
+		ub16 ga : 1;
+		ub16 is_smash_attack : 1;
+		u16 unused : 3;
+	};
+#endif
 	u16 halfword;
 };
 
@@ -116,8 +127,13 @@ struct GMColDesc
 
 struct GMColEventDefault
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 value : 26;
+#else
+	u32 value : 26;
+	u32 opcode : 6;
+#endif
 };
 
 struct GMColEventGoto1
@@ -127,7 +143,11 @@ struct GMColEventGoto1
 
 struct GMColEventGoto2
 {
+#ifdef PORT
+	u32 p_goto;         // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_goto;
+#endif
 };
 
 struct GMColEventGoto
@@ -143,7 +163,11 @@ struct GMColEventSubroutine1
 
 struct GMColEventSubroutine2
 {
+#ifdef PORT
+	u32 p_subroutine;   // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_subroutine;
+#endif
 };
 
 struct GMColEventSubroutine
@@ -159,7 +183,11 @@ struct GMColEventParallel1
 
 struct GMColEventParallel2
 {
+#ifdef PORT
+	u32 p_script;       // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_script;
+#endif
 };
 
 struct GMColEventParallel
@@ -175,10 +203,17 @@ struct GMColEventSetRGBA1
 
 struct GMColEventSetRGBA2
 {
+#if IS_BIG_ENDIAN
 	u32 r : 8;
 	u32 g : 8;
 	u32 b : 8;
 	u32 a : 8;
+#else
+	u32 a : 8;
+	u32 b : 8;
+	u32 g : 8;
+	u32 r : 8;
+#endif
 };
 
 struct GMColEventSetRGBA
@@ -189,16 +224,28 @@ struct GMColEventSetRGBA
 
 struct GMColEventBlendRGBA1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 blend_frames : 26;
+#else
+	u32 blend_frames : 26;
+	u32 opcode : 6;
+#endif
 };
 
 struct GMColEventBlendRGBA2
 {
+#if IS_BIG_ENDIAN
 	u32 r : 8;
 	u32 g : 8;
 	u32 b : 8;
 	u32 a : 8;
+#else
+	u32 a : 8;
+	u32 b : 8;
+	u32 g : 8;
+	u32 r : 8;
+#endif
 };
 
 struct GMColEventBlendRGBA
@@ -209,28 +256,50 @@ struct GMColEventBlendRGBA
 
 struct GMColEventMakeEffect1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
 	u32 effect_id : 9;
 	u32 flag : 10;
+#else
+	u32 flag : 10;
+	u32 effect_id : 9;
+	s32 joint_id : 7;
+	u32 opcode : 6;
+#endif
 };
 
 struct GMColEventMakeEffect2
 {
+#if IS_BIG_ENDIAN
 	s32 off_x : 16;
 	s32 off_y : 16;
+#else
+	s32 off_y : 16;
+	s32 off_x : 16;
+#endif
 };
 
 struct GMColEventMakeEffect3
 {
+#if IS_BIG_ENDIAN
 	s32 off_z : 16;
 	s32 rng_x : 16;
+#else
+	s32 rng_x : 16;
+	s32 off_z : 16;
+#endif
 };
 
 struct GMColEventMakeEffect4
 {
+#if IS_BIG_ENDIAN
 	s32 rng_y : 16;
 	s32 rng_z : 16;
+#else
+	s32 rng_z : 16;
+	s32 rng_y : 16;
+#endif
 };
 
 struct GMColEventMakeEffect
@@ -243,9 +312,15 @@ struct GMColEventMakeEffect
 
 struct GMColEventSetLight
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 light1 : 13;
 	s32 light2 : 13;
+#else
+	s32 light2 : 13;
+	s32 light1 : 13;
+	u32 opcode : 6;
+#endif
 };
 
 union GMColEventAll
@@ -272,8 +347,13 @@ union GMColEventAll
 
 struct GMRumbleEventDefault
 {
+#if IS_BIG_ENDIAN
 	u16 opcode : 3;
 	u16 param : 13;
+#else
+	u16 param : 13;
+	u16 opcode : 3;
+#endif
 };
 
 struct GMRumbleScript

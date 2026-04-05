@@ -336,7 +336,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventSetThrow:
         ftMotionEventAdvance(ms, FTMotionEventSetThrow1);
 
+#ifdef PORT
+        fp->throw_desc = (FTThrowHitDesc*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventSetThrow2)->throw_desc);
+#else
         fp->throw_desc = ftMotionEventCast(ms, FTMotionEventSetThrow2)->throw_desc;
+#endif
 
         ftMotionEventAdvance(ms, FTMotionEventSetThrow2);
         break;
@@ -519,7 +523,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
 
         ms->script_id++;
 
+#ifdef PORT
+        ms->p_script = (u32*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventSubroutine2)->p_goto);
+#else
         ms->p_script = ftMotionEventCast(ms, FTMotionEventSubroutine2)->p_goto;
+#endif
         break;
 
     case nFTMotionEventSetDamageThrown:
@@ -529,6 +537,22 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
 
             ftMotionEventAdvance(ms, FTMotionEventSetDamageThrown1);
 
+#ifdef PORT
+            p_damage = (FTMotionDamageScript*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventSetDamageThrown2)->p_subroutine);
+
+            {
+                u32 script_token = p_damage->p_script[fp->status_vars.common.damage.script_id][fkind];
+                if (script_token != 0)
+                {
+                    ms->p_goto[ms->script_id] = lbRelocGetFileData(void*, ms->p_script, sizeof(FTMotionEventSetDamageThrown2));
+
+                    ms->script_id++;
+
+                    ms->p_script = (u32*)PORT_RESOLVE(script_token);
+                }
+                else ftMotionEventAdvance(ms, FTMotionEventSetDamageThrown2);
+            }
+#else
             p_damage = ftMotionEventCast(ms, FTMotionEventSetDamageThrown2)->p_subroutine;
 
             if (p_damage->p_script[fp->status_vars.common.damage.script_id][fkind] != NULL)
@@ -540,6 +564,7 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
                 ms->p_script = p_damage->p_script[fp->status_vars.common.damage.script_id][fkind];
             }
             else ftMotionEventAdvance(ms, FTMotionEventSetDamageThrown2);
+#endif
         }
         else ftMotionEventAdvance(ms, FTMotionEventSetDamageThrown);
         break;
@@ -551,7 +576,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
     case nFTMotionEventGoto:
         ftMotionEventAdvance(ms, FTMotionEventGoto1);
 
+#ifdef PORT
+        ms->p_script = (u32*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventGoto2)->p_goto);
+#else
         ms->p_script = ftMotionEventCast(ms, FTMotionEventGoto2)->p_goto;
+#endif
         break;
 
     case nFTMotionEventSetParallelScript:
@@ -559,7 +588,11 @@ void ftMainParseMotionEvent(GObj *fighter_gobj, FTStruct *fp, FTMotionScript *ms
 
         if (fp->motion_scripts[0][1].p_script == NULL)
         {
+#ifdef PORT
+            fp->motion_scripts[0][1].p_script = fp->motion_scripts[1][1].p_script = (u32*)PORT_RESOLVE(ftMotionEventCast(ms, FTMotionEventParallel2)->p_goto);
+#else
             fp->motion_scripts[0][1].p_script = fp->motion_scripts[1][1].p_script = ftMotionEventCast(ms, FTMotionEventParallel2)->p_goto;
+#endif
             fp->motion_scripts[0][1].script_wait = fp->motion_scripts[1][1].script_wait = DObjGetStruct(fighter_gobj)->anim_speed - fighter_gobj->anim_frame;
             fp->motion_scripts[0][1].script_id = fp->motion_scripts[1][1].script_id = 0;
         }
@@ -1008,7 +1041,11 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
 
             case nGMColEventGoto:
                 gmColEventAdvance(colanim->cs[i].p_script, GMColEventGoto1);
+#ifdef PORT
+                colanim->cs[i].p_script = (u32*)PORT_RESOLVE(gmColEventCast(colanim->cs[i].p_script, GMColEventGoto2)->p_goto);
+#else
                 colanim->cs[i].p_script = gmColEventCast(colanim->cs[i].p_script, GMColEventGoto2)->p_goto;
+#endif
                 break;
 
             case nGMColEventLoopBegin:
@@ -1028,7 +1065,11 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
             case nGMColEventSubroutine:
                 gmColEventAdvance(colanim->cs[i].p_script, GMColEventSubroutine1);
                 colanim->cs[i].p_subroutine[colanim->cs[i].script_id++] = lbRelocGetFileData(void*, colanim->cs[i].p_script, sizeof(GMColEventSubroutine1));
+#ifdef PORT
+                colanim->cs[i].p_script = (u32*)PORT_RESOLVE(gmColEventCast(colanim->cs[i].p_script, GMColEventSubroutine2)->p_subroutine);
+#else
                 colanim->cs[i].p_script = gmColEventCast(colanim->cs[i].p_script, GMColEventSubroutine2)->p_subroutine;
+#endif
                 break;
 
             case nGMColEventReturn:
@@ -1040,7 +1081,11 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
 
                 if (colanim->cs[1].p_script == NULL)
                 {
+#ifdef PORT
+                    colanim->cs[1].p_script = (u32*)PORT_RESOLVE(gmColEventCast(colanim->cs[i].p_script, GMColEventParallel2)->p_script);
+#else
                     colanim->cs[1].p_script = gmColEventCast(colanim->cs[i].p_script, GMColEventParallel2)->p_script;
+#endif
                     colanim->cs[1].color_event_timer = 0;
                     colanim->cs[1].script_id = 0;
                 }

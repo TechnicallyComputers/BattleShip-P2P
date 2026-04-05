@@ -49,19 +49,33 @@ union FTAnimDesc
 {
     u32 word;
 
+#if IS_BIG_ENDIAN
     struct
     {
         ub32 is_use_xrotn_joint : 1;        // 0x80000000
         ub32 is_use_transn_joint : 1;       // 0x40000000
         ub32 is_use_yrotn_joint : 1;        // 0x20000000
-        ub32 is_enabled_joints : 24;        // 0x10000000 to 0x00000020 - not actually a single variable, but 24 bits, each corresponding to a joint ID
+        ub32 is_enabled_joints : 24;        // 0x10000000 to 0x00000020
         ub32 is_use_submotion_script : 1;   // 0x00000010
-        ub32 is_anim_joint : 1;             // 0x00000008 - whether current animation is type Figatree (0) or AnimJoint (1)
+        ub32 is_anim_joint : 1;             // 0x00000008
         ub32 is_have_translate_scale : 1;   // 0x00000004
         ub32 is_use_shieldpose : 1;         // 0x00000002
         ub32 is_use_animlocks : 1;          // 0x00000001
-
     } flags;
+#else
+    struct
+    {
+        ub32 is_use_animlocks : 1;          // 0x00000001
+        ub32 is_use_shieldpose : 1;         // 0x00000002
+        ub32 is_have_translate_scale : 1;   // 0x00000004
+        ub32 is_anim_joint : 1;             // 0x00000008
+        ub32 is_use_submotion_script : 1;   // 0x00000010
+        ub32 is_enabled_joints : 24;        // 0x00000020 to 0x10000000
+        ub32 is_use_yrotn_joint : 1;        // 0x20000000
+        ub32 is_use_transn_joint : 1;       // 0x40000000
+        ub32 is_use_xrotn_joint : 1;        // 0x80000000
+    } flags;
+#endif
 };
 
 struct FTMotionDesc
@@ -181,8 +195,13 @@ struct FTTexturePartStatus
 
 struct FTMotionFlags
 {
+#if IS_BIG_ENDIAN
     s16 motion_id : 10;
     u16 attack_id : 6;
+#else
+    u16 attack_id : 6;
+    s16 motion_id : 10;
+#endif
 };
 
 struct FTMotionScript
@@ -196,19 +215,31 @@ struct FTMotionScript
 
 struct FTMotionEventDefault // Event with no arguments
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
-    u32 value : 26;
+	u32 value : 26;
+#else
+	u32 value : 26;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventDouble // Event with no arguments
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 pad1 : 26;
 	u32 pad2 : 32;
+#else
+	u32 pad1 : 26;
+	u32 opcode : 6;
+	u32 pad2 : 32;
+#endif
 };
 
 struct FTMotionEventMakeAttack1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 group_id : 3;
@@ -216,34 +247,67 @@ struct FTMotionEventMakeAttack1
 	u32 damage : 8;
 	ub32 can_rebound : 1;
 	u32 element : 4;
+#else
+	u32 element : 4;
+	ub32 can_rebound : 1;
+	u32 damage : 8;
+	s32 joint_id : 7;
+	u32 group_id : 3;
+	u32 attack_id: 3;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventMakeAttack2
 {
+#if IS_BIG_ENDIAN
 	u32 size : 16;
 	s32 off_x : 16;
+#else
+	s32 off_x : 16;
+	u32 size : 16;
+#endif
 };
 
 struct FTMotionEventMakeAttack3
 {
+#if IS_BIG_ENDIAN
 	s32 off_y : 16;
 	s32 off_z : 16;
+#else
+	s32 off_z : 16;
+	s32 off_y : 16;
+#endif
 };
 
 struct FTMotionEventMakeAttack4
 {
+#if IS_BIG_ENDIAN
 	s32 angle : 10;
 	u32 knockback_scale : 10;
 	u32 knockback_weight : 10;
-	u32 is_hit_ground_air : 2;  // This should really be two separate bits, but it doesn't match that way
+	u32 is_hit_ground_air : 2;
+#else
+	u32 is_hit_ground_air : 2;
+	u32 knockback_weight : 10;
+	u32 knockback_scale : 10;
+	s32 angle : 10;
+#endif
 };
 
 struct FTMotionEventMakeAttack5
 {
+#if IS_BIG_ENDIAN
 	s32 shield_damage : 8;
 	u32 fgm_level : 3;
 	u32 fgm_kind : 4;
 	u32 knockback_base : 10;
+#else
+	u32 knockback_base : 10;
+	u32 fgm_kind : 4;
+	u32 fgm_level : 3;
+	s32 shield_damage : 8;
+#endif
 };
 
 struct FTMotionEventMakeAttack
@@ -257,15 +321,26 @@ struct FTMotionEventMakeAttack
 
 struct FTMotionEventSetAttackOffset1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	s32 off_x : 16;
+#else
+	s32 off_x : 16;
+	u32 attack_id: 3;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetAttackOffset2
 {
+#if IS_BIG_ENDIAN
 	s32 off_y : 16;
 	s32 off_z : 16;
+#else
+	s32 off_z : 16;
+	s32 off_y : 16;
+#endif
 };
 
 struct FTMotionEventSetAttackOffset
@@ -276,23 +351,41 @@ struct FTMotionEventSetAttackOffset
 
 struct FTMotionEventSetAttackCollDamage
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 damage : 8;
+#else
+	u32 damage : 8;
+	u32 attack_id: 3;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetAttackCollSize
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 size : 16;
+#else
+	u32 size : 16;
+	u32 attack_id: 3;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetAttackCollSound
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 fgm_level : 3;
+#else
+	u32 fgm_level : 3;
+	u32 attack_id: 3;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetThrow1
@@ -302,7 +395,11 @@ struct FTMotionEventSetThrow1
 
 struct FTMotionEventSetThrow2
 {
+#ifdef PORT
+	u32 throw_desc;     // Relocation token — use PORT_RESOLVE()
+#else
 	FTThrowHitDesc* throw_desc;
+#endif
 };
 
 struct FTMotionEventSetThrow
@@ -313,28 +410,50 @@ struct FTMotionEventSetThrow
 
 struct FTMotionEventMakeEffect1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
 	u32 effect_id : 9;
 	u32 flag : 10;
+#else
+	u32 flag : 10;
+	u32 effect_id : 9;
+	s32 joint_id : 7;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventMakeEffect2
 {
+#if IS_BIG_ENDIAN
 	s32 off_x : 16;
 	s32 off_y : 16;
+#else
+	s32 off_y : 16;
+	s32 off_x : 16;
+#endif
 };
 
 struct FTMotionEventMakeEffect3
 {
+#if IS_BIG_ENDIAN
 	s32 off_z : 16;
 	s32 rng_x : 16;
+#else
+	s32 rng_x : 16;
+	s32 off_z : 16;
+#endif
 };
 
 struct FTMotionEventMakeEffect4
 {
+#if IS_BIG_ENDIAN
 	s32 rng_y : 16;
 	s32 rng_z : 16;
+#else
+	s32 rng_z : 16;
+	s32 rng_y : 16;
+#endif
 };
 
 struct FTMotionEventMakeEffect
@@ -347,33 +466,59 @@ struct FTMotionEventMakeEffect
 
 struct FTMotionEventSetHitStatusPartID
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
 	u32 hitstatus : 19;
+#else
+	u32 hitstatus : 19;
+	s32 joint_id : 7;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetDamageCollPartID1
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
+#else
+	s32 joint_id : 7;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetDamageCollPartID2
 {
+#if IS_BIG_ENDIAN
 	s32 off_x : 16;
 	s32 off_y : 16;
+#else
+	s32 off_y : 16;
+	s32 off_x : 16;
+#endif
 };
 
 struct FTMotionEventSetDamageCollPartID3
 {
+#if IS_BIG_ENDIAN
 	s32 off_z : 16;
 	s32 size_x : 16;
+#else
+	s32 size_x : 16;
+	s32 off_z : 16;
+#endif
 };
 
 struct FTMotionEventSetDamageCollPartID4
 {
+#if IS_BIG_ENDIAN
 	s32 size_y : 16;
 	s32 size_z : 16;
+#else
+	s32 size_z : 16;
+	s32 size_y : 16;
+#endif
 };
 
 struct FTMotionEventSetDamageCollPartID
@@ -391,7 +536,11 @@ struct FTMotionEventSubroutine1
 
 struct FTMotionEventSubroutine2
 {
+#ifdef PORT
+	u32 p_goto;         // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_goto;
+#endif
 };
 
 struct FTMotionEventSubroutine
@@ -407,12 +556,20 @@ struct FTMotionEventSetDamageThrown1
 
 struct FTMotionEventSetDamageThrown2
 {
+#ifdef PORT
+	u32 p_subroutine;   // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_subroutine;
+#endif
 };
 
 struct FTMotionDamageScript
 {
+#ifdef PORT
+	u32 p_script[2][nFTKindEnumCount];   // Relocation tokens — use PORT_RESOLVE()
+#else
 	void* p_script[2][nFTKindEnumCount];
+#endif
 };
 
 struct FTMotionEventSetDamageThrown
@@ -428,7 +585,11 @@ struct FTMotionEventGoto1
 
 struct FTMotionEventGoto2
 {
+#ifdef PORT
+	u32 p_goto;         // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_goto;
+#endif
 };
 
 struct FTMotionEventGoto
@@ -444,7 +605,11 @@ struct FTMotionEventParallel1
 
 struct FTMotionEventParallel2
 {
+#ifdef PORT
+	u32 p_goto;         // Relocation token — use PORT_RESOLVE()
+#else
 	void* p_goto;
+#endif
 };
 
 struct FTMotionEventParallel
@@ -455,50 +620,91 @@ struct FTMotionEventParallel
 
 struct FTMotionEventSetModelPartID
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
 	s32 modelpart_id : 19;
+#else
+	s32 modelpart_id : 19;
+	s32 joint_id : 7;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetTexturePartID
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 texturepart_id : 6;
 	u32 frame : 20;
+#else
+	u32 frame : 20;
+	u32 texturepart_id : 6;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetColAnimID
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 colanim_id : 8;
 	u32 length : 18;
+#else
+	u32 length : 18;
+	u32 colanim_id : 8;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetSlopeContour
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 pad : 23;
 	u32 flags : 3;
+#else
+	u32 flags : 3;
+	u32 pad : 23;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventSetAfterImage
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 is_itemswing : 8;
 	s32 drawstatus : 18;
+#else
+	s32 drawstatus : 18;
+	u32 is_itemswing : 8;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventMakeRumble
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 length : 13;
 	u32 rumble_id : 13;
+#else
+	u32 rumble_id : 13;
+	u32 length : 13;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTMotionEventStopRumble
 {
+#if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	u32 rumble_id : 26;
+#else
+	u32 rumble_id : 26;
+	u32 opcode : 6;
+#endif
 };
 
 struct FTStatusDesc
@@ -861,12 +1067,19 @@ union FTKeyEvent
 {
     u16 halfword;
 
+#if IS_BIG_ENDIAN
     struct
     {
         u16 opcode : 4;
         u16 param : 12;
-    } 
-    command;
+    } command;
+#else
+    struct
+    {
+        u16 param : 12;
+        u16 opcode : 4;
+    } command;
+#endif
 
     Vec2b stick_range;
 };
