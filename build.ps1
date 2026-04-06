@@ -17,8 +17,11 @@ $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BuildDir = Join-Path $Root "build"
 $ROM = Join-Path $Root "baserom.us.z64"
 $O2R = Join-Path $Root "ssb64.o2r"
+$F3DO2R = Join-Path $Root "f3d.o2r"
+$Fast3DShaderDir = Join-Path $Root "libultraship\src\fast\shaders"
 $TorchExe = Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\Debug\torch.exe"
 $GameExe = Join-Path $BuildDir "Debug\ssb64.exe"
+$ExeDir = Split-Path $GameExe -Parent
 
 function Write-Step($msg) {
     Write-Host "`n=== $msg ===" -ForegroundColor Cyan
@@ -32,6 +35,9 @@ if ($Clean) {
     }
     if (Test-Path $O2R) {
         Remove-Item -Force $O2R
+    }
+    if (Test-Path $F3DO2R) {
+        Remove-Item -Force $F3DO2R
     }
 }
 
@@ -102,11 +108,36 @@ if (-not $SkipExtract) {
     Write-Host ("Assets extracted: ssb64.o2r ({0:N1} MB)" -f $o2rSize) -ForegroundColor Green
 
     # Copy o2r next to exe
-    $exeDir = Split-Path $GameExe -Parent
-    if ((Test-Path $exeDir) -and ($exeDir -ne $Root)) {
-        Copy-Item $O2R (Join-Path $exeDir "ssb64.o2r") -Force
-        Write-Host "Copied ssb64.o2r to $exeDir"
+    if ((Test-Path $ExeDir) -and ($ExeDir -ne $Root)) {
+        Copy-Item $O2R (Join-Path $ExeDir "ssb64.o2r") -Force
+        Write-Host "Copied ssb64.o2r to $ExeDir"
     }
+}
+
+# ── Package Fast3D shader archive ──
+Write-Step "Packaging Fast3D shader archive"
+if (-not (Test-Path $Fast3DShaderDir)) {
+    Write-Host "ERROR: Fast3D shader directory not found at $Fast3DShaderDir" -ForegroundColor Red
+    exit 1
+}
+
+if (Test-Path $F3DO2R) {
+    Remove-Item -Force $F3DO2R
+}
+
+Compress-Archive -Path $Fast3DShaderDir -DestinationPath $F3DO2R -Force
+
+if (-not (Test-Path $F3DO2R)) {
+    Write-Host "ERROR: f3d.o2r was not created" -ForegroundColor Red
+    exit 1
+}
+
+$f3dSizeKB = [math]::Round((Get-Item $F3DO2R).Length / 1KB, 1)
+Write-Host ("Packaged f3d.o2r ({0:N1} KB)" -f $f3dSizeKB) -ForegroundColor Green
+
+if ((Test-Path $ExeDir) -and ($ExeDir -ne $Root)) {
+    Copy-Item $F3DO2R (Join-Path $ExeDir "f3d.o2r") -Force
+    Write-Host "Copied f3d.o2r to $ExeDir"
 }
 
 # ── Done ──
@@ -117,5 +148,8 @@ if (Test-Path $GameExe) {
 }
 if (Test-Path $O2R) {
     Write-Host "  Assets:     $O2R"
+}
+if (Test-Path $F3DO2R) {
+    Write-Host "  Fast3D:     $F3DO2R"
 }
 Write-Host ""

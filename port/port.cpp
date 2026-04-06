@@ -40,7 +40,10 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext->InitConsoleVariables()) { port_log("SSB64: InitConsoleVariables failed\n"); return 1; }
 	port_log("SSB64: Config + CVars OK\n");
 
-	std::vector<std::string> archivePaths = { "ssb64.o2r" };
+	std::vector<std::string> archivePaths = {
+		"ssb64.o2r",
+		"f3d.o2r"
+	};
 	if (!sContext->InitResourceManager(archivePaths)) { port_log("SSB64: InitResourceManager failed\n"); return 1; }
 	port_log("SSB64: ResourceManager OK\n");
 
