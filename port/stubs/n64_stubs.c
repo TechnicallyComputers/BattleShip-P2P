@@ -463,11 +463,24 @@ OSYieldResult osSpTaskYielded(OSTask *tp)
 
 s32 osContStartQuery(OSMesgQueue *mq)
 {
+	if (mq != NULL) {
+		osSendMesg(mq, NULL, OS_MESG_NOBLOCK);
+	}
 	return 0;
 }
 
 void osContGetQuery(OSContStatus *data)
 {
+	s32 i;
+
+	if (data == NULL) {
+		return;
+	}
+	for (i = 0; i < MAXCONTROLLERS; i++) {
+		data[i].errno = 0;
+		data[i].status = CONT_CARD_ON;
+		data[i].type = 0;
+	}
 }
 
 /* ========================================================================= */

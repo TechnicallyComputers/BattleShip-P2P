@@ -92,12 +92,6 @@ void syControllerUpdateDeviceStatuses(void)
     s32 i;
 
     osContStartQuery(&sSYControllerInitMesgQueue);
-#ifdef PORT
-    /* On N64, osContStartQuery triggers async SI hardware and the completion
-     * interrupt posts to the queue.  On PC, the LUS stub is synchronous —
-     * post the completion message ourselves so osRecvMesg doesn't deadlock. */
-    osSendMesg(&sSYControllerInitMesgQueue, (OSMesg)0, OS_MESG_NOBLOCK);
-#endif
     osRecvMesg(&sSYControllerInitMesgQueue, NULL, OS_MESG_BLOCK);
     osContGetQuery(sSYControllerDeviceStatuses);
 
@@ -107,11 +101,7 @@ void syControllerUpdateDeviceStatuses(void)
         {
             if (!(sSYControllerDescs[i].unk1D & CONT_CARD_ON) || (sSYControllerDescs[i].unk1C != 0))
             {
-#ifdef PORT
-                /* osMotorInit on PC doesn't use SI — skip to avoid blocking. */
-#else
                 osMotorInit(&sSYControllerInitMesgQueue, &sSYControllerMotorPfs[i], i);
-#endif
             }
         }
         sSYControllerDescs[i].unk1C = sSYControllerDeviceStatuses[i].errno;
@@ -125,9 +115,6 @@ void syControllerReadDeviceData(void)
     s32 i;
 
     osContStartReadData(&sSYControllerInitMesgQueue);
-#ifdef PORT
-    osSendMesg(&sSYControllerInitMesgQueue, (OSMesg)0, OS_MESG_NOBLOCK);
-#endif
     osRecvMesg(&sSYControllerInitMesgQueue, NULL, OS_MESG_BLOCK);
     osContGetReadData(sSYControllerData);
 
@@ -135,9 +122,7 @@ void syControllerReadDeviceData(void)
     {
         if (!sSYControllerData[i].errno && (sSYControllerDeviceStatuses[i].status & CONT_CARD_ON) && sSYControllerDescs[i].unk1C)
         {
-#ifndef PORT
             osMotorInit(&sSYControllerInitMesgQueue, &sSYControllerMotorPfs[i], i);
-#endif
         }
         sSYControllerDescs[i].unk1C = sSYControllerData[i].errno;
 
