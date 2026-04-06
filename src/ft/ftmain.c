@@ -4145,6 +4145,9 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
     DObj *sibling_joint;
     FTAttributes *attr;
     FTCommonPart *commonpart;
+    DObjDesc *commonpart_dobjdesc;
+    MObjSub ***commonpart_p_mobjsubs;
+    AObjEvent32 ***commonpart_p_costume_matanim_joints;
     DObj *parent_joint;
     FTParts *parts;
 
@@ -4157,7 +4160,7 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
         {
             commonpart = &((FTCommonPartContainer*)PORT_RESOLVE(fp->attr->commonparts_container))->commonparts[0];
         }
-        else if (((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[1].dobjdesc[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl != NULL)
+        else if (FTPARTS_GET_DOBJDESC(&((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[1])[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl != NULL)
         {
             commonpart = &((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[1];
         }
@@ -4165,7 +4168,8 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
     }
     else commonpart = NULL;
 
-    dl = (commonpart != NULL) ? PORT_RESOLVE(commonpart->dobjdesc[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl) : NULL;
+    commonpart_dobjdesc = (commonpart != NULL) ? FTPARTS_GET_DOBJDESC(commonpart) : NULL;
+    dl = (commonpart_dobjdesc != NULL) ? PORT_RESOLVE(commonpart_dobjdesc[hiddenpart->root_joint_id - nFTPartsJointCommonStart].dl) : NULL;
 
     root_joint = gcAddDObjForGObj(fp->fighter_gobj, dl);
     root_joint->sib_prev->sib_next = NULL;
@@ -4173,7 +4177,17 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
 
     if (dl != NULL)
     {
-        lbCommonAddMObjForFighterPartsDObj(root_joint, commonpart->p_mobjsubs[hiddenpart->root_joint_id - nFTPartsJointCommonStart], commonpart->p_costume_matanim_joints[hiddenpart->root_joint_id - nFTPartsJointCommonStart], NULL, fp->costume);
+        commonpart_p_mobjsubs = FTPARTS_GET_MOBJSUBS(commonpart);
+        commonpart_p_costume_matanim_joints = FTPARTS_GET_COSTUME_MATANIM_JOINTS(commonpart);
+
+        lbCommonAddMObjForFighterPartsDObj
+        (
+            root_joint,
+            (commonpart_p_mobjsubs != NULL) ? commonpart_p_mobjsubs[hiddenpart->root_joint_id - nFTPartsJointCommonStart] : NULL,
+            (commonpart_p_costume_matanim_joints != NULL) ? commonpart_p_costume_matanim_joints[hiddenpart->root_joint_id - nFTPartsJointCommonStart] : NULL,
+            NULL,
+            fp->costume
+        );
     }
     if (commonpart != NULL)
     {
@@ -4704,7 +4718,7 @@ void ftMainSetStatus(GObj *fighter_gobj, s32 status_id, f32 frame_begin, f32 ani
                 }
                 else ftMainEjectHiddenPartID(fp, i);
             }
-            dobjdesc = ((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[fp->detail_curr - nFTPartsDetailStart].dobjdesc;
+            dobjdesc = FTPARTS_GET_DOBJDESC(&((FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container))->commonparts[fp->detail_curr - nFTPartsDetailStart]);
 
             for (i = nFTPartsJointCommonStart; dobjdesc->id != DOBJ_ARRAY_MAX; i++, dobjdesc++)
             {

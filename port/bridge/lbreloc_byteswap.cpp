@@ -99,9 +99,11 @@ static void scan_display_lists(const uint32_t *words, size_t num_words,
 			uint32_t num_vtx = (w0 >> 12) & 0xFF;
 			uint8_t seg = (w1 >> 24) & 0xFF;
 			uint32_t offset = w1 & 0x00FFFFFF;
+			size_t offset_sz = static_cast<size_t>(offset);
+			size_t vtx_bytes = static_cast<size_t>(num_vtx) * 16;
 
 			if (seg == FILE_SEGMENT_ID && num_vtx > 0 &&
-			    offset + num_vtx * 16 <= file_size)
+			    offset_sz <= file_size && vtx_bytes <= (file_size - offset_sz))
 			{
 				regions.push_back({offset, num_vtx * 16, FIXUP_VERTEX});
 			}
@@ -150,8 +152,14 @@ static void scan_display_lists(const uint32_t *words, size_t num_words,
 			// Align to 4 bytes for u32 word processing
 			tex_bytes = (tex_bytes + 3) & ~3u;
 
-			if (pending_tex_offset + tex_bytes > file_size)
-				tex_bytes = file_size - pending_tex_offset;
+			size_t pending_offset_sz = static_cast<size_t>(pending_tex_offset);
+			if (pending_offset_sz > file_size)
+			{
+				has_pending_tex = false;
+				break;
+			}
+			if (static_cast<size_t>(tex_bytes) > (file_size - pending_offset_sz))
+				tex_bytes = static_cast<uint32_t>(file_size - pending_offset_sz);
 
 			RegionFixup fixup;
 			switch (pending_tex_siz)
@@ -184,8 +192,14 @@ static void scan_display_lists(const uint32_t *words, size_t num_words,
 			// Align to 4 bytes
 			palette_bytes = (palette_bytes + 3) & ~3u;
 
-			if (pending_tex_offset + palette_bytes > file_size)
-				palette_bytes = file_size - pending_tex_offset;
+			size_t pending_offset_sz = static_cast<size_t>(pending_tex_offset);
+			if (pending_offset_sz > file_size)
+			{
+				has_pending_tex = false;
+				break;
+			}
+			if (static_cast<size_t>(palette_bytes) > (file_size - pending_offset_sz))
+				palette_bytes = static_cast<uint32_t>(file_size - pending_offset_sz);
 
 			regions.push_back({pending_tex_offset, palette_bytes, FIXUP_TEX_U16});
 			has_pending_tex = false;
@@ -211,14 +225,14 @@ static inline uint32_t rotate16(uint32_t w)
 	return (w << 16) | (w >> 16);
 }
 
-static void apply_fixup_vertex(uint32_t *words, uint32_t num_words)
+static void apply_fixup_vertex(uint32_t *words, size_t num_words)
 {
 	// Vtx is 4 u32 words (16 bytes):
 	//   Word 0: s16 ob[0] | s16 ob[1]   -> rotate16
 	//   Word 1: s16 ob[2] | u16 flag     -> rotate16
 	//   Word 2: s16 tc[0] | s16 tc[1]    -> rotate16
 	//   Word 3: u8 cn[0-3]               -> bswap32 (restore byte order)
-	for (uint32_t i = 0; i + 3 < num_words; i += 4)
+	for (size_t i = 0; i + 3 < num_words; i += 4)
 	{
 		words[i + 0] = rotate16(words[i + 0]);
 		words[i + 1] = rotate16(words[i + 1]);
@@ -227,22 +241,22 @@ static void apply_fixup_vertex(uint32_t *words, uint32_t num_words)
 	}
 }
 
-static void apply_fixup_tex_bytes(uint32_t *words, uint32_t num_words)
+static void apply_fixup_tex_bytes(uint32_t *words, size_t num_words)
 {
 	// 4bpp/8bpp texture data: byte-granular pixels.
 	// u32 swap reversed byte order within each 4-byte group.
 	// Undo by swapping back to original byte order.
-	for (uint32_t i = 0; i < num_words; i++)
+	for (size_t i = 0; i < num_words; i++)
 	{
 		words[i] = BSWAP32(words[i]);
 	}
 }
 
-static void apply_fixup_tex_u16(uint32_t *words, uint32_t num_words)
+static void apply_fixup_tex_u16(uint32_t *words, size_t num_words)
 {
 	// 16bpp texture/palette data: u16 pixel values.
 	// Same fixup as vertex s16 data.
-	for (uint32_t i = 0; i < num_words; i++)
+	for (size_t i = 0; i < num_words; i++)
 	{
 		words[i] = rotate16(words[i]);
 	}
@@ -255,12 +269,23 @@ static void apply_fixups(void *data, size_t file_size,
 
 	for (const auto &region : regions)
 	{
-		if (region.byte_offset + region.byte_size > file_size)
+		size_t start = static_cast<size_t>(region.byte_offset);
+		size_t len = static_cast<size_t>(region.byte_size);
+
+		// Bounds check using size_t math to prevent 32-bit overflow.
+		if (start > file_size || len > (file_size - start))
+			continue;
+
+		// We reinterpret as u32 words, so both start and length must be word-aligned.
+		if ((start & 3) != 0)
+			continue;
+		len &= ~static_cast<size_t>(3);
+		if (len == 0)
 			continue;
 
 		uint32_t *region_words = reinterpret_cast<uint32_t *>(
-			bytes + region.byte_offset);
-		uint32_t num_words = region.byte_size / 4;
+			bytes + start);
+		size_t num_words = len / 4;
 
 		switch (region.type)
 		{

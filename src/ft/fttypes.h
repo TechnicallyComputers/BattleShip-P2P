@@ -151,9 +151,15 @@ struct FTModelPart
 
 struct FTCommonPart
 {
+#ifdef PORT
+    u32 dobjdesc;                   // Relocation token
+    u32 p_mobjsubs;                 // Relocation token
+    u32 p_costume_matanim_joints;   // Relocation token
+#else
     DObjDesc *dobjdesc;
     MObjSub ***p_mobjsubs;
     AObjEvent32 ***p_costume_matanim_joints;
+#endif
     u8 flags;
 };
 
@@ -161,6 +167,16 @@ struct FTCommonPartContainer
 {
     FTCommonPart commonparts[2];
 };
+
+#ifdef PORT
+#define FTPARTS_GET_DOBJDESC(commonpart) ((DObjDesc*)PORT_RESOLVE((commonpart)->dobjdesc))
+#define FTPARTS_GET_MOBJSUBS(commonpart) ((MObjSub***)PORT_RESOLVE((commonpart)->p_mobjsubs))
+#define FTPARTS_GET_COSTUME_MATANIM_JOINTS(commonpart) ((AObjEvent32***)PORT_RESOLVE((commonpart)->p_costume_matanim_joints))
+#else
+#define FTPARTS_GET_DOBJDESC(commonpart) ((commonpart)->dobjdesc)
+#define FTPARTS_GET_MOBJSUBS(commonpart) ((commonpart)->p_mobjsubs)
+#define FTPARTS_GET_COSTUME_MATANIM_JOINTS(commonpart) ((commonpart)->p_costume_matanim_joints)
+#endif
 
 struct FTModelPartDesc
 {

@@ -790,7 +790,12 @@ void lbCommonAddDObjAnimJointAll(DObj *root_dobj, AObjEvent32 **anim_joints, f32
 
     while (current_dobj != NULL)
     {
+#ifdef PORT
+        u32 anim_joint_token = *(u32*)anim_joints;
+        AObjEvent32 *anim_joint = (anim_joint_token != 0) ? (AObjEvent32*)PORT_RESOLVE(anim_joint_token) : NULL;
+#else
         AObjEvent32 *anim_joint = *anim_joints;
+#endif
         
         if (anim_joint != NULL)
         {
@@ -798,7 +803,11 @@ void lbCommonAddDObjAnimJointAll(DObj *root_dobj, AObjEvent32 **anim_joints, f32
         }
         else current_dobj->anim_wait = AOBJ_ANIM_NULL;
         
+#ifdef PORT
+        anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+#else
         anim_joints++;
+#endif
         
         current_dobj = lbCommonGetTreeDObjNextFromRoot(current_dobj, root_dobj);
     }
@@ -813,7 +822,12 @@ void lbCommonAddFighterPartsFigatree(DObj *root_dobj, void **figatree, f32 anim_
 
     while (current_dobj != NULL)
     {
+#ifdef PORT
+        u32 anim_token = *(u32*)figatree;
+        void *anim = (anim_token != 0) ? PORT_RESOLVE(anim_token) : NULL;
+#else
         void *anim = *figatree;
+#endif
         FTParts *parts = current_dobj->user_data.p;
         
         if (anim != NULL)
@@ -828,7 +842,11 @@ void lbCommonAddFighterPartsFigatree(DObj *root_dobj, void **figatree, f32 anim_
 
             parts->is_have_anim = FALSE;
         }
+#ifdef PORT
+        figatree = (void**)(void*)(((u32*)figatree) + 1);
+#else
         figatree++;
+#endif
         
         current_dobj = lbCommonGetTreeDObjNextFromRoot(current_dobj, root_dobj);
     }
@@ -1023,9 +1041,13 @@ void lbCommonSetupFighterPartsDObjs
     DObj *array_dobjs[DOBJ_ARRAY_MAX];
     s32 detail_id;
     DObjDesc *dobjdesc;
+    DObjDesc *detail_dobjdesc;
+    MObjSub ***detail_p_mobjsubs;
+    AObjEvent32 ***detail_p_costume_matanim_joints;
+    DObjDesc *low_dobjdesc;
     DObj *current_dobj;
 
-    dobjdesc = commonparts_container->commonparts[detail_curr - 1].dobjdesc;
+    dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[detail_curr - 1]);
 
     flags0 = setup_parts[0], flags1 = setup_parts[1];
 
@@ -1044,25 +1066,30 @@ void lbCommonSetupFighterPartsDObjs
             if
             (
                 (detail_curr == nFTPartsDetailHigh) ||
-                (commonparts_container->commonparts[nFTPartsDetailLow - nFTPartsDetailStart].dobjdesc[i].dl == NULL)
+                ((low_dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[nFTPartsDetailLow - nFTPartsDetailStart])) == NULL) ||
+                (low_dobjdesc[i].dl == NULL)
             )
             {
                 detail_id = 0;
             }
             else detail_id = 1;
 
+            detail_dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[detail_id]);
+            detail_p_mobjsubs = FTPARTS_GET_MOBJSUBS(&commonparts_container->commonparts[detail_id]);
+            detail_p_costume_matanim_joints = FTPARTS_GET_COSTUME_MATANIM_JOINTS(&commonparts_container->commonparts[detail_id]);
+
             if (id != 0)
             {
                 current_dobj = array_dobjs[id] = gcAddChildForDObj
                 (
                     array_dobjs[id - 1],
-                    PORT_RESOLVE(commonparts_container->commonparts[detail_id].dobjdesc[i].dl)
+                    PORT_RESOLVE(detail_dobjdesc[i].dl)
                 );
             }
             else current_dobj = array_dobjs[0] = gcAddChildForDObj
             (
                 root_dobj,
-                PORT_RESOLVE(commonparts_container->commonparts[detail_id].dobjdesc[i].dl)
+                PORT_RESOLVE(detail_dobjdesc[i].dl)
             );
             if (dobjdesc->id & 0x8000)
             {
@@ -1077,10 +1104,8 @@ void lbCommonSetupFighterPartsDObjs
             lbCommonAddMObjForFighterPartsDObj
             (
                 current_dobj,
-                (commonparts_container->commonparts[detail_id].p_mobjsubs != NULL) ?
-                commonparts_container->commonparts[detail_id].p_mobjsubs[i] : NULL,
-                (commonparts_container->commonparts[detail_id].p_costume_matanim_joints != NULL) ?
-                commonparts_container->commonparts[detail_id].p_costume_matanim_joints[i] : NULL,
+                (detail_p_mobjsubs != NULL) ? detail_p_mobjsubs[i] : NULL,
+                (detail_p_costume_matanim_joints != NULL) ? detail_p_costume_matanim_joints[i] : NULL,
                 NULL,
                 anim_frame
             );

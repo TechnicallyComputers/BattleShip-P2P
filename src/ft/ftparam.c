@@ -757,6 +757,9 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
     s32 detail_id;
     AObjEvent32 **costume_matanim_joints;
     MObjSub **mobjsubs;
+    DObjDesc *detail_dobjdesc;
+    MObjSub ***detail_p_mobjsubs;
+    AObjEvent32 ***detail_p_costume_matanim_joints;
 
     joint = fp->joints[joint_id];
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
@@ -785,23 +788,31 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
                 }
                 else
                 {
-                    if ((fp->detail_curr == nFTPartsDetailHigh) || (commonparts_container->commonparts[1].dobjdesc[joint_id - nFTPartsJointCommonStart].dl == NULL))
+                    if
+                    (
+                        (fp->detail_curr == nFTPartsDetailHigh) ||
+                        (FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[1])[joint_id - nFTPartsJointCommonStart].dl == NULL)
+                    )
                     {
                         detail_id = 0;
                     }
                     else detail_id = 1;
 
-                    joint->dl = PORT_RESOLVE(commonparts_container->commonparts[detail_id].dobjdesc[joint_id - nFTPartsJointCommonStart].dl);
+                    detail_dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[detail_id]);
+                    detail_p_mobjsubs = FTPARTS_GET_MOBJSUBS(&commonparts_container->commonparts[detail_id]);
+                    detail_p_costume_matanim_joints = FTPARTS_GET_COSTUME_MATANIM_JOINTS(&commonparts_container->commonparts[detail_id]);
 
-                    if (commonparts_container->commonparts[detail_id].p_mobjsubs != NULL)
+                    joint->dl = PORT_RESOLVE(detail_dobjdesc[joint_id - nFTPartsJointCommonStart].dl);
+
+                    if (detail_p_mobjsubs != NULL)
                     {
-                        mobjsubs = commonparts_container->commonparts[detail_id].p_mobjsubs[joint_id - nFTPartsJointCommonStart];
+                        mobjsubs = detail_p_mobjsubs[joint_id - nFTPartsJointCommonStart];
                     }
                     else mobjsubs = NULL;
 
-                    if (commonparts_container->commonparts[detail_id].p_costume_matanim_joints != NULL)
+                    if (detail_p_costume_matanim_joints != NULL)
                     {
-                        costume_matanim_joints = commonparts_container->commonparts[detail_id].p_costume_matanim_joints[joint_id - nFTPartsJointCommonStart];
+                        costume_matanim_joints = detail_p_costume_matanim_joints[joint_id - nFTPartsJointCommonStart];
                     }
                     else costume_matanim_joints = NULL;
 
@@ -840,6 +851,9 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
     s32 detail_id;
     AObjEvent32 **costume_matanim_joints;
     MObjSub **mobjsubs;
+    DObjDesc *detail_dobjdesc;
+    MObjSub ***detail_p_mobjsubs;
+    AObjEvent32 ***detail_p_costume_matanim_joints;
     s32 i;
 
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
@@ -878,23 +892,31 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
                     }
                     else
                     {
-                        if ((fp->detail_curr == nFTPartsDetailHigh) || (commonparts_container->commonparts[1].dobjdesc[i].dl == NULL))
+                        if
+                        (
+                            (fp->detail_curr == nFTPartsDetailHigh) ||
+                            (FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[1])[i].dl == NULL)
+                        )
                         {
                             detail_id = 0;
                         }
                         else detail_id = 1;
 
-                        joint->dl = PORT_RESOLVE(commonparts_container->commonparts[detail_id].dobjdesc[i].dl);
+                        detail_dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[detail_id]);
+                        detail_p_mobjsubs = FTPARTS_GET_MOBJSUBS(&commonparts_container->commonparts[detail_id]);
+                        detail_p_costume_matanim_joints = FTPARTS_GET_COSTUME_MATANIM_JOINTS(&commonparts_container->commonparts[detail_id]);
 
-                        if (commonparts_container->commonparts[detail_id].p_mobjsubs != NULL)
+                        joint->dl = PORT_RESOLVE(detail_dobjdesc[i].dl);
+
+                        if (detail_p_mobjsubs != NULL)
                         {
-                            mobjsubs = commonparts_container->commonparts[detail_id].p_mobjsubs[i];
+                            mobjsubs = detail_p_mobjsubs[i];
                         }
                         else mobjsubs = NULL;
 
-                        if (commonparts_container->commonparts[detail_id].p_costume_matanim_joints != NULL)
+                        if (detail_p_costume_matanim_joints != NULL)
                         {
-                            costume_matanim_joints = commonparts_container->commonparts[detail_id].p_costume_matanim_joints[i];
+                            costume_matanim_joints = detail_p_costume_matanim_joints[i];
                         }
                         else costume_matanim_joints = NULL;
 
@@ -987,6 +1009,9 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
     FTModelPart *modelpart;
     MObjSub **mobjsubs;
     AObjEvent32 **costume_matanim_joints;
+    DObjDesc *detail_dobjdesc;
+    MObjSub ***detail_p_mobjsubs;
+    AObjEvent32 ***detail_p_costume_matanim_joints;
     s32 i;
 
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
@@ -1012,21 +1037,29 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
                 }
                 else
                 {
-                    if ((fp->detail_curr == nFTPartsDetailHigh) || (commonparts_container->commonparts[1].dobjdesc[i].dl == NULL))
+                    if
+                    (
+                        (fp->detail_curr == nFTPartsDetailHigh) ||
+                        (FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[1])[i].dl == NULL)
+                    )
                     {
                         detail_id = 0;
                     }
                     else detail_id = 1;
 
-                    if (commonparts_container->commonparts[detail_id].p_mobjsubs != NULL)
+                    detail_dobjdesc = FTPARTS_GET_DOBJDESC(&commonparts_container->commonparts[detail_id]);
+                    detail_p_mobjsubs = FTPARTS_GET_MOBJSUBS(&commonparts_container->commonparts[detail_id]);
+                    detail_p_costume_matanim_joints = FTPARTS_GET_COSTUME_MATANIM_JOINTS(&commonparts_container->commonparts[detail_id]);
+
+                    if (detail_p_mobjsubs != NULL)
                     {
-                        mobjsubs = commonparts_container->commonparts[detail_id].p_mobjsubs[i];
+                        mobjsubs = detail_p_mobjsubs[i];
                     }
                     else mobjsubs = NULL;
 
-                    if (commonparts_container->commonparts[detail_id].p_costume_matanim_joints != NULL)
+                    if (detail_p_costume_matanim_joints != NULL)
                     {
-                        costume_matanim_joints = commonparts_container->commonparts[detail_id].p_costume_matanim_joints[i];
+                        costume_matanim_joints = detail_p_costume_matanim_joints[i];
                     }
                     else costume_matanim_joints = NULL;
 

@@ -171,18 +171,48 @@ void gcAddAnimJointAll(GObj *gobj, AObjEvent32 **anim_joints, f32 anim_frame)
 
     while (dobj != NULL) 
     {
-        if (*anim_joints != NULL) 
+        if (anim_joints != NULL)
         {
-            gcAddDObjAnimJoint(dobj, *anim_joints, anim_frame);
-            dobj->is_anim_root = is_anim_root;
-            is_anim_root = FALSE;
-        } 
-        else 
-        {
-            dobj->anim_wait = AOBJ_ANIM_NULL;
-            dobj->is_anim_root = FALSE;
+ #ifdef PORT
+            u32 anim_joint_token = *(u32*)anim_joints;
+
+            if (anim_joint_token != 0)
+            {
+                AObjEvent32 *anim_joint = (AObjEvent32*)PORT_RESOLVE(anim_joint_token);
+
+                if (anim_joint != NULL)
+                {
+                    gcAddDObjAnimJoint(dobj, anim_joint, anim_frame);
+                    dobj->is_anim_root = is_anim_root;
+                    is_anim_root = FALSE;
+                }
+                else
+                {
+                    dobj->anim_wait = AOBJ_ANIM_NULL;
+                    dobj->is_anim_root = FALSE;
+                }
+            }
+            else
+            {
+                dobj->anim_wait = AOBJ_ANIM_NULL;
+                dobj->is_anim_root = FALSE;
+            }
+            anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+ #else
+            if (*anim_joints != NULL)
+            {
+                gcAddDObjAnimJoint(dobj, *anim_joints, anim_frame);
+                dobj->is_anim_root = is_anim_root;
+                is_anim_root = FALSE;
+            } 
+            else 
+            {
+                dobj->anim_wait = AOBJ_ANIM_NULL;
+                dobj->is_anim_root = FALSE;
+            }
+            anim_joints++;
+ #endif
         }
-        anim_joints++;
         dobj = gcGetTreeDObjNext(dobj);
     }
 }
@@ -197,6 +227,35 @@ void gcAddMatAnimJointAll(GObj *gobj, AObjEvent32 ***p_matanim_joints, f32 anim_
     {
         if (p_matanim_joints != NULL)
         {
+#ifdef PORT
+            u32 matanim_joints_token = *(u32*)p_matanim_joints;
+
+            if (matanim_joints_token != 0)
+            {
+                u32 *matanim_joints = (u32*)PORT_RESOLVE(matanim_joints_token);
+                MObj *mobj = dobj->mobj;
+
+                if (matanim_joints != NULL)
+                {
+                    while (mobj != NULL)
+                    {
+                        u32 matanim_joint_token = *matanim_joints;
+
+                        if (matanim_joint_token != 0)
+                        {
+                            AObjEvent32 *matanim_joint = (AObjEvent32*)PORT_RESOLVE(matanim_joint_token);
+
+                            if (matanim_joint != NULL)
+                            {
+                                gcAddMObjMatAnimJoint(mobj, matanim_joint, anim_frame);
+                            }
+                        }
+                        matanim_joints++;
+                        mobj = mobj->next;
+                    }
+                }
+            }
+#else
             if (*p_matanim_joints != NULL)
             {
                 AObjEvent32 **matanim_joints = *p_matanim_joints;
@@ -213,6 +272,10 @@ void gcAddMatAnimJointAll(GObj *gobj, AObjEvent32 ***p_matanim_joints, f32 anim_
                 }
             }
             p_matanim_joints++;
+#endif
+#ifdef PORT
+            p_matanim_joints = (AObjEvent32***)(void*)(((u32*)p_matanim_joints) + 1);
+#endif
         }
         dobj = gcGetTreeDObjNext(dobj);
     }
@@ -229,6 +292,32 @@ void gcAddAnimAll(GObj *gobj, AObjEvent32 **anim_joints, AObjEvent32 ***p_matani
     {
         if (anim_joints != NULL)
         {
+#ifdef PORT
+            u32 anim_joint_token = *(u32*)anim_joints;
+
+            if (anim_joint_token != 0)
+            {
+                AObjEvent32 *anim_joint = (AObjEvent32*)PORT_RESOLVE(anim_joint_token);
+
+                if (anim_joint != NULL)
+                {
+                    gcAddDObjAnimJoint(dobj, anim_joint, anim_frame);
+                    dobj->is_anim_root = is_anim_root;
+                    is_anim_root = FALSE;
+                }
+                else
+                {
+                    dobj->anim_wait = AOBJ_ANIM_NULL;
+                    dobj->is_anim_root = FALSE;
+                }
+            } 
+            else 
+            {
+                dobj->anim_wait = AOBJ_ANIM_NULL;
+                dobj->is_anim_root = FALSE;
+            }
+            anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+#else
             if (*anim_joints != NULL)
             {
                 gcAddDObjAnimJoint(dobj, *anim_joints, anim_frame);
@@ -241,9 +330,39 @@ void gcAddAnimAll(GObj *gobj, AObjEvent32 **anim_joints, AObjEvent32 ***p_matani
                 dobj->is_anim_root = FALSE;
             }
             anim_joints++;
+#endif
         }
         if (p_matanim_joints != NULL) 
         {
+#ifdef PORT
+            u32 matanim_joints_token = *(u32*)p_matanim_joints;
+
+            if (matanim_joints_token != 0)
+            {
+                u32 *matanim_joints = (u32*)PORT_RESOLVE(matanim_joints_token);
+                MObj *mobj = dobj->mobj;
+
+                if (matanim_joints != NULL)
+                {
+                    while (mobj != NULL)
+                    {
+                        u32 matanim_joint_token = *matanim_joints;
+
+                        if (matanim_joint_token != 0)
+                        {
+                            AObjEvent32 *matanim_joint = (AObjEvent32*)PORT_RESOLVE(matanim_joint_token);
+
+                            if (matanim_joint != NULL)
+                            {
+                                gcAddMObjMatAnimJoint(mobj, matanim_joint, anim_frame);
+                            }
+                        }
+                        matanim_joints++;
+                        mobj = mobj->next;
+                    }
+                }
+            }
+#else
             if (*p_matanim_joints != NULL) 
             {
                 AObjEvent32 **matanim_joints = *p_matanim_joints;
@@ -260,6 +379,10 @@ void gcAddAnimAll(GObj *gobj, AObjEvent32 **anim_joints, AObjEvent32 ***p_matani
                 }
             }
             p_matanim_joints++;
+#endif
+#ifdef PORT
+            p_matanim_joints = (AObjEvent32***)(void*)(((u32*)p_matanim_joints) + 1);
+#endif
         }
         dobj = gcGetTreeDObjNext(dobj);
     }
@@ -1820,7 +1943,11 @@ f32 gcGetDObjTempAnimTimeMax
 
     time_max = 0.0F;
 
+ #ifdef PORT
+    if ((anim_joints == NULL) || (*(u32*)anim_joints == 0))
+ #else
     if ((anim_joints == NULL) || (*anim_joints == NULL))
+ #endif
     {
         if (dobjdesc == NULL)
         {
@@ -1832,6 +1959,23 @@ f32 gcGetDObjTempAnimTimeMax
     root_aobj = dobj->aobj;
     dobj->aobj = NULL;
 
+ #ifdef PORT
+    if ((anim_joints != NULL) && (*(u32*)anim_joints != 0))
+    {
+        dobj->anim_joint.event32 = (AObjEvent32*)PORT_RESOLVE(*(u32*)anim_joints);
+
+        if (dobj->anim_joint.event32 != NULL)
+        {
+            dobj->anim_wait = AOBJ_ANIM_CHANGED;
+            dobj->anim_frame = anim_frame;
+
+            gcParseDObjAnimJoint(dobj);
+
+            parse_aobj = dobj->aobj;
+            dobj->aobj = NULL;
+        }
+    }
+ #else
     if ((anim_joints != NULL) && (*anim_joints != NULL))
     {
         dobj->anim_joint.event32 = *anim_joints;
@@ -1843,6 +1987,7 @@ f32 gcGetDObjTempAnimTimeMax
         parse_aobj = dobj->aobj;
         dobj->aobj = NULL;
     }
+ #endif
     for (i = nGCAnimTrackJointStart; i <= nGCAnimTrackJointEnd; i++)
     {
         if (i == nGCAnimTrackTraI)
@@ -1969,7 +2114,11 @@ f32 func_8000EC64_F864
             }
             if (anim_joints != NULL)
             {
+#ifdef PORT
+                anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+#else
                 anim_joints++;
+#endif
             }
             if (dobjdesc != NULL)
             {
@@ -2000,7 +2149,11 @@ f32 func_8000EC64_F864
 
         if (anim_joints != NULL)
         {
+#ifdef PORT
+            anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+#else
             anim_joints++;
+#endif
         }
         if (dobjdesc != NULL)
         {
@@ -2032,6 +2185,80 @@ void func_8000EE40_FA40(GObj *gobj, AObjEvent32 **anim_joints, f32 anim_frame, D
 
     while (dobj != NULL) 
     {
+#ifdef PORT
+        u32 anim_joint_token = *(u32*)anim_joints;
+
+        if (anim_joint_token != 0)
+        {
+            AObjEvent32 *anim_joint = (AObjEvent32*)PORT_RESOLVE(anim_joint_token);
+
+            if (anim_joint != NULL)
+            {
+                gcAddDObjAnimJoint(dobj, anim_joint, anim_frame);
+            
+                dobj->is_anim_root = is_anim_root;
+                is_anim_root = FALSE;
+
+                for (i = nGCAnimTrackJointStart; i <= nGCAnimTrackJointEnd; i++)
+                {
+                    if (i != nGCAnimTrackTraI)
+                    {
+                        gcCheckGetDObjNoAxisTrack
+                        (
+                            0, 
+                            dobj,
+                            &axis_value, 
+                            NULL, 
+                            dobj->aobj, 
+                            dobjdesc, 
+                            i, 
+                            0, 
+                            &translate, 
+                            &is_axis_ready
+                        );
+                        switch (i) 
+                        {
+                        case nGCAnimTrackRotX:
+                            dobj->rotate.vec.f.x = axis_value;
+                            break;
+                        
+                        case nGCAnimTrackRotY:
+                            dobj->rotate.vec.f.y = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackRotZ:
+                            dobj->rotate.vec.f.z = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackTraX:
+                            dobj->translate.vec.f.x = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackTraY:
+                            dobj->translate.vec.f.y = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackTraZ:
+                            dobj->translate.vec.f.z = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackScaX:
+                            dobj->scale.vec.f.x = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackScaY:
+                            dobj->scale.vec.f.y = axis_value; 
+                            break;
+                        
+                        case nGCAnimTrackScaZ:
+                            dobj->scale.vec.f.z = axis_value; 
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+#else
         if (*anim_joints != NULL)
         {
             gcAddDObjAnimJoint(dobj, *anim_joints, anim_frame);
@@ -2097,6 +2324,7 @@ void func_8000EE40_FA40(GObj *gobj, AObjEvent32 **anim_joints, f32 anim_frame, D
                 }
             }
         }
+#endif
         else
         {
             dobj->anim_wait = AOBJ_ANIM_NULL;
@@ -2109,7 +2337,11 @@ void func_8000EE40_FA40(GObj *gobj, AObjEvent32 **anim_joints, f32 anim_frame, D
                 dobj->scale.vec.f = dobjdesc->scale;
             }
         }
+#ifdef PORT
+        anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+#else
         anim_joints++;
+#endif
 
         if (dobjdesc != NULL)
         {
@@ -2402,6 +2634,33 @@ void gcSetupCustomDObjsWithMObj(GObj *gobj, DObjDesc *dobjdesc, MObjSub ***p_mob
 
         if (p_mobjsubs != NULL)
         {
+#ifdef PORT
+            u32 mobjsubs_token = *(u32*)p_mobjsubs;
+            if (mobjsubs_token != 0)
+            {
+                u32 *mobjsubs = (u32*)PORT_RESOLVE(mobjsubs_token);
+
+                if (mobjsubs != NULL)
+                {
+                    u32 mobjsub_token = *mobjsubs;
+
+                    while (mobjsub_token != 0)
+                    {
+                        MObjSub *mobjsub = (MObjSub*)PORT_RESOLVE(mobjsub_token);
+
+                        if (mobjsub == NULL)
+                        {
+                            break;
+                        }
+                        gcAddMObjForDObj(dobj, mobjsub);
+
+                        mobjsubs++;
+
+                        mobjsub_token = *mobjsubs;
+                    }
+                }
+            }
+#else
             if (*p_mobjsubs != NULL)
             {
                 MObjSub **mobjsubs = *p_mobjsubs;
@@ -2417,6 +2676,10 @@ void gcSetupCustomDObjsWithMObj(GObj *gobj, DObjDesc *dobjdesc, MObjSub ***p_mob
                 }
             }
             p_mobjsubs++;
+#endif
+#ifdef PORT
+            p_mobjsubs = (MObjSub***)(void*)(((u32*)p_mobjsubs) + 1);
+#endif
         }
         if (dobjs != NULL)
         {
@@ -2434,6 +2697,33 @@ void gcAddMObjAll(GObj *gobj, MObjSub ***p_mobjsubs)
     {
         if (p_mobjsubs != NULL)
         {
+#ifdef PORT
+            u32 mobjsubs_token = *(u32*)p_mobjsubs;
+            if (mobjsubs_token != 0)
+            {
+                u32 *mobjsubs = (u32*)PORT_RESOLVE(mobjsubs_token);
+
+                if (mobjsubs != NULL)
+                {
+                    u32 mobjsub_token = *mobjsubs;
+
+                    while (mobjsub_token != 0)
+                    {
+                        MObjSub *mobjsub = (MObjSub*)PORT_RESOLVE(mobjsub_token);
+
+                        if (mobjsub == NULL)
+                        {
+                            break;
+                        }
+                        gcAddMObjForDObj(dobj, mobjsub);
+
+                        mobjsubs++;
+
+                        mobjsub_token = *mobjsubs;
+                    }
+                }
+            }
+#else
             if (*p_mobjsubs != NULL)
             {
                 MObjSub **mobjsubs = *p_mobjsubs;
@@ -2449,6 +2739,10 @@ void gcAddMObjAll(GObj *gobj, MObjSub ***p_mobjsubs)
                 }
             }
             p_mobjsubs++;
+#endif
+#ifdef PORT
+            p_mobjsubs = (MObjSub***)(void*)(((u32*)p_mobjsubs) + 1);
+#endif
         }
         dobj = gcGetTreeDObjNext(dobj);
     }
@@ -2927,11 +3221,19 @@ s32 gcGetAnimTotalLength(AObjEvent32 **anim_joints)
     s32 total = 0;
     s32 i;
 
+#ifdef PORT
+    while (*(u32*)anim_joints == 0)
+    {
+        anim_joints = (AObjEvent32**)(void*)(((u32*)anim_joints) + 1);
+    }
+    anim_joint = (AObjEvent32*)PORT_RESOLVE(*(u32*)anim_joints);
+#else
     while (*anim_joints == NULL)
     {
         anim_joints++;
     }
     anim_joint = *anim_joints;
+#endif
 
     while (TRUE)
     {
