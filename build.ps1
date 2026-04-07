@@ -126,14 +126,24 @@ if (Test-Path $F3DO2R) {
 }
 
 # The resource manager loads shaders as "shaders/opengl/...", "shaders/directx/...", etc.
-# Stage under a "shaders/" subdirectory so ZipFile preserves the right internal paths.
-$ShaderStaging = Join-Path $env:TEMP "ssb64_f3d_staging"
-if (Test-Path $ShaderStaging) { Remove-Item -Recurse -Force $ShaderStaging }
-$null = New-Item -ItemType Directory -Path (Join-Path $ShaderStaging "shaders")
-Copy-Item -Recurse $Fast3DShaderDir\* (Join-Path $ShaderStaging "shaders")
+# ZipFile::CreateFromDirectory on Windows stores entries with backslashes, which breaks
+# zip_name_locate (exact forward-slash match). Write entries individually with explicit
+# forward-slash paths using ZipArchive.
+Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::CreateFromDirectory($ShaderStaging, $F3DO2R)
-Remove-Item -Recurse -Force $ShaderStaging
+$stream = [System.IO.File]::Open($F3DO2R, [System.IO.FileMode]::Create)
+$zip = New-Object System.IO.Compression.ZipArchive($stream, [System.IO.Compression.ZipArchiveMode]::Create)
+Get-ChildItem -Recurse -File $Fast3DShaderDir | ForEach-Object {
+    $rel = "shaders/" + $_.FullName.Substring($Fast3DShaderDir.Length + 1).Replace('\', '/')
+    $entry = $zip.CreateEntry($rel)
+    $es = $entry.Open()
+    $fs = [System.IO.File]::OpenRead($_.FullName)
+    $fs.CopyTo($es)
+    $fs.Close()
+    $es.Close()
+}
+$zip.Dispose()
+$stream.Close()
 
 if (-not (Test-Path $F3DO2R)) {
     Write-Host "ERROR: f3d.o2r was not created" -ForegroundColor Red
