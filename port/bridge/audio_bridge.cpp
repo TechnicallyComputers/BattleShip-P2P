@@ -545,29 +545,30 @@ extern "C" void portAudioLoadAssets(void)
     alHeapInit(&sSYAudioHeap, sSYAudioCurrentSettings.heap_base,
                (s32)sSYAudioCurrentSettings.heap_size);
 
-    // Load BLOBs
-    AudioBlob sounds1_ctl, sounds1_tbl, sounds2_ctl, sounds2_tbl;
-    AudioBlob music_sbk;
-    AudioBlob fgm_unk_blob, fgm_tbl_blob, fgm_ucd_blob;
+    // Load BLOBs — static so the shared_ptrs keep data alive for the
+    // entire session (wavetable base pointers reference TBL data directly,
+    // FGM packages reference their data, etc.)
+    static AudioBlob sounds1_ctl, sounds1_tbl, sounds2_ctl, sounds2_tbl;
+    static AudioBlob music_sbk;
+    static AudioBlob fgm_unk_blob, fgm_tbl_blob, fgm_ucd_blob;
 
     bool ok = true;
-    ok = ok && loadBlob("B1_sounds1_ctl", sounds1_ctl);
-    ok = ok && loadBlob("B1_sounds1_tbl", sounds1_tbl);
-    ok = ok && loadBlob("B1_sounds2_ctl", sounds2_ctl);
-    ok = ok && loadBlob("B1_sounds2_tbl", sounds2_tbl);
-    ok = ok && loadBlob("S1_music_sbk",   music_sbk);
+    ok = ok && loadBlob("audio/B1_sounds1_ctl", sounds1_ctl);
+    ok = ok && loadBlob("audio/B1_sounds1_tbl", sounds1_tbl);
+    ok = ok && loadBlob("audio/B1_sounds2_ctl", sounds2_ctl);
+    ok = ok && loadBlob("audio/B1_sounds2_tbl", sounds2_tbl);
+    ok = ok && loadBlob("audio/S1_music_sbk",   music_sbk);
 
     if (!ok) {
         spdlog::error("audio_bridge: failed to load core audio assets, audio disabled");
         return;
     }
 
-    // Copy TBL data into heap (must persist — wavetables point into it)
-    u8* tbl1 = (u8*)alHeapAlloc(&sSYAudioHeap, 1, (s32)sounds1_tbl.size);
-    memcpy(tbl1, sounds1_tbl.data, sounds1_tbl.size);
-
-    u8* tbl2 = (u8*)alHeapAlloc(&sSYAudioHeap, 1, (s32)sounds2_tbl.size);
-    memcpy(tbl2, sounds2_tbl.data, sounds2_tbl.size);
+    // TBL data is raw ADPCM samples — too large for the N64-sized audio heap
+    // (~350KB).  Instead of copying, point wavetables directly into the Blob
+    // data (kept alive by the static AudioBlob shared_ptrs above).
+    u8* tbl1 = const_cast<u8*>(sounds1_tbl.data);
+    u8* tbl2 = const_cast<u8*>(sounds2_tbl.data);
 
     // Parse SFX bank (sounds2 = music instruments, sounds1 = SFX instruments)
     // Note: the naming in the decomp is confusing:
@@ -617,19 +618,19 @@ extern "C" void portAudioLoadAssets(void)
     sSYAudioDataBuffers[2] = (s16*)alHeapAlloc(&sSYAudioHeap, 1, 0xE60);
 
     // Load FGM packages (optional — game still works without SFX)
-    if (loadBlob("fgm_unk", fgm_unk_blob)) {
+    if (loadBlob("audio/fgm_unk", fgm_unk_blob)) {
         SYAudioPackage* pkg = parsePackage(fgm_unk_blob.data, fgm_unk_blob.size, &sSYAudioHeap);
         dSYAudioPublicSettings.unk4C = sSYAudioCurrentSettings.unk4C = (u16)pkg->count;
         dSYAudioPublicSettings.unk44 = sSYAudioCurrentSettings.unk44 = pkg->data;
     }
 
-    if (loadBlob("fgm_tbl", fgm_tbl_blob)) {
+    if (loadBlob("audio/fgm_tbl", fgm_tbl_blob)) {
         SYAudioPackage* pkg = parsePackage(fgm_tbl_blob.data, fgm_tbl_blob.size, &sSYAudioHeap);
         dSYAudioPublicSettings2.fgm_table_count = sSYAudioCurrentSettings.fgm_table_count = (u16)pkg->count;
         dSYAudioPublicSettings.fgm_table_data = sSYAudioCurrentSettings.fgm_table_data = pkg->data;
     }
 
-    if (loadBlob("fgm_ucd", fgm_ucd_blob)) {
+    if (loadBlob("audio/fgm_ucd", fgm_ucd_blob)) {
         SYAudioPackage* pkg = parsePackage(fgm_ucd_blob.data, fgm_ucd_blob.size, &sSYAudioHeap);
         dSYAudioPublicSettings3.fgm_ucode_count = sSYAudioCurrentSettings.fgm_ucode_count = (u16)pkg->count;
         dSYAudioPublicSettings3.fgm_ucode_data = sSYAudioCurrentSettings.fgm_ucode_data = pkg->data;

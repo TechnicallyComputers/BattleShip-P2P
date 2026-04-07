@@ -9,6 +9,7 @@
 #include "audio/audio_playback.h"
 #include "audio/audio_dma.h"
 #include "bridge/audio_bridge.h"
+#include "acmd_trace/acmd_trace.h"
 #endif
 
 extern SYAudioSettings dSYAudioPublicSettings2, dSYAudioPublicSettings3;
@@ -143,7 +144,12 @@ SYAudioSettings dSYAudioPublicSettings =
 // // // // // // // // // // // //
 
 // 0x800472D0
-#if defined(REGION_US)
+#ifdef PORT
+// PORT: Larger heap — N64 heap was sized for 4MB RDRAM.  On PC we need
+// space for parsed bank structs, sequence data copies, FGM packages,
+// Acmd double buffers, and audio output triple buffers.
+u8 gSYAudioHeapBuffer[0x100000]; // 1 MB
+#elif defined(REGION_US)
 u8 gSYAudioHeapBuffer[0x56000];
 #else
 u8 gSYAudioHeapBuffer[0x53000];
@@ -946,8 +952,24 @@ void syAudioMakeBGMPlayers(void)
     }
     else
     {
+#ifdef PORT
+        /* PORT: instArray[0] can be NULL when the CTL binary has offset 0
+         * for the first instrument slot (unused/dummy).  On N64 alBnkfNew
+         * adds the base address so offset 0 becomes non-NULL garbage.
+         * Use instArray[1] as fallback (first real instrument). */
+        {
+            ALInstrument *inst0 = sSYAudioSequenceBank1->instArray[0];
+            if (inst0 == NULL && sSYAudioSequenceBank1->instCount > 1)
+            {
+                inst0 = sSYAudioSequenceBank1->instArray[1];
+            }
+            audio_config.inst_sound_count = inst0 ? inst0->soundCount : 0;
+            audio_config.inst_sound_array = inst0 ? inst0->soundArray : NULL;
+        }
+#else
         audio_config.inst_sound_count = sSYAudioSequenceBank1->instArray[0]->soundCount;
         audio_config.inst_sound_array = sSYAudioSequenceBank1->instArray[0]->soundArray;
+#endif
     }
     audio_config.fgm_ucode_data = sSYAudioCurrentSettings.fgm_ucode_data;
     audio_config.fgm_table_data = sSYAudioCurrentSettings.fgm_table_data;
@@ -1053,6 +1075,8 @@ void syAudioThreadMain(void *arg)
         s32 port_id_mod3;
         s32 port_i;
 
+        acmd_trace_init();
+
         while (TRUE)
         {
             osRecvMesg(&sSYAudioTicMesgQueue, NULL, OS_MESG_BLOCK);
@@ -1063,9 +1087,13 @@ void syAudioThreadMain(void *arg)
 
             dSYAudioSampleCounts[port_id_mod3] = sSYAudioFrequency;
 
+            acmd_trace_begin_task();
+
             n_alAudioFrame(sSYAudioCurrentAcmdListBuffer, &port_cmdLen,
                            sSYAudioDataBuffers[port_id_mod3],
                            dSYAudioSampleCounts[port_id_mod3]);
+
+            acmd_trace_end_task();
 
             portAudioSubmitFrame(sSYAudioDataBuffers[port_id_mod3],
                                  dSYAudioSampleCounts[port_id_mod3]);

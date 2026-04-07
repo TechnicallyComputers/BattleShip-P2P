@@ -12,6 +12,8 @@
 
 #include "resource/ResourceType.h"
 #include "resource/RelocFileFactory.h"
+#include <ship/resource/factory/BlobFactory.h>
+#include <ship/resource/ResourceType.h>
 
 static std::shared_ptr<Ship::Context> sContext;
 
@@ -66,13 +68,20 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext->InitFileDropMgr()) { port_log("SSB64: InitFileDropMgr failed\n"); return 1; }
 	port_log("SSB64: All subsystems initialized\n");
 
-	// Register SSB64-specific resource factories
+	// Register resource factories
 	auto loader = sContext->GetResourceManager()->GetResourceLoader();
 	loader->RegisterResourceFactory(
 		std::make_shared<ResourceFactoryBinaryRelocFileV0>(),
 		RESOURCE_FORMAT_BINARY,
 		"SSB64Reloc",
 		static_cast<uint32_t>(SSB64::ResourceType::SSB64Reloc),
+		0
+	);
+	loader->RegisterResourceFactory(
+		std::make_shared<Ship::ResourceFactoryBinaryBlobV0>(),
+		RESOURCE_FORMAT_BINARY,
+		"Blob",
+		static_cast<uint32_t>(Ship::ResourceType::Blob),
 		0
 	);
 

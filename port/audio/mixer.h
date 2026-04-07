@@ -23,6 +23,11 @@
 /* Pull in the state typedefs (ADPCM_STATE, RESAMPLE_STATE, etc.)
  * These are defined in abi.h which is included before this header. */
 
+/* Acmd trace: log each command we execute so traces can be diffed
+ * against the N64 emulator.  acmd_trace_log_cmd() is a no-op when
+ * tracing is disabled, so this adds no overhead in normal builds. */
+#include "acmd_trace/acmd_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -74,21 +79,102 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 /*  uintptr_t on PORT. We cast back to the appropriate pointer type.  */
 /* ------------------------------------------------------------------ */
 
-#define aSegment(pkt, s, b)         do { (void)(pkt); } while (0)
-#define aClearBuffer(pkt, d, c)     aClearBufferImpl(d, c)
-#define aSetBuffer(pkt, f, i, o, c) aSetBufferImpl(f, i, o, c)
-#define aLoadBuffer(pkt, s)         aLoadBufferImpl((uintptr_t)(s))
-#define aSaveBuffer(pkt, s)         aSaveBufferImpl((uintptr_t)(s))
-#define aInterleave(pkt, l, r)      aInterleaveImpl(l, r)
-#define aDMEMMove(pkt, i, o, c)     aDMEMMoveImpl(i, o, c)
-#define aLoadADPCM(pkt, c, d)       aLoadADPCMImpl(c, (uintptr_t)(d))
-#define aSetLoop(pkt, a)            aSetLoopImpl((uintptr_t)(a))
-#define aADPCMdec(pkt, f, s)        aADPCMdecImpl(f, (int16_t*)(uintptr_t)(s))
-#define aResample(pkt, f, p, s)     aResampleImpl(f, p, (int16_t*)(uintptr_t)(s))
-#define aSetVolume(pkt, f, v, t, r) aSetVolumeImpl(f, v, t, r)
-#define aEnvMixer(pkt, f, s)        aEnvMixerImpl(f, (int16_t*)(uintptr_t)(s))
-#define aMix(pkt, f, g, i, o)       aMixImpl(f, g, i, o)
-#define aPoleFilter(pkt, f, g, s)   aPoleFilterImpl(f, g, (int16_t*)(uintptr_t)(s))
+/* ------------------------------------------------------------------ */
+/*  Trace-logging helpers: encode the Acmd w0/w1 exactly as the N64   */
+/*  ABI macros do (see include/PR/abi.h), then call the CPU impl.     */
+/*  _SHIFTL and A_* constants are already visible from abi.h.         */
+/* ------------------------------------------------------------------ */
+
+#define aSegment(pkt, s, b) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_SEGMENT, 24, 8), \
+	                        _SHIFTL(s, 24, 8) | _SHIFTL(b, 0, 24)); \
+	} while (0)
+
+#define aClearBuffer(pkt, d, c) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_CLEARBUFF, 24, 8) | _SHIFTL(d, 0, 24), \
+	                        (uint32_t)(c)); \
+	     aClearBufferImpl(d, c); \
+	} while (0)
+
+#define aSetBuffer(pkt, f, i, o, c) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_SETBUFF, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(i, 0, 16), \
+	                        _SHIFTL(o, 16, 16) | _SHIFTL(c, 0, 16)); \
+	     aSetBufferImpl(f, i, o, c); \
+	} while (0)
+
+#define aLoadBuffer(pkt, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_LOADBUFF, 24, 8), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aLoadBufferImpl((uintptr_t)(s)); \
+	} while (0)
+
+#define aSaveBuffer(pkt, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_SAVEBUFF, 24, 8), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aSaveBufferImpl((uintptr_t)(s)); \
+	} while (0)
+
+#define aInterleave(pkt, l, r) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_INTERLEAVE, 24, 8), \
+	                        _SHIFTL(l, 16, 16) | _SHIFTL(r, 0, 16)); \
+	     aInterleaveImpl(l, r); \
+	} while (0)
+
+#define aDMEMMove(pkt, i, o, c) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_DMEMMOVE, 24, 8) | _SHIFTL(i, 0, 24), \
+	                        _SHIFTL(o, 16, 16) | _SHIFTL(c, 0, 16)); \
+	     aDMEMMoveImpl(i, o, c); \
+	} while (0)
+
+#define aLoadADPCM(pkt, c, d) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_LOADADPCM, 24, 8) | _SHIFTL(c, 0, 24), \
+	                        (uint32_t)(uintptr_t)(d)); \
+	     aLoadADPCMImpl(c, (uintptr_t)(d)); \
+	} while (0)
+
+#define aSetLoop(pkt, a) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_SETLOOP, 24, 8), \
+	                        (uint32_t)(uintptr_t)(a)); \
+	     aSetLoopImpl((uintptr_t)(a)); \
+	} while (0)
+
+#define aADPCMdec(pkt, f, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_ADPCM, 24, 8) | _SHIFTL(f, 16, 8), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aADPCMdecImpl(f, (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+#define aResample(pkt, f, p, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_RESAMPLE, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(p, 0, 16), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aResampleImpl(f, p, (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+#define aSetVolume(pkt, f, v, t, r) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_SETVOL, 24, 8) | _SHIFTL(f, 16, 16) | _SHIFTL(v, 0, 16), \
+	                        _SHIFTL(t, 16, 16) | _SHIFTL(r, 0, 16)); \
+	     aSetVolumeImpl(f, v, t, r); \
+	} while (0)
+
+#define aEnvMixer(pkt, f, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_ENVMIXER, 24, 8) | _SHIFTL(f, 16, 8), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aEnvMixerImpl(f, (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+#define aMix(pkt, f, g, i, o) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_MIXER, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(g, 0, 16), \
+	                        _SHIFTL(i, 16, 16) | _SHIFTL(o, 0, 16)); \
+	     aMixImpl(f, g, i, o); \
+	} while (0)
+
+#define aPoleFilter(pkt, f, g, s) \
+	do { acmd_trace_log_cmd(_SHIFTL(A_POLEF, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(g, 0, 16), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aPoleFilterImpl(f, g, (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
 #define aPan(pkt, f, d, s)          do { (void)(pkt); } while (0)
 
 #ifdef __cplusplus

@@ -174,7 +174,9 @@ typedef struct SYAudioConfig
 } SYAudioConfig;
 
 extern SYAudioSettings dSYAudioPublicSettings;
-#if defined(REGION_US)
+#ifdef PORT
+extern u8 gSYAudioHeapBuffer[0x100000];
+#elif defined(REGION_US)
 extern u8 gSYAudioHeapBuffer[0x56000];
 #else
 extern u8 gSYAudioHeapBuffer[0x53000];

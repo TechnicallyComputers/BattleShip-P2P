@@ -513,7 +513,10 @@ s32 osAfterPreNMI(void)
 
 s32 osAiSetFrequency(u32 freq)
 {
-	return 0;
+	/* PORT: N64 version programs the AI DAC and returns the actual
+	 * achievable frequency.  On PC we use SDL audio at whatever rate
+	 * the game requests, so just return freq unchanged. */
+	return (s32)freq;
 }
 
 /* ========================================================================= */

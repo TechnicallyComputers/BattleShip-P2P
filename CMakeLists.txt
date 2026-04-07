@@ -115,6 +115,10 @@ set(SSB64_COMPILE_DEFS
     F3DEX_GBI_2=1
     _LANGUAGE_C
 
+    # Audio — SSB64 uses the compact "n_audio" microcode (N_MICRO).
+    # This controls buffer layout and command set in the synthesis pull chain.
+    N_MICRO=1
+
     # Platform compat
     _USE_MATH_DEFINES
 
@@ -182,6 +186,7 @@ target_include_directories(ssb64_game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include    # Custom C headers (shadows system headers)
     ${CMAKE_CURRENT_SOURCE_DIR}/src        # Game headers
     ${CMAKE_CURRENT_SOURCE_DIR}/port       # Port headers (coroutine.h, etc.)
+    ${CMAKE_CURRENT_SOURCE_DIR}/debug_tools # Acmd trace (mixer.h calls acmd_trace_log_cmd)
 )
 
 ################################################################################
