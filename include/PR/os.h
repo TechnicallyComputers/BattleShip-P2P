@@ -898,7 +898,11 @@ extern "C"
 
 	/* Address translation routines and macros */
 
+#ifdef PORT
+	extern u64 osVirtualToPhysical(void*);
+#else
 	extern u32 osVirtualToPhysical(void*);
+#endif
 	extern void* osPhysicalToVirtual(u32);
 
 #define OS_K0_TO_PHYSICAL(x) (u32)(((char*)(x)-0x80000000))

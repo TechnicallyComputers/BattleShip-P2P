@@ -418,4 +418,8 @@ typedef short ENVMIX_STATE[40];
 
 #endif /* _LANGUAGE_C */
 
+#ifdef PORT
+#include "audio/mixer.h"
+#endif
+
 #endif /* !_ABI_H_ */
