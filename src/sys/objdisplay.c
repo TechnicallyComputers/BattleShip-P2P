@@ -1509,7 +1509,13 @@ void gcDrawMObjForDObj(DObj *dobj, Gfx **dl_head)
 
             if (sprite_tokens == NULL)
             {
-                gcLogMObjResolveWarning("sprite-array-null", dobj, mobj, mobj->sub.sprites, NULL, -1, 0);
+                // Zero token means no sprite array by design (e.g. S2DEX BG objects use
+                // G_BG_COPY/G_BG_1CYC and don't reference a sprite array). Only warn if
+                // the token was non-zero, which indicates a genuine resolution failure.
+                if (mobj->sub.sprites != 0)
+                {
+                    gcLogMObjResolveWarning("sprite-array-null", dobj, mobj, mobj->sub.sprites, NULL, -1, 0);
+                }
             }
             else
             {
