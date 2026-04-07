@@ -751,6 +751,7 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
     FTAttributes *attr = fp->attr;
     FTCommonPartContainer *commonparts_container;
     FTModelPart *modelpart;
+    FTModelPartContainer *modelparts_container;
     FTModelPartStatus *modelpart_status;
     FTParts *parts;
     DObj *joint;
@@ -763,6 +764,7 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
 
     joint = fp->joints[joint_id];
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
+    modelparts_container = (FTModelPartContainer*)PORT_RESOLVE(fp->attr->modelparts_container);
     modelpart_status = &fp->modelpart_status[joint_id - nFTPartsJointCommonStart];
     parts = ftGetParts(joint);
 
@@ -776,13 +778,13 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
 
             if (modelpart_id != -1)
             {
-                if (((FTModelPartContainer*)PORT_RESOLVE(fp->attr->modelparts_container))->modelparts_desc[joint_id - nFTPartsJointCommonStart] != NULL)
+                if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart) != NULL)
                 {
-                    modelpart = &((FTModelPartContainer*)PORT_RESOLVE(fp->attr->modelparts_container))->modelparts_desc[joint_id - nFTPartsJointCommonStart]->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
+                    modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, joint_id - nFTPartsJointCommonStart)->modelparts[modelpart_id][fp->detail_curr - nFTPartsDetailStart];
 
-                    joint->dl = modelpart->dl;
+                    joint->dl = FTMODELPART_GET_DL(modelpart);
 
-                    lbCommonAddMObjForFighterPartsDObj(joint, modelpart->mobjsubs, modelpart->costume_matanim_joints, modelpart->main_matanim_joints, fp->costume);
+                    lbCommonAddMObjForFighterPartsDObj(joint, FTMODELPART_GET_MOBJSUBS(modelpart), FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart), FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart), fp->costume);
 
                     parts->flags = modelpart->flags;
                 }
@@ -845,6 +847,7 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
     FTAttributes *attr = fp->attr;
     FTCommonPartContainer *commonparts_container;
     FTModelPart *modelpart;
+    FTModelPartContainer *modelparts_container;
     FTModelPartStatus *modelpart_status;
     FTParts *parts;
     DObj *joint;
@@ -857,6 +860,7 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
     s32 i;
 
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
+    modelparts_container = (FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container);
 
     for (i = 0; i < ARRAY_COUNT(fp->joints) - nFTPartsJointCommonStart; i++)
     {
@@ -880,13 +884,13 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
                 {
                     parts = ftGetParts(joint);
 
-                    if (((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i] != NULL)
+                    if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i) != NULL)
                     {
-                        modelpart = &((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+                        modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i)->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
 
-                        joint->dl = modelpart->dl;
+                        joint->dl = FTMODELPART_GET_DL(modelpart);
 
-                        lbCommonAddMObjForFighterPartsDObj(joint, modelpart->mobjsubs, modelpart->costume_matanim_joints, modelpart->main_matanim_joints, fp->costume);
+                        lbCommonAddMObjForFighterPartsDObj(joint, FTMODELPART_GET_MOBJSUBS(modelpart), FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart), FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart), fp->costume);
 
                         parts->flags = modelpart->flags;
                     }
@@ -1004,6 +1008,7 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
     FTParts *parts;
     FTCommonPartContainer *commonparts_container;
     FTAccessPart *accesspart;
+    FTModelPartContainer *modelparts_container;
     FTModelPartStatus *modelpart_status;
     s32 detail_id;
     FTModelPart *modelpart;
@@ -1016,6 +1021,7 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
 
     commonparts_container = (FTCommonPartContainer*)PORT_RESOLVE(attr->commonparts_container);
     accesspart = (FTAccessPart*)PORT_RESOLVE(attr->accesspart);
+    modelparts_container = (FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container);
 
     for (i = 0; i < ARRAY_COUNT(fp->joints) - nFTPartsJointCommonStart; i++)
     {
@@ -1029,11 +1035,11 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
 
             if (modelpart_status->modelpart_id_curr != -1)
             {
-                if (((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i] != NULL)
+                if (FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i) != NULL)
                 {
-                    modelpart = &((FTModelPartContainer*)PORT_RESOLVE(attr->modelparts_container))->modelparts_desc[i]->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
+                    modelpart = &FTMODELPARTCONTAINER_GET_DESC(modelparts_container, i)->modelparts[modelpart_status->modelpart_id_curr][fp->detail_curr - nFTPartsDetailStart];
 
-                    lbCommonAddMObjForFighterPartsDObj(joint, modelpart->mobjsubs, modelpart->costume_matanim_joints, modelpart->main_matanim_joints, costume);
+                    lbCommonAddMObjForFighterPartsDObj(joint, FTMODELPART_GET_MOBJSUBS(modelpart), FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart), FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart), costume);
                 }
                 else
                 {
@@ -1081,9 +1087,9 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
                     parts_gobj = gcMakeGObjSPAfter(nGCCommonKindFighterParts, NULL, nGCCommonLinkIDFighterParts, GOBJ_PRIORITY_DEFAULT);
                     parts->gobj = parts_gobj;
 
-                    gcAddDObjForGObj(parts_gobj, accesspart->dl);
+                    gcAddDObjForGObj(parts_gobj, FTACCESSPART_GET_DL(accesspart));
 
-                    lbCommonAddMObjForFighterPartsDObj(DObjGetStruct(parts->gobj), accesspart->mobjsubs, accesspart->costume_matanim_joints, NULL, costume);
+                    lbCommonAddMObjForFighterPartsDObj(DObjGetStruct(parts->gobj), FTACCESSPART_GET_MOBJSUBS(accesspart), FTACCESSPART_GET_COSTUME_MATANIM_JOINTS(accesspart), NULL, costume);
                 }
             }
         }

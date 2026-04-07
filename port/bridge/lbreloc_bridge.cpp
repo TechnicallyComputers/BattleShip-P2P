@@ -86,6 +86,7 @@ struct LBTableEntry
 extern "C" {
 extern void syDebugPrintf(const char *fmt, ...);
 extern void scManagerRunPrintGObjStatus(void);
+extern void portResetPackedDisplayListCache(void);
 
 // Forward declarations for functions used in mutual recursion
 void* lbRelocGetExternBufferFile(u32 id);
@@ -105,6 +106,16 @@ static u32 *sLBRelocExternFileIDs;
 static s32 sLBRelocExternFileIDsNum;
 static s32 sLBRelocExternFileIDsMax;
 static void *sLBRelocExternFileHeap;
+
+struct PortRelocFileRange
+{
+	uintptr_t base;
+	size_t size;
+	u32 file_id;
+	const char *path;
+};
+
+static std::vector<PortRelocFileRange> sPortRelocFileRanges;
 
 static bool portRelocIsFighterFigatreeFile(u32 file_id)
 {
@@ -327,6 +338,8 @@ void lbRelocLoadAndRelocFile(u32 file_id, void *ram_dst, u32 bytes_num, s32 loc)
 	{
 		lbRelocAddStatusBufferFile(file_id, ram_dst);
 	}
+
+	sPortRelocFileRanges.push_back({ reinterpret_cast<uintptr_t>(ram_dst), copySize, file_id, gRelocFileTable[file_id] });
 
 	// --- Internal pointer relocation (token-based) ---
 	//
@@ -627,6 +640,91 @@ size_t lbRelocGetAllocSize(u32 *ids, u32 len)
 	return allocated;
 }
 
+bool portRelocFindContainingFile(const void *ptr, uintptr_t *out_base, size_t *out_size)
+{
+	uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+
+	for (const auto &range : sPortRelocFileRanges)
+	{
+		uintptr_t start = range.base;
+		size_t size = range.size;
+
+		if ((addr >= start) && (size != 0) && ((addr - start) < size))
+		{
+			if (out_base != NULL)
+			{
+				*out_base = start;
+			}
+			if (out_size != NULL)
+			{
+				*out_size = size;
+			}
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+void *portRelocResolveArrayEntry(const void *array_ptr, unsigned int index)
+{
+	if (array_ptr == nullptr)
+	{
+		return nullptr;
+	}
+
+	uintptr_t base = 0;
+	size_t size = 0;
+
+	if (portRelocFindContainingFile(array_ptr, &base, &size))
+	{
+		uintptr_t addr = reinterpret_cast<uintptr_t>(array_ptr);
+		size_t byte_offset = static_cast<size_t>(addr - base);
+		size_t entry_offset = byte_offset + (static_cast<size_t>(index) * sizeof(uint32_t));
+
+		if ((entry_offset > size) || ((size - entry_offset) < sizeof(uint32_t)))
+		{
+			return nullptr;
+		}
+
+		return portRelocResolvePointer(reinterpret_cast<const uint32_t *>(array_ptr)[index]);
+	}
+
+	return reinterpret_cast<void *const *>(array_ptr)[index];
+}
+
+bool portRelocDescribePointer(const void *ptr, uintptr_t *out_base, size_t *out_size, u32 *out_file_id, const char **out_path)
+{
+	uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
+
+	for (const auto &range : sPortRelocFileRanges)
+	{
+		uintptr_t start = range.base;
+		size_t size = range.size;
+
+		if ((addr >= start) && (size != 0) && ((addr - start) < size))
+		{
+			if (out_base != NULL)
+			{
+				*out_base = start;
+			}
+			if (out_size != NULL)
+			{
+				*out_size = size;
+			}
+			if (out_file_id != NULL)
+			{
+				*out_file_id = range.file_id;
+			}
+			if (out_path != NULL)
+			{
+				*out_path = range.path;
+			}
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 // // // // // // // // // // // //
 //                               //
 //    BRIDGE: INITIALIZATION     //
@@ -638,6 +736,8 @@ void lbRelocInitSetup(LBRelocSetup *setup)
 	// Clear token table from previous scene — prevents unbounded growth
 	// and stale tokens pointing to freed heap memory
 	portRelocResetPointerTable();
+	portResetPackedDisplayListCache();
+	sPortRelocFileRanges.clear();
 
 	// Clear u16 struct fixup tracking — addresses from the old heap are stale
 	portResetStructFixups();

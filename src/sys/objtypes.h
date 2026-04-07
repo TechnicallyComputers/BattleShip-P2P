@@ -408,11 +408,14 @@ struct DObjTransformTypes
 #ifdef PORT
 extern void *portRelocResolvePointer(unsigned int token);
 extern unsigned int portRelocRegisterPointer(void *ptr);
+extern void *portRelocResolveArrayEntry(const void *array_ptr, unsigned int index);
 #define PORT_RESOLVE(token) portRelocResolvePointer((unsigned int)(token))
 #define PORT_REGISTER(ptr) portRelocRegisterPointer((void*)(ptr))
+#define PORT_RESOLVE_ARRAY(array_ptr, index) portRelocResolveArrayEntry((const void*)(array_ptr), (unsigned int)(index))
 #else
 #define PORT_RESOLVE(token) (token)
 #define PORT_REGISTER(ptr) (ptr)
+#define PORT_RESOLVE_ARRAY(array_ptr, index) (((array_ptr) != NULL) ? ((void *const*)(array_ptr))[index] : NULL)
 #endif
 
 struct DObjDesc

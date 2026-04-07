@@ -35,6 +35,13 @@ uint32_t portRelocRegisterPointer(void *ptr);
 void *portRelocResolvePointer(uint32_t token);
 
 /**
+ * Try to resolve a token without logging when the value is not registered.
+ * This is useful for consumers that must distinguish reloc tokens from
+ * other 32-bit address encodings such as N64 segmented addresses.
+ */
+void *portRelocTryResolvePointer(uint32_t token);
+
+/**
  * Reset the token table (e.g. on scene change when all files are unloaded).
  */
 void portRelocResetPointerTable(void);

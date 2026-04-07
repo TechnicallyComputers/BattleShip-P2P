@@ -67,6 +67,16 @@ void *portRelocResolvePointer(uint32_t token)
 	return sPointerTable[token];
 }
 
+void *portRelocTryResolvePointer(uint32_t token)
+{
+	if ((token == 0) || (token >= sNextToken))
+	{
+		return nullptr;
+	}
+
+	return sPointerTable[token];
+}
+
 void portRelocResetPointerTable(void)
 {
 	sNextToken = 1;

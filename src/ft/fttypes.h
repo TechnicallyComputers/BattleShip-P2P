@@ -135,18 +135,36 @@ struct FTData
 struct FTAccessPart
 {
     s32 joint_id;
+#ifdef PORT
+    u32 dl;
+    u32 mobjsubs;
+    u32 costume_matanim_joints;
+#else
     Gfx *dl;
     MObjSub **mobjsubs;
     AObjEvent32 **costume_matanim_joints;
+#endif
 };
 
 struct FTModelPart
 {
+#ifdef PORT
+    u32 dl;
+    u32 mobjsubs;
+    u32 costume_matanim_joints;
+    u32 main_matanim_joints;
+#else
     Gfx *dl;
     MObjSub **mobjsubs;
     AObjEvent32 **costume_matanim_joints;
     AObjEvent32 **main_matanim_joints;
+#endif
+#if IS_BIG_ENDIAN
     u8 flags;
+#else
+    u8 pad[3];
+    u8 flags;
+#endif
 };
 
 struct FTCommonPart
@@ -160,7 +178,12 @@ struct FTCommonPart
     MObjSub ***p_mobjsubs;
     AObjEvent32 ***p_costume_matanim_joints;
 #endif
+#if IS_BIG_ENDIAN
     u8 flags;
+#else
+    u8 pad[3];
+    u8 flags;
+#endif
 };
 
 struct FTCommonPartContainer
@@ -169,10 +192,31 @@ struct FTCommonPartContainer
 };
 
 #ifdef PORT
+#define FTACCESSPART_GET_DL(accesspart) ((Gfx*)PORT_RESOLVE((accesspart)->dl))
+#define FTACCESSPART_GET_MOBJSUBS(accesspart) ((MObjSub**)PORT_RESOLVE((accesspart)->mobjsubs))
+#define FTACCESSPART_GET_COSTUME_MATANIM_JOINTS(accesspart) ((AObjEvent32**)PORT_RESOLVE((accesspart)->costume_matanim_joints))
+#define FTMODELPART_GET_DL(modelpart) ((Gfx*)PORT_RESOLVE((modelpart)->dl))
+#define FTMODELPART_GET_MOBJSUBS(modelpart) ((MObjSub**)PORT_RESOLVE((modelpart)->mobjsubs))
+#define FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart) ((AObjEvent32**)PORT_RESOLVE((modelpart)->costume_matanim_joints))
+#define FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart) ((AObjEvent32**)PORT_RESOLVE((modelpart)->main_matanim_joints))
+#define FTMODELPARTCONTAINER_GET_DESC(container, index) ((FTModelPartDesc*)PORT_RESOLVE((container)->modelparts_desc[index]))
+#define FTPARTS_GET_FLAGS(commonpart) ((commonpart)->flags)
 #define FTPARTS_GET_DOBJDESC(commonpart) ((DObjDesc*)PORT_RESOLVE((commonpart)->dobjdesc))
 #define FTPARTS_GET_MOBJSUBS(commonpart) ((MObjSub***)PORT_RESOLVE((commonpart)->p_mobjsubs))
 #define FTPARTS_GET_COSTUME_MATANIM_JOINTS(commonpart) ((AObjEvent32***)PORT_RESOLVE((commonpart)->p_costume_matanim_joints))
+_Static_assert(sizeof(FTAccessPart) == 16, "FTAccessPart must be 16 bytes to match file data layout");
+_Static_assert(sizeof(FTModelPart) == 20, "FTModelPart must be 20 bytes to match file data layout");
+_Static_assert(sizeof(FTCommonPart) == 16, "FTCommonPart must be 16 bytes to match file data layout");
 #else
+#define FTACCESSPART_GET_DL(accesspart) ((accesspart)->dl)
+#define FTACCESSPART_GET_MOBJSUBS(accesspart) ((accesspart)->mobjsubs)
+#define FTACCESSPART_GET_COSTUME_MATANIM_JOINTS(accesspart) ((accesspart)->costume_matanim_joints)
+#define FTMODELPART_GET_DL(modelpart) ((modelpart)->dl)
+#define FTMODELPART_GET_MOBJSUBS(modelpart) ((modelpart)->mobjsubs)
+#define FTMODELPART_GET_COSTUME_MATANIM_JOINTS(modelpart) ((modelpart)->costume_matanim_joints)
+#define FTMODELPART_GET_MAIN_MATANIM_JOINTS(modelpart) ((modelpart)->main_matanim_joints)
+#define FTMODELPARTCONTAINER_GET_DESC(container, index) ((container)->modelparts_desc[index])
+#define FTPARTS_GET_FLAGS(commonpart) ((commonpart)->flags)
 #define FTPARTS_GET_DOBJDESC(commonpart) ((commonpart)->dobjdesc)
 #define FTPARTS_GET_MOBJSUBS(commonpart) ((commonpart)->p_mobjsubs)
 #define FTPARTS_GET_COSTUME_MATANIM_JOINTS(commonpart) ((commonpart)->p_costume_matanim_joints)
@@ -185,7 +229,11 @@ struct FTModelPartDesc
 
 struct FTModelPartContainer
 {
+#ifdef PORT
+    u32 modelparts_desc[FTPARTS_JOINT_NUM_MAX - nFTPartsJointCommonStart];
+#else
     FTModelPartDesc *modelparts_desc[FTPARTS_JOINT_NUM_MAX - nFTPartsJointCommonStart];
+#endif
 };
 
 struct FTModelPartStatus
@@ -915,11 +963,30 @@ struct FTSkeleton
 {
     union
     {
+#ifdef PORT
+        u32 dl;        // Relocation token
+        u32 dls;       // Relocation token for a 2-entry display-list array
+#else
         Gfx *dl;        // Single array of display lists
         Gfx **dls;      // Pointer to two arrays of display lists
+#endif
     };
+#if IS_BIG_ENDIAN
     u8 flags;
+#else
+    u8 pad[3];
+    u8 flags;
+#endif
 };
+
+#ifdef PORT
+#define FTSKELETON_GET_DL(skeleton) ((Gfx*)PORT_RESOLVE((skeleton)->dl))
+#define FTSKELETON_GET_DLS(skeleton) (PORT_RESOLVE((skeleton)->dls))
+_Static_assert(sizeof(FTSkeleton) == 8, "FTSkeleton must be 8 bytes to match file data layout");
+#else
+#define FTSKELETON_GET_DL(skeleton) ((skeleton)->dl)
+#define FTSKELETON_GET_DLS(skeleton) ((skeleton)->dls)
+#endif
 
 struct FTShadow
 {

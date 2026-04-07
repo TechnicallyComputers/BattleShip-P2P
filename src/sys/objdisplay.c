@@ -152,20 +152,23 @@ static void* gcTryResolveTokenArrayEntry(const char *issue, DObj *dobj, MObj *mo
 static void gcLogSuspiciousDLPointer(const char *issue, DObj *dobj, unsigned long long draw_dl_raw, s32 list_id, DObjDLLink *dl_link)
 {
     void *draw_dl = (void*)draw_dl_raw;
+    void *resolved_dl = NULL;
 
     if ((draw_dl == NULL) || (draw_dl_raw >= 0x10000ULL))
     {
         return;
     }
+    resolved_dl = PORT_RESOLVE((u32)draw_dl_raw);
     if (sGCDLPointerWarningCount < 64)
     {
         port_log
         (
-            "SSB64: gcDrawDObj - suspicious-dl issue=%s dobj=%p dobj_dl=%p draw_dl=%p draw_dl_raw=0x%llx dl_link=%p list_id=%d flags=0x%04x mobj=%p child=%p sib=%p\n",
+            "SSB64: gcDrawDObj - suspicious-dl issue=%s dobj=%p dobj_dl=%p draw_dl=%p resolved_dl=%p draw_dl_raw=0x%llx dl_link=%p list_id=%d flags=0x%04x mobj=%p child=%p sib=%p\n",
             issue,
             dobj,
             dobj->dl,
             draw_dl,
+            resolved_dl,
             draw_dl_raw,
             dl_link,
             list_id,
@@ -2049,7 +2052,8 @@ void unref_800147E0(GObj *gobj)
 void gcDrawDObjTreeMultiList(DObj *dobj) 
 {
     s32 num;
-    Gfx **dls;
+    void *dls;
+    Gfx *dl;
     DObj *current_dobj;
     f32 bak;
 
@@ -2060,12 +2064,14 @@ void gcDrawDObjTreeMultiList(DObj *dobj)
         bak = gGCScaleX;
         num = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-        if ((dls != NULL) && (dls[sGCDetailLevel] != NULL)) 
+        dl = PORT_RESOLVE_ARRAY(dls, sGCDetailLevel);
+
+        if (dl != NULL) 
         {
             if (!(dobj->flags & DOBJ_FLAG_NOTEXTURE))
             {
                 gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
-                gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[sGCDetailLevel]);
+                gSPDisplayList(gSYTaskmanDLHeads[0]++, dl);
             }
         }
         if (dobj->child != NULL) 
@@ -2374,7 +2380,9 @@ void unref_80014FFC(GObj *gobj)
 void gcDrawDObjTreeDLArray(DObj *dobj) 
 {
     s32 num;
-    Gfx **dls;
+    void *dls;
+    Gfx *dl0;
+    Gfx *dl1;
     f32 bak;
     DObj *current_dobj;
 
@@ -2384,16 +2392,19 @@ void gcDrawDObjTreeDLArray(DObj *dobj)
     {
         bak = gGCScaleX;
 
-        if ((dls != NULL) && (dls[0] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+        dl0 = PORT_RESOLVE_ARRAY(dls, 0);
+        dl1 = PORT_RESOLVE_ARRAY(dls, 1);
+
+        if ((dl0 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
         {
-            gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[0]);
+            gSPDisplayList(gSYTaskmanDLHeads[0]++, dl0);
         }
         num = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-        if ((dls != NULL) && (dls[1] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+        if ((dl1 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
         {
             gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
-            gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[1]);
+            gSPDisplayList(gSYTaskmanDLHeads[0]++, dl1);
         }
         if (dobj->child != NULL)
         { 
@@ -2528,29 +2539,31 @@ void gcDrawDObjTreeDLDoubleArray(DObj *dobj)
     s32 num;
     DObj *current_dobj;
     f32 bak;
-    Gfx **dls;
-    Gfx ***p_dls;
+    void *dls;
+    void *p_dls;
+    Gfx *dl0;
+    Gfx *dl1;
 
-    p_dls = (Gfx***)dobj->dv;
+    p_dls = dobj->dv;
 
     if (!(dobj->flags & DOBJ_FLAG_HIDDEN)) 
     {
         bak = gGCScaleX;
 
-        if (p_dls != NULL)
-        { 
-            dls = p_dls[sGCDetailLevel]; 
-        }
-        if ((p_dls != NULL) && (dls[0] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+        dls = PORT_RESOLVE_ARRAY(p_dls, sGCDetailLevel);
+        dl0 = PORT_RESOLVE_ARRAY(dls, 0);
+        dl1 = PORT_RESOLVE_ARRAY(dls, 1);
+
+        if ((dl0 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
         {
-            gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[0]);
+            gSPDisplayList(gSYTaskmanDLHeads[0]++, dl0);
         }
         num = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-        if ((p_dls != NULL) && (dls[1]) != NULL && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+        if ((dl1 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
         {
             gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
-            gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[1]);
+            gSPDisplayList(gSYTaskmanDLHeads[0]++, dl1);
         }
         if (dobj->child != NULL)
         {

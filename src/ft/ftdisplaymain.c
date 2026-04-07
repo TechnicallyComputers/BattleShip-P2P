@@ -724,6 +724,7 @@ void ftDisplayMainDecideFogDraw(u8 flags, FTStruct *fp)
 void ftDisplayMainDrawAccessory(FTStruct *fp, DObj *dobj, FTParts *parts)
 {
     DObj *root_dobj = DObjGetStruct(parts->gobj);
+    Gfx *dl;
 
     switch (parts->flags & 0xF)
     {
@@ -738,7 +739,9 @@ void ftDisplayMainDrawAccessory(FTStruct *fp, DObj *dobj, FTParts *parts)
         break;
 
     case 1:
-        if ((dobj->dls != NULL) && (dobj->dls[1] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+        dl = PORT_RESOLVE_ARRAY(dobj->dls, 1);
+
+        if ((dl != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
         {
             gcDrawMObjForDObj(root_dobj, gSYTaskmanDLHeads);
             ftDisplayMainDecideFogDraw(parts->flags, fp);
@@ -758,7 +761,9 @@ void ftDisplayMainDrawDefault(DObj *dobj)
     Vec3f sp48;
     FTParts *parts;
     DObj *sibling_dobj;
-    Gfx **dls;
+    void *dls;
+    Gfx *dl0;
+    Gfx *dl1;
 
     parts = ftGetParts(dobj);
 
@@ -788,21 +793,23 @@ void ftDisplayMainDrawDefault(DObj *dobj)
 
             case 1:
                 dls = dobj->dls;
+                dl0 = PORT_RESOLVE_ARRAY(dls, 0);
+                dl1 = PORT_RESOLVE_ARRAY(dls, 1);
 
-                if ((dls != NULL) && (dls[0] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+                if ((dl0 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
                 {
                     ftDisplayMainDecideFogDraw(parts->flags, fp);
 
-                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[0]);
+                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dl0);
                 }
                 sp58 = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-                if ((dls != NULL) && (dls[1] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+                if ((dl1 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
                 {
                     gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
                     ftDisplayMainDecideFogDraw(parts->flags, fp);
 
-                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[1]);
+                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dl1);
                 }
                 break;
             }
@@ -850,10 +857,13 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
     s32 sp60;
     s32 unused;
     Vec3f sp50;
-    Gfx **dls;
+    void *dls;
+    Gfx *dl0;
+    Gfx *dl1;
     FTParts *parts;
     DObj *sibling_dobj;
     FTSkeleton *skeleton;
+    u32 *skeletons;
 
     fp = ftGetStruct(dobj->parent_gobj);
     parts = ftGetParts(dobj);
@@ -864,39 +874,42 @@ void ftDisplayMainDrawSkeleton(DObj *dobj)
 
         if ((parts != NULL) && (parts->joint_id >= nFTPartsJointCommonStart))
         {
-            skeleton = &((FTSkeleton*)PORT_RESOLVE(((FTSkeleton**)PORT_RESOLVE(fp->attr->skeleton))[fp->colanim.skeleton_id]))[parts->joint_id - nFTPartsJointCommonStart];
+            skeletons = PORT_RESOLVE(fp->attr->skeleton);
+            skeleton = &((FTSkeleton*)PORT_RESOLVE(skeletons[fp->colanim.skeleton_id]))[parts->joint_id - nFTPartsJointCommonStart];
 
             switch (skeleton->flags & 0xF)
             {
             case 0:
                 sp60 = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-                if (!(dobj->flags & DOBJ_FLAG_NOTEXTURE) && (skeleton->dl != NULL))
+                if (!(dobj->flags & DOBJ_FLAG_NOTEXTURE) && (FTSKELETON_GET_DL(skeleton) != NULL))
                 {
                     gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
                     ftDisplayMainDecideFogDraw(skeleton->flags, fp);
 
-                    gSPDisplayList(gSYTaskmanDLHeads[0]++, skeleton->dl);
+                    gSPDisplayList(gSYTaskmanDLHeads[0]++, FTSKELETON_GET_DL(skeleton));
                 }
                 break;
 
             case 1:
-                dls = skeleton->dls;
+                dls = FTSKELETON_GET_DLS(skeleton);
+                dl0 = PORT_RESOLVE_ARRAY(dls, 0);
+                dl1 = PORT_RESOLVE_ARRAY(dls, 1);
 
-                if ((dls != NULL) && (dls[0] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+                if ((dl0 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
                 {
                     ftDisplayMainDecideFogDraw(skeleton->flags, fp);
 
-                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[0]);
+                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dl0);
                 }
                 sp60 = gcPrepDObjMatrix(gSYTaskmanDLHeads, dobj);
 
-                if ((dls != NULL) && (dls[1] != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
+                if ((dl1 != NULL) && !(dobj->flags & DOBJ_FLAG_NOTEXTURE))
                 {
                     gcDrawMObjForDObj(dobj, gSYTaskmanDLHeads);
                     ftDisplayMainDecideFogDraw(skeleton->flags, fp);
 
-                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dls[1]);
+                    gSPDisplayList(gSYTaskmanDLHeads[0]++, dl1);
                 }
                 break;
             }
@@ -930,14 +943,16 @@ void ftDisplayMainDrawAll(GObj *fighter_gobj)
 {
     FTStruct *fp = ftGetStruct(fighter_gobj);
     FTAttributes *attr = fp->attr;
+    u32 *skeletons = PORT_RESOLVE(attr->skeleton);
 
     if
     (
         (fp->colanim.skeleton_id)                                                                   &&
         (attr->skeleton != 0)                                                                       &&
-        (((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[fp->colanim.skeleton_id] != NULL)             &&
-        (fp->joints[(s32)(((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[0])] != NULL)                &&  // ???
-        (fp->joints[(s32)(((FTSkeleton**)PORT_RESOLVE(attr->skeleton))[0])]->dl != NULL)                // Hello???
+        (skeletons != NULL)                                                                         &&
+        (PORT_RESOLVE(skeletons[fp->colanim.skeleton_id]) != NULL)                                  &&
+        (fp->joints[(s32)skeletons[0]] != NULL)                                                     &&  // ???
+        (fp->joints[(s32)skeletons[0]]->dl != NULL)                                                     // Hello???
     )
     {
         ftDisplayMainDrawSkeleton(DObjGetStruct(fighter_gobj));

@@ -805,8 +805,8 @@ GObj* ftManagerMakeFighter(FTDesc *desc) // Create fighter
 
                     parts->gobj = gcMakeGObjSPAfter(nGCCommonKindFighterParts, NULL, nGCCommonLinkIDFighterParts, GOBJ_PRIORITY_DEFAULT);
 
-                    gcAddDObjForGObj(parts->gobj, accesspart->dl);
-                    lbCommonAddMObjForFighterPartsDObj(DObjGetStruct(parts->gobj), accesspart->mobjsubs, accesspart->costume_matanim_joints, NULL, fp->costume);
+                    gcAddDObjForGObj(parts->gobj, FTACCESSPART_GET_DL(accesspart));
+                    lbCommonAddMObjForFighterPartsDObj(DObjGetStruct(parts->gobj), FTACCESSPART_GET_MOBJSUBS(accesspart), FTACCESSPART_GET_COSTUME_MATANIM_JOINTS(accesspart), NULL, fp->costume);
                 }
             }
         }
