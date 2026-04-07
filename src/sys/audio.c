@@ -7,6 +7,7 @@
 
 #ifdef PORT
 #include "audio/audio_playback.h"
+#include "bridge/audio_bridge.h"
 #endif
 
 extern SYAudioSettings dSYAudioPublicSettings2, dSYAudioPublicSettings3;
@@ -1019,32 +1020,29 @@ void syAudioThreadMain(void *arg)
     sSYAudioCurrentSettings = dSYAudioPublicSettings;
 
 #ifdef PORT
-    /* PORT TODO: Remove this guard when audio is implemented via SDL2.
-     *
-     * syAudioLoadAssets() tries to load audio banks from ROM addresses
-     * that are linker symbols on N64.  In the 64-bit port the address-of
-     * these symbols produces PC pointers (>0x80000000), causing the code
-     * to treat them as direct RAM pointers to data that doesn't exist,
-     * resulting in a NULL-dereference crash inside syAudioMakeBGMPlayers.
-     *
-     * Since all audio library functions (n_alInit, n_alAudioFrame, etc.)
-     * are stubbed, we skip asset loading and just keep the thread alive
-     * so the coroutine scheduler can tick it without hanging.
-     */
+    /* PORT: Load audio assets from .o2r archive instead of ROM DMA.
+     * portAudioLoadAssets() parses big-endian N64 binary and constructs
+     * native C structs with correct 64-bit pointer width. */
+    portAudioLoadAssets();
+#else
+    syAudioLoadAssets();
+#endif
+    syAudioMakeBGMPlayers();
+
+    dSYAudioPublicSettings = sSYAudioCurrentSettings;
+
     osSendMesg(&gSYMainThreadingMesgQueue, (OSMesg)1, OS_MESG_NOBLOCK);
+
+#ifdef PORT
+    /* PORT: Audio assets are loaded but synthesis is not yet wired.
+     * Push silence until the Acmd interpreter is implemented (Phase 3C/3D).
+     * This loop will be replaced with real synthesis later. */
     while (TRUE)
     {
         osRecvMesg(&sSYAudioTicMesgQueue, NULL, OS_MESG_BLOCK);
         portAudioPushSilence();
     }
 #endif
-
-    syAudioLoadAssets();
-    syAudioMakeBGMPlayers();
-
-    dSYAudioPublicSettings = sSYAudioCurrentSettings;
-
-    osSendMesg(&gSYMainThreadingMesgQueue, (OSMesg)1, OS_MESG_NOBLOCK);
 
     while (TRUE)
     {
