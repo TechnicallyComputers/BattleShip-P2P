@@ -365,27 +365,13 @@ void lbRelocLoadAndRelocFile(u32 file_id, void *ram_dst, u32 bytes_num, s32 loc)
 		u16 next_reloc = (u16)(*slot >> 16);
 		u16 words_num  = (u16)(*slot & 0xFFFF);
 
-		// Check if this reloc slot is the w1 field of a G_DL command.
-		// G_DL commands that reference segment 0x0E for runtime-dynamic
-		// display lists (graphics heap) must NOT be tokenized — they need
-		// to be resolved at runtime through the Fast3D segment table when
-		// the game sets segment 0x0E via gSPSegment().
-		bool skip_tokenize = false;
-		if (reloc_intern > 0)
-		{
-			u32 *prev_word = slot - 1;
-			u8 prev_opcode = (u8)(*prev_word >> 24);
-
-			if (prev_opcode == 0xDE)  // G_DL opcode
-			{
-				// Restore the original segment 0x0E address.
-				u32 original_seg_addr = 0x0E000000 | (words_num * sizeof(u32));
-				*slot = original_seg_addr;
-				skip_tokenize = true;
-			}
-		}
-
-		if (!skip_tokenize)
+		// All reloc chain entries are intra-file pointers.  Tokenize them
+		// normally so the resource system can resolve them to PC addresses.
+		//
+		// Note: G_DL commands that reference segment 0x0E for the runtime
+		// graphics heap (written by gcDrawMObjForDObj) are NOT in the reloc
+		// chain — they exist as raw 0x0Exxxxxx values in the ROM data and
+		// are preserved by the DL normalization code in the interpreter.
 		{
 			// Compute the real target pointer (within this file's data)
 			void *target = (void *)((uintptr_t)ram_dst + (words_num * sizeof(u32)));
