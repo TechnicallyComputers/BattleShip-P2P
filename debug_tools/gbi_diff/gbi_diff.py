@@ -81,7 +81,7 @@ def parse_trace(filepath: str) -> dict[int, Frame]:
     current_frame: Optional[int] = None
     current_cmds: list[GbiCommand] = []
 
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
             line = line.rstrip('\n')
 
@@ -140,7 +140,7 @@ def parse_trace(filepath: str) -> dict[int, Frame]:
 # Opcodes where w1 is an address (not comparable between port and emu)
 ADDRESS_OPCODES = {
     'G_VTX', 'G_DL', 'G_MTX', 'G_SETTIMG', 'G_SETCIMG', 'G_SETZIMG',
-    'G_MOVEMEM', 'G_LOAD_UCODE', 'G_BRANCH_Z', 'G_DMA_IO',
+    'G_MOVEMEM', 'G_MOVEWORD', 'G_LOAD_UCODE', 'G_BRANCH_Z', 'G_DMA_IO',
 }
 
 
