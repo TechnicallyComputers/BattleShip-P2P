@@ -2256,9 +2256,20 @@ Acmd *n_alSavePull( s32 sampleOffset, Acmd *p)
 	aInterleave(ptr++, AL_MAIN_L_OUT, AL_MAIN_R_OUT);
 	aSetBuffer (ptr++, 0, 0, 0, FIXED_SAMPLE<<2);
 	aSaveBuffer(ptr++, n_syn->sv_dramout);
+#elif defined(PORT)
+	/* PORT: Inline the interleave+save directly.  The n_a* macros from
+	 * n_abi.h don't expand correctly through mixer.h's #undef/#define
+	 * cycle on MSVC, so we call the CPU impl functions directly. */
+	(void)(ptr++);
+	acmd_trace_log_cmd(_SHIFTL(A_INTERLEAVE, 24, 8), 0);
+	aInterleaveImpl(N_AL_MAIN_L_OUT, N_AL_MAIN_R_OUT);
+	(void)(ptr++);
+	acmd_trace_log_cmd(_SHIFTL(A_SAVEBUFF, 24, 8) | _SHIFTL(FIXED_SAMPLE<<2, 12, 12),
+	                   (uint32_t)(uintptr_t)n_syn->sv_dramout);
+	aSetBufferImpl(0, 0, 0, FIXED_SAMPLE<<2);
+	aSaveBufferImpl((uintptr_t)n_syn->sv_dramout);
 #else
-	// Oneliner
-	n_aInterleave(ptr++); \
+	n_aInterleave(ptr++);
 	n_aSaveBuffer(ptr++, FIXED_SAMPLE<<2, 0, n_syn->sv_dramout);
 #endif
 	return ptr;
@@ -3477,7 +3488,11 @@ void n_alCSeqNew(ALCSeq *seq, u8 *ptr)
 		{
 			flagTmp = 1 << i;
 			seq->validTracks |= flagTmp;
+#ifdef PORT
+			seq->curLoc[i] = ptr + tmpOff;
+#else
 			seq->curLoc[i] = (u8*)((u32)ptr + tmpOff);
+#endif
 			seq->evtDeltaTicks[i] = __readVarLen(seq,i);
 			/*__n_alCSeqGetTrackEvent(seq,i); prime the event buffers  */
 		}

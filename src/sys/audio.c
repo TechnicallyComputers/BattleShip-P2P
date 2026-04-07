@@ -1133,6 +1133,24 @@ void syAudioThreadMain(void *arg)
                         memcpy(sSYAudioBGMSequenceDatas[port_i],
                                sSYAudioSeqFile->seqArray[sSYAudioBGMPlayingIDs[port_i]].offset,
                                sSYAudioSeqFile->seqArray[sSYAudioBGMPlayingIDs[port_i]].len);
+
+                        /* PORT: Byte-swap the ALCMidiHdr — sequence data from
+                         * ROM is big-endian.  The MIDI event stream itself is
+                         * byte-oriented (VarLen + single-byte status), but the
+                         * header has u32 trackOffset[16] and u32 division. */
+                        {
+                            u32 *hdr = (u32 *)sSYAudioBGMSequenceDatas[port_i];
+                            s32 j;
+                            for (j = 0; j < 17; j++) /* 16 trackOffsets + 1 division */
+                            {
+                                u32 v = hdr[j];
+                                hdr[j] = ((v >> 24) & 0xFF)
+                                       | ((v >>  8) & 0xFF00)
+                                       | ((v <<  8) & 0xFF0000)
+                                       | ((v << 24) & 0xFF000000);
+                            }
+                        }
+
                         sSYAudioCSPlayerStatuses[port_i]++;
                         continue;
                     }

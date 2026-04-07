@@ -177,6 +177,130 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 
 #define aPan(pkt, f, d, s)          do { (void)(pkt); } while (0)
 
+/* ================================================================== */
+/*  N_MICRO (n_abi.h) macro replacements                              */
+/*                                                                    */
+/*  SSB64 uses N_MICRO (compact audio microcode).  The n_a* macros    */
+/*  pack buffer setup (DMEM in/out/count) into the command word       */
+/*  itself, unlike standard macros which use separate aSetBuffer.     */
+/*  We #undef the n_abi.h originals and redefine them to:             */
+/*    1. Call aSetBufferImpl to configure I/O state                   */
+/*    2. Call the corresponding CPU impl function                     */
+/*    3. Log the N_MICRO-encoded w0/w1 for trace comparison           */
+/* ================================================================== */
+
+#undef n_aADPCMdec
+#undef n_aEnvMixer
+#undef n_aInterleave
+#undef n_aLoadBuffer
+#undef n_aResample
+#undef n_aSaveBuffer
+#undef n_aSetVolume
+#undef n_aLoadADPCM
+#undef n_aPoleFilter
+
+/* n_aLoadBuffer(pkt, c, d, s) — load c bytes from DRAM s to DMEM d */
+#define n_aLoadBuffer(pkt, c, d, s) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_LOADBUFF, 24, 8) | _SHIFTL(c, 12, 12) | _SHIFTL(d, 0, 12), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aSetBufferImpl(0, (d), 0, (c)); \
+	     aLoadBufferImpl((uintptr_t)(s)); \
+	} while (0)
+
+/* n_aSaveBuffer(pkt, c, d, s) — save c bytes from DMEM d to DRAM s */
+#define n_aSaveBuffer(pkt, c, d, s) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_SAVEBUFF, 24, 8) | _SHIFTL(c, 12, 12) | _SHIFTL(d, 0, 12), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     aSetBufferImpl(0, 0, (d), (c)); \
+	     aSaveBufferImpl((uintptr_t)(s)); \
+	} while (0)
+
+/* n_aADPCMdec(pkt, s, f, c, a, d) — ADPCM decode:
+ *   s=state, f=flags, c=count, a=dramAlign(=input offset), d=output DMEM */
+#define n_aADPCMdec(pkt, s, f, c, a, d) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_ADPCM, 24, 8) | _SHIFTL(s, 0, 24), \
+	                        _SHIFTL(f, 28, 4) | _SHIFTL(c, 16, 12) | \
+	                        _SHIFTL(a, 12, 4) | _SHIFTL(d, 0, 12)); \
+	     aSetBufferImpl(0, (a), (d), (c)); \
+	     aADPCMdecImpl((uint8_t)(f), (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+/* n_aResample(pkt, s, f, p, i, o) — pitch resample:
+ *   s=state, f=flags, p=pitch, i=input DMEM, o=output selector (2 bits) */
+#define n_aResample(pkt, s, f, p, i, o) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_RESAMPLE, 24, 8) | _SHIFTL(s, 0, 24), \
+	                        _SHIFTL(f, 30, 2) | _SHIFTL(p, 14, 16) | \
+	                        _SHIFTL(i, 2, 12) | _SHIFTL(o, 0, 2)); \
+	     aSetBufferImpl(0, (i), (uint16_t)((o) << 8), FIXED_SAMPLE << 1); \
+	     aResampleImpl((uint8_t)(f), (uint16_t)(p), (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+/* n_aSetVolume(pkt, f, v, t, r) — N_MICRO repurposes the flags:
+ *   0x00 (A_RATE):      sets LEFT target + ramp (standard: A_LEFT|A_RATE = 0x02)
+ *   0x06 (A_LEFT|A_VOL): sets LEFT volume + packs dry/wet into t,r
+ *   0x04 (A_RIGHT|A_VOL): sets RIGHT target + ramp (standard: A_RIGHT|A_RATE = 0x00)
+ */
+#define n_aSetVolume(pkt, f, v, t, r) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_SETVOL, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(v, 0, 16), \
+	                        _SHIFTL(t, 16, 16) | _SHIFTL(r, 0, 16)); \
+	     if (((f) & 0x0E) == 0x00) { \
+	         /* N_MICRO A_RATE(0x00) → standard LEFT rate */ \
+	         aSetVolumeImpl(0x02, v, t, r); \
+	     } else if (((f) & 0x0E) == 0x06) { \
+	         /* N_MICRO A_LEFT|A_VOL(0x06) → LEFT vol + dry/wet */ \
+	         aSetVolumeImpl(0x06, v, 0, 0); \
+	         aSetVolumeImpl(0x08, t, 0, r); \
+	     } else if (((f) & 0x0E) == 0x04) { \
+	         /* N_MICRO A_RIGHT|A_VOL(0x04) → RIGHT target + rate */ \
+	         aSetVolumeImpl(0x00, v, t, r); \
+	     } else { \
+	         aSetVolumeImpl(f, v, t, r); \
+	     } \
+	} while (0)
+
+/* n_aEnvMixer(pkt, f, t, s) — envelope mixer:
+ *   f=flags, t=cvolR (on A_INIT) or 0, s=state
+ *   N_MICRO packs cvolR into the command; standard path sets it via
+ *   a separate aSetVolume(A_RIGHT|A_VOL) call before aEnvMixer. */
+#define n_aEnvMixer(pkt, f, t, s) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_ENVMIXER, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(t, 0, 16), \
+	                        (uint32_t)(uintptr_t)(s)); \
+	     if ((f) & 0x01) { /* A_INIT */ \
+	         aSetVolumeImpl(0x04 /* A_RIGHT|A_VOL */, (uint16_t)(t), 0, 0); \
+	     } \
+	     aEnvMixerImpl((uint8_t)(f), (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
+/* n_aInterleave(pkt) — interleave using fixed N_MICRO DMEM addresses */
+#define n_aInterleave(pkt) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_INTERLEAVE, 24, 8), 0); \
+	     aInterleaveImpl(N_AL_MAIN_L_OUT, N_AL_MAIN_R_OUT); \
+	} while (0)
+
+/* n_aLoadADPCM(pkt, c, d) — same semantics as standard aLoadADPCM */
+#define n_aLoadADPCM(pkt, c, d) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_LOADADPCM, 24, 8) | _SHIFTL(c, 0, 24), \
+	                        (uint32_t)(uintptr_t)(d)); \
+	     aLoadADPCMImpl(c, (uintptr_t)(d)); \
+	} while (0)
+
+/* n_aPoleFilter(pkt, f, g, t, s) — IIR pole filter:
+ *   f=flags, g=gain, t=output shift, s=state */
+#define n_aPoleFilter(pkt, f, g, t, s) \
+	do { (void)(pkt); \
+	     acmd_trace_log_cmd(_SHIFTL(A_POLEF, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(g, 0, 16), \
+	                        _SHIFTL(t, 24, 8) | _SHIFTL((uint32_t)(uintptr_t)(s), 0, 24)); \
+	     aPoleFilterImpl(f, g, (int16_t*)(uintptr_t)(s)); \
+	} while (0)
+
 #ifdef __cplusplus
 }
 #endif
