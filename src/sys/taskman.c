@@ -365,14 +365,31 @@ void syTaskmanCheckBufferLengths(void)
 	{
 		if (sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].length + (uintptr_t)sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].start < (uintptr_t)gSYTaskmanDLHeads[i])
 		{
+#ifdef PORT
+			port_log("SSB64: DLBuffer OVERFLOW kind=%d used=%llu alloc=%u start=%p head=%p\n",
+				i,
+				(unsigned long long)((uintptr_t)gSYTaskmanDLHeads[i] - (uintptr_t)sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].start),
+				(unsigned int)sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].length,
+				sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].start,
+				gSYTaskmanDLHeads[i]);
+#else
 			syDebugPrintf("gtl : DLBuffer over flow !  kind = %d  vol = %d byte\n", i, (uintptr_t)gSYTaskmanDLHeads[i] - (uintptr_t)sSYTaskmanDLBuffers[gSYTaskmanTaskID][i].start);
 			while (TRUE);
+#endif
 		}
 	}
 	if ((uintptr_t)gSYTaskmanGraphicsHeap.end < (uintptr_t)gSYTaskmanGraphicsHeap.ptr)
 	{
+#ifdef PORT
+		port_log("SSB64: DynamicBuffer OVERFLOW used=%llu start=%p end=%p ptr=%p\n",
+			(unsigned long long)((uintptr_t)gSYTaskmanGraphicsHeap.ptr - (uintptr_t)gSYTaskmanGraphicsHeap.start),
+			gSYTaskmanGraphicsHeap.start,
+			gSYTaskmanGraphicsHeap.end,
+			gSYTaskmanGraphicsHeap.ptr);
+#else
 		syDebugPrintf("gtl : DynamicBuffer over flow !  %d byte\n", (uintptr_t)gSYTaskmanGraphicsHeap.ptr - (uintptr_t)gSYTaskmanGraphicsHeap.start);
 		while (TRUE);
+#endif
 	}
 }
 

@@ -368,10 +368,10 @@ void lbRelocLoadAndRelocFile(u32 file_id, void *ram_dst, u32 bytes_num, s32 loc)
 		// All reloc chain entries are intra-file pointers.  Tokenize them
 		// normally so the resource system can resolve them to PC addresses.
 		//
-		// Note: G_DL commands that reference segment 0x0E for the runtime
-		// graphics heap (written by gcDrawMObjForDObj) are NOT in the reloc
-		// chain — they exist as raw 0x0Exxxxxx values in the ROM data and
-		// are preserved by the DL normalization code in the interpreter.
+		// Note: G_DL commands that reference segment 0x0E are NOT in the reloc
+		// chain — they exist as raw 0x0Exxxxxx values in the ROM data.
+		// These are intra-file sub-DL references resolved to absolute
+		// addresses by portNormalizeDisplayListPointer at widening time.
 		{
 			// Compute the real target pointer (within this file's data)
 			void *target = (void *)((uintptr_t)ram_dst + (words_num * sizeof(u32)));
