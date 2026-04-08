@@ -7,7 +7,7 @@
 // 0x8010B4D0
 void grBonus3InitHeaders(void)
 {
-    gGRCommonStruct.bonus3.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRBonus3MapMapHead);
+    gGRCommonStruct.bonus3.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRBonus3MapMapHead);
     gGRCommonStruct.bonus3.item_head = (void*) ((uintptr_t)gMPCollisionGroundData - (intptr_t)llGRBonus3MapItemHead);
 }
 

@@ -109,7 +109,7 @@ void grJungleMakeTaruCann(void)
     void *map_head;
     GObj *tarucann_gobj;
 
-    map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRJungleMapMapHead);
+    map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRJungleMapMapHead);
     gGRCommonStruct.jungle.map_head = map_head;
 
     gGRCommonStruct.jungle.tarucann_gobj = tarucann_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);

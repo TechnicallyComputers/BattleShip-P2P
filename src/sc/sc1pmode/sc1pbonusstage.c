@@ -706,7 +706,7 @@ void sc1PBonusStageMakeBumpers(void)
 
 	if (gMPCollisionGroundData->map_nodes != NULL)
 	{
-		file = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][0]);
+		file = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - dSC1PBonusStageBumperDescs[gSCManagerBattleState->gkind - nGRKindBonus2Start][0]);
 
 		vel.x = vel.y = vel.z = 0.0F;
 

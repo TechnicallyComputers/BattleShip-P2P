@@ -144,7 +144,7 @@ void grWallpaperMakeCommon(void)
         0,
         GOBJ_PRIORITY_DEFAULT,
         ~0,
-        gMPCollisionGroundData->wallpaper,
+        (Sprite*)PORT_RESOLVE(gMPCollisionGroundData->wallpaper),
         nGCProcessKindFunc,
         grWallpaperCommonProcUpdate,
         3
@@ -174,9 +174,9 @@ void grWallpaperMakeStatic(void)
         0, 
         GOBJ_PRIORITY_DEFAULT, 
         -1, 
-        gMPCollisionGroundData->wallpaper, 
-        nGCProcessKindFunc, 
-        NULL, 
+        (Sprite*)PORT_RESOLVE(gMPCollisionGroundData->wallpaper),
+        nGCProcessKindFunc,
+        NULL,
         3
     );
     wallpaper_sobj = SObjGetStruct(wallpaper_gobj);
@@ -237,7 +237,7 @@ void grWallpaperMakeSector(void)
 
     gcAddGObjDisplay(wallpaper_gobj, lbCommonDrawSObjAttr, 0, GOBJ_PRIORITY_DEFAULT, ~0);
 
-    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, gMPCollisionGroundData->wallpaper);
+    wallpaper_sobj = lbCommonMakeSObjForGObj(wallpaper_gobj, (Sprite*)PORT_RESOLVE(gMPCollisionGroundData->wallpaper));
 
     wallpaper_sobj->pos.x = 10.0F;
     wallpaper_sobj->pos.y = 10.0F;

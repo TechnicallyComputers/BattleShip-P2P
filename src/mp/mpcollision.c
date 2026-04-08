@@ -792,7 +792,7 @@ sb32 mpCollisionCheckFloorLineCollisionSame(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -951,7 +951,7 @@ sb32 mpCollisionCheckFloorLineCollisionDiff(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -1296,7 +1296,7 @@ sb32 mpCollisionCheckCeilLineCollisionSame(Vec3f *position, Vec3f *translate, Ve
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -1455,7 +1455,7 @@ sb32 mpCollisionCheckCeilLineCollisionDiff(Vec3f *position, Vec3f *translate, Ve
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -1616,7 +1616,7 @@ sb32 mpCollisionCheckRWallLineCollisionSame(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -1936,7 +1936,7 @@ sb32 mpCollisionCheckRWallLineCollisionDiff(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2157,7 +2157,7 @@ sb32 mpCollisionCheckLWallLineCollisionSame(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2442,7 +2442,7 @@ sb32 mpCollisionCheckLWallLineCollisionDiff(Vec3f *position, Vec3f *translate, V
     f32 spAC;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2590,7 +2590,7 @@ sb32 func_ovl2_800F8FFC(Vec3f *position)
     f32 vpdist_x, vpdist_y;
     s32 line_id;
 
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2661,7 +2661,7 @@ sb32 mpCollisionCheckProjectFloor(Vec3f *position, s32 *project_line_id, f32 *ga
     f32 gdist;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2764,7 +2764,7 @@ sb32 mpCollisionCheckProjectCeil(Vec3f *position, s32 *project_line_id, f32 *ga_
     f32 gdist;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2867,7 +2867,7 @@ sb32 mpCollisionCheckProjectRWall(Vec3f *position, s32 *project_line_id, f32 *ga
     f32 gdist;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -2970,7 +2970,7 @@ sb32 mpCollisionCheckProjectLWall(Vec3f *position, s32 *project_line_id, f32 *ga
     f32 gdist;
 
     line_project_pos = F32_MAX;
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -3448,7 +3448,7 @@ void func_ovl2_800FB04C(void)
     s32 vp2;
     s32 index;
 
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = l = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -3624,7 +3624,7 @@ void mpCollisionUpdateBoundsCurrent(void)
 
     bounds = gMPCollisionBounds.stop;
 
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -3797,7 +3797,7 @@ void mpCollisionInitYakumonoAll(void)
     s32 i, j, k, l;
     s32 unused[2];
 
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     bounds_moved.top = -65536.0F;
     bounds_moved.right = -65536.0F;
@@ -3902,7 +3902,7 @@ s32 mpCollisionAllocLinesGetCountTotal(void)
     {
         line_count[i] = 0;
     }
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -3940,7 +3940,7 @@ void mpCollisionInitLineIDsAll(void)
     {
         line_count[i] = 0;
     }
-    line_info = gMPCollisionGeometry->line_info;
+    line_info = (MPLineInfo*)PORT_RESOLVE(gMPCollisionGeometry->line_info);
 
     for (i = 0; i < gMPCollisionGeometry->yakumono_count; i++, line_info++)
     {
@@ -3977,7 +3977,7 @@ void mpCollisionInitGroundData(void)
         dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].offset
     );
 
-    gMPCollisionGeometry = gMPCollisionGroundData->map_geometry;
+    gMPCollisionGeometry = (MPGeometryData*)PORT_RESOLVE(gMPCollisionGroundData->map_geometry);
     gdata = gMPCollisionGeometry;
 
     if (gdata == NULL)
@@ -3988,17 +3988,17 @@ void mpCollisionInitGroundData(void)
             scManagerRunPrintGObjStatus();
         }
     }
-    gMPCollisionVertexData  = gdata->vertex_data;
-    gMPCollisionVertexIDs   = gdata->vertex_id;
-    gMPCollisionVertexLinks = gdata->vertex_links;
-    gMPCollisionMapObjs     = gdata->mapobjs;
+    gMPCollisionVertexData  = (MPVertexPosContainer*)PORT_RESOLVE(gdata->vertex_data);
+    gMPCollisionVertexIDs   = (MPVertexArray*)PORT_RESOLVE(gdata->vertex_id);
+    gMPCollisionVertexLinks = (MPVertexLinks*)PORT_RESOLVE(gdata->vertex_links);
+    gMPCollisionMapObjs     = (MPMapObjContainer*)PORT_RESOLVE(gdata->mapobjs);
 
     gMPCollisionLinesNum = mpCollisionAllocLinesGetCountTotal();
 
     mpCollisionInitLineIDsAll();
     mpCollisionAllocVertexInfo();
     func_ovl2_800FB554();
-    mpCollisionAllocYakumono(gMPCollisionGroundData->gr_desc[1].dobjdesc);
+    mpCollisionAllocYakumono((DObjDesc*)PORT_RESOLVE(gMPCollisionGroundData->gr_desc[1].dobjdesc));
 
     gMPCollisionLightColor.r = 0xFF;
     gMPCollisionLightColor.g = 0xFF;
@@ -4028,7 +4028,7 @@ void mpCollisionSetBGM(void)
 // 0x800FC450
 void mpCollisionClearYakumonoAll(void)
 {
-    DObjDesc *dobjdesc = gMPCollisionGroundData->gr_desc[1].dobjdesc;
+    DObjDesc *dobjdesc = (DObjDesc*)PORT_RESOLVE(gMPCollisionGroundData->gr_desc[1].dobjdesc);
     s32 i;
 
     for (i = 0; dobjdesc->id != DOBJ_ARRAY_MAX; i++, dobjdesc++)

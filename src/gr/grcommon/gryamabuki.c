@@ -267,7 +267,7 @@ void grYamabukiMakeGate(void)
 // 0x8010B250
 void grYamabukiInitGroundVars(void)
 {
-    gGRCommonStruct.yamabuki.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRYamabukiMapMapHead);
+    gGRCommonStruct.yamabuki.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRYamabukiMapMapHead);
 
     mpCollisionSetYakumonoOnID(3);
 

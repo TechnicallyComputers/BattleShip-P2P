@@ -947,13 +947,13 @@ GObj* mnMapsMakePreviewWallpaper(s32 gkind)
 					lbRelocGetForceExternHeapFile
 					(
 						dMNMapsTrainingModeFileInfos[dMNMapsTrainingModeWallpaperIDs[gkind]].file_id,
-						(void*) ((uintptr_t)sMNMapsGroundInfo->wallpaper - dMNMapsWallpaperOffsets[gkind])
+						(void*) ((uintptr_t)PORT_RESOLVE(sMNMapsGroundInfo->wallpaper) - dMNMapsWallpaperOffsets[gkind])
 					),
 					llGRWallpaperTrainingBlueSprite
 				)
 			);
 		}
-		else sobj = lbCommonMakeSObjForGObj(gobj, sMNMapsGroundInfo->wallpaper); // Use stage bg
+		else sobj = lbCommonMakeSObjForGObj(gobj, (Sprite*)PORT_RESOLVE(sMNMapsGroundInfo->wallpaper)); // Use stage bg
 		
 		sobj->sprite.attr &= ~SP_FASTCOPY;
 
@@ -1006,15 +1006,15 @@ GObj* mnMapsMakeLayer(s32 gkind, MPGroundData *ground_data, MPGroundDesc *ground
 	}
 	gobj = gcMakeGObjSPAfter(0, NULL, 5, GOBJ_PRIORITY_DEFAULT);
 	gcAddGObjDisplay(gobj, (ground_data->layer_mask & (1 << id)) ? mnMapsModelSecProcDisplay : mnMapsModelPriProcDisplay, 3, GOBJ_PRIORITY_DEFAULT, ~0);
-	gcSetupCustomDObjs(gobj, ground_desc->dobjdesc, NULL, nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, nGCMatrixKindNull);
+	gcSetupCustomDObjs(gobj, (DObjDesc*)PORT_RESOLVE(ground_desc->dobjdesc), NULL, nGCMatrixKindTraRotRpyRSca, nGCMatrixKindNull, nGCMatrixKindNull);
 
 	if (ground_desc->p_mobjsubs != NULL)
 	{
-		gcAddMObjAll(gobj, ground_desc->p_mobjsubs);
+		gcAddMObjAll(gobj, (MObjSub***)PORT_RESOLVE(ground_desc->p_mobjsubs));
 	}
 	if ((ground_desc->anim_joints != NULL) || (ground_desc->p_matanim_joints != NULL))
 	{
-		gcAddAnimAll(gobj, ground_desc->anim_joints, ground_desc->p_matanim_joints, 0.0F);
+		gcAddAnimAll(gobj, (AObjEvent32**)PORT_RESOLVE(ground_desc->anim_joints), (AObjEvent32***)PORT_RESOLVE(ground_desc->p_matanim_joints), 0.0F);
 		gcPlayAnimAll(gobj);
 	}
 	DObjGetStruct(gobj)->scale.vec.f.x = scales[gkind];

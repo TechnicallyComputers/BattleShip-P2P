@@ -57,12 +57,21 @@ struct MPLineInfo
 struct MPGeometryData
 {
 	u16 yakumono_count;
+#ifdef PORT
+	u32 vertex_data;
+	u32 vertex_id;
+	u32 vertex_links;
+	u32 line_info;
+	u16 mapobj_count;
+	u32 mapobjs;
+#else
 	void* vertex_data;
 	void* vertex_id;
 	void* vertex_links;
 	MPLineInfo* line_info;
 	u16 mapobj_count;
 	void* mapobjs;
+#endif
 };
 
 struct MPVertexInfoContainer
@@ -168,18 +177,31 @@ struct MPItemWeights
 
 struct MPGroundDesc
 {
+#ifdef PORT
+	u32 dobjdesc;
+	u32 anim_joints;
+	u32 p_mobjsubs;
+	u32 p_matanim_joints;
+#else
 	DObjDesc *dobjdesc;
 	AObjEvent32 **anim_joints;
 	MObjSub ***p_mobjsubs;
 	AObjEvent32 ***p_matanim_joints;
+#endif
 };
 
 struct MPGroundData
 {
 	MPGroundDesc gr_desc[4];
+#ifdef PORT
+	u32 map_geometry;
+	u8 layer_mask;
+	u32 wallpaper;
+#else
 	MPGeometryData *map_geometry;
 	u8 layer_mask; // render mask which determines render type for each geo layer (gr_desc) - 0 = primary, 1 = secondary (more alpha control w/2 display lists)
 	Sprite *wallpaper; 								// Background image?
+#endif
 	SYColorRGB fog_color;
 	u8 fog_alpha;								 	// Unused padding?
 	SYColorRGB emblem_colors[GMCOMMON_PLAYERS_MAX]; // What's this doing here?
@@ -194,8 +216,13 @@ struct MPGroundData
 	s16 map_bound_right;
 	s16 map_bound_left;
 	u32 bgm_id;
+#ifdef PORT
+	u32 map_nodes;
+	u32 item_weights;
+#else
 	void *map_nodes;
 	MPItemWeights *item_weights; 	// Randomizer weights of items
+#endif
 	s16 alt_warning;				// Warning whistle plays if a player goes below this altitude
 	s16 camera_bound_team_top;		// 1P Game VS. <character> Team bounds
 	s16 camera_bound_team_bottom;

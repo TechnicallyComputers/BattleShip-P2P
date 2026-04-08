@@ -31,7 +31,7 @@ void grCastleInitAll(void)
     s32 pos_id;
     DObj *dobj;
 
-    gGRCommonStruct.castle.map_head = map_head = (void*)((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRCastleMapMapHead);
+    gGRCommonStruct.castle.map_head = map_head = (void*)((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRCastleMapMapHead);
 
     ground_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);
 
@@ -42,7 +42,7 @@ void grCastleInitAll(void)
 
     gcAddGObjProcess(ground_gobj, gcPlayAnimAll, nGCProcessKindFunc, 5);
 
-    gcAddAnimJointAll(ground_gobj, gMPCollisionGroundData->map_nodes, 0.0F);
+    gcAddAnimJointAll(ground_gobj, (AObjEvent32**)PORT_RESOLVE(gMPCollisionGroundData->map_nodes), 0.0F);
     gcPlayAnimAll(ground_gobj);
 
     mpCollisionGetMapObjIDsKind(nMPMapObjKindBumper, &pos_id);

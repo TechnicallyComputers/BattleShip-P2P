@@ -1089,7 +1089,7 @@ void grSectorInitAll(void)
     GObj *map_gobj;
     void *map_file;
 
-    gGRCommonStruct.sector.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRSectorMapMapHead);
+    gGRCommonStruct.sector.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRSectorMapMapHead);
 
     map_file = lbRelocGetForceStatusBufferFile((intptr_t)llFoxSpecial3FileID);
 

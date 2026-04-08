@@ -662,7 +662,7 @@ GObj* grPupupuMakeMapGObj(intptr_t o_dobjdesc, intptr_t o_mobjsub, void (*proc_d
 // 0x8010658C
 void grPupupuInitAll(void)
 {
-    gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRPupupuMapMapHead);
+    gGRCommonStruct.pupupu.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRPupupuMapMapHead);
     gGRCommonStruct.pupupu.map_gobj[0] = grPupupuMakeMapGObj(llGRPupupuMapMapHead, llGRPupupuMapWhispyEyesTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
     gGRCommonStruct.pupupu.map_gobj[1] = grPupupuMakeMapGObj(llGRPupupuMapWhispyMouthTransformKindsDObjDesc, llGRPupupuMapWhispyMouthTransformKindsMObjSub, grDisplayLayer0PriProcDisplay, 4);
     gGRCommonStruct.pupupu.map_gobj[2] = grPupupuMakeMapGObj(llGRPupupuMapFlowersBackTransformKindsDObjDesc, 0x0, grDisplayLayer0PriProcDisplay, 4);

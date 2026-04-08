@@ -74,7 +74,7 @@ GObj* grZebesMakeAcid(void)
     GObj *map_gobj;
     void *map_head;
 
-    map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRZebesMapAcidDObjDesc);
+    map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRZebesMapAcidDObjDesc);
     gGRCommonStruct.zebes.map_head = map_head;
 
     map_gobj = gcMakeGObjSPAfter(nGCCommonKindGround, NULL, nGCCommonLinkIDGround, GOBJ_PRIORITY_DEFAULT);

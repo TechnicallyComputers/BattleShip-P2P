@@ -204,7 +204,7 @@ void grYosterInitAll(void)
     void *map_head;
     s32 i, j;
 
-    map_head = (uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRYosterMapMapHead;
+    map_head = (uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRYosterMapMapHead;
     gGRCommonStruct.yoster.map_head = map_head;
 
     for (i = 0; i < ARRAY_COUNT(gGRCommonStruct.yoster.clouds); i++)

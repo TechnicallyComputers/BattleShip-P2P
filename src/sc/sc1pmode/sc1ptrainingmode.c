@@ -651,13 +651,13 @@ void sc1PTrainingModeLoadSprites(void)
 // 0x8018DDB0
 void sc1PTrainingModeLoadWallpaper(void)
 {
-	gMPCollisionGroundData->wallpaper = lbRelocGetFileData
+	gMPCollisionGroundData->wallpaper = (uintptr_t)lbRelocGetFileData
 	(
 		Sprite*,
 		lbRelocGetForceExternHeapFile
 		(
 			dSC1PTrainingModeWallpaperDescs[dSC1PTrainingModeWallpaperIDs[gSCManagerBattleState->gkind]].file_id,
-			(void*) ((uintptr_t)gMPCollisionGroundData->wallpaper - (intptr_t)dSC1PTrainingModeWallpaperHeapOffsets[gSCManagerBattleState->gkind])
+			(void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->wallpaper) - (intptr_t)dSC1PTrainingModeWallpaperHeapOffsets[gSCManagerBattleState->gkind])
 		),
 		dSC1PTrainingModeWallpaperDescs[dSC1PTrainingModeWallpaperIDs[gSCManagerBattleState->gkind]].offset
 	);

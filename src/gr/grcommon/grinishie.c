@@ -564,7 +564,7 @@ sb32 grInishiePowerBlockCheckGetDamageKind(GObj *item_gobj, GObj *fighter_gobj, 
 // 0x80109BD4
 void grInishieInitHeaders(void)
 {
-    gGRCommonStruct.inishie.map_head = (void*) ((uintptr_t)gMPCollisionGroundData->map_nodes - (intptr_t)llGRInishieMapMapHead);
+    gGRCommonStruct.inishie.map_head = (void*) ((uintptr_t)PORT_RESOLVE(gMPCollisionGroundData->map_nodes) - (intptr_t)llGRInishieMapMapHead);
     gGRCommonStruct.inishie.item_head = (void*) ((uintptr_t)gMPCollisionGroundData - (intptr_t)llGRInishieMapMapHeader);
 }
 

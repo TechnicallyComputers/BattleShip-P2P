@@ -576,7 +576,7 @@ GObj* itManagerMakeAppearActor(void)
         {
             if (gMPCollisionGroundData->item_weights != NULL)
             {
-                p_any_weights = gMPCollisionGroundData->item_weights;
+                p_any_weights = (MPItemWeights*)PORT_RESOLVE(gMPCollisionGroundData->item_weights);
                 item_any_toggles = gSCManagerBattleState->item_toggles;
 
                 item_any_weights = 0;
@@ -622,7 +622,7 @@ GObj* itManagerMakeAppearActor(void)
                 gcAddGObjProcess(gobj, itManagerAppearActorProcUpdate, nGCProcessKindFunc, 3);
 
                 item_valid_toggles = gSCManagerBattleState->item_toggles;
-                p_valid_weights = gMPCollisionGroundData->item_weights;
+                p_valid_weights = (MPItemWeights*)PORT_RESOLVE(gMPCollisionGroundData->item_weights);
 
                 for (i = nITKindCommonStart, item_valid_weights = 0; i <= nITKindCommonEnd; i++, item_valid_toggles >>= 1)
                 {
@@ -675,7 +675,7 @@ void itManagerSetupContainerDrops(void)
     if ((gSCManagerBattleState->item_appearance_rate != nSCBattleItemSwitchNone) && (gSCManagerBattleState->item_toggles != 0) && (gMPCollisionGroundData->item_weights != NULL))
     {
         item_any_toggles = gSCManagerBattleState->item_toggles >> nITKindUtilityStart;
-        p_any_weights = gMPCollisionGroundData->item_weights;
+        p_any_weights = (MPItemWeights*)PORT_RESOLVE(gMPCollisionGroundData->item_weights);
 
         item_any_weights = 0;
 
@@ -691,7 +691,7 @@ void itManagerSetupContainerDrops(void)
         if (item_any_weights != 0)
         {
             item_valid_toggles = gSCManagerBattleState->item_toggles >> nITKindUtilityStart;
-            p_valid_weights = gMPCollisionGroundData->item_weights;
+            p_valid_weights = (MPItemWeights*)PORT_RESOLVE(gMPCollisionGroundData->item_weights);
 
             for (item_valid_weights = 0, i = nITKindUtilityStart; i <= nITKindUtilityEnd; i++, item_valid_toggles >>= 1)
             {
