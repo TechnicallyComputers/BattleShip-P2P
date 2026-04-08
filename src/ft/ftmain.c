@@ -983,18 +983,8 @@ void ftMainPlayAnim(GObj *fighter_gobj)
     {
         fp->anim_vel = fp->joints[nFTPartsJointTransN]->translate.vec.f;
     }
-#ifdef PORT
-    port_log("SSB64: ftMainPlayAnim - before anim keys gobj=%p\n", fighter_gobj);
-#endif
     ftParamUpdateAnimKeys(fighter_gobj);
-#ifdef PORT
-    port_log("SSB64: ftMainPlayAnim - after anim keys gobj=%p\n", fighter_gobj);
-    port_log("SSB64: ftMainPlayAnim - before parts transform joint=%p\n", fp->joints[nFTPartsJointTopN]);
-#endif
     ftParamsUpdateFighterPartsTransform(fp->joints[nFTPartsJointTopN]);
-#ifdef PORT
-    port_log("SSB64: ftMainPlayAnim - after parts transform gobj=%p\n", fighter_gobj);
-#endif
 }
 
 // 0x800E0830 - Play fighter animation and run motion scripts normally

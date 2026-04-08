@@ -523,7 +523,7 @@ void mvOpeningMarioFuncStart(void)
 	ftManagerSetupFilesAllKind(nFTKindMario);
 
 	sMVOpeningMarioFigatreeHeap = syTaskmanMalloc(gFTManagerFigatreeHeapSize, 0x10);
-	
+
 	mvOpeningMarioMakeNameCamera();
 	mvOpeningMarioMakePosedWallpaperCamera();
 	mvOpeningMarioMakePosedFighterCamera();

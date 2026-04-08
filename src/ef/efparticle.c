@@ -94,6 +94,21 @@ s32 efParticleGetLoadBankID(uintptr_t scripts_lo, uintptr_t scripts_hi, uintptr_
     {
         return bank_id;
     }
+
+#ifdef PORT
+    /* On PC the scripts_lo/hi/textures_lo/hi values are &-of linker symbol
+     * stubs — meaningless PC addresses, not ROM offsets.  syDmaReadRom is a
+     * no-op, so the allocated buffers would contain stale heap data.
+     * lbParticleSetupBankID then reads garbage scripts_num/textures_num
+     * counts and iterates into a segfault.
+     *
+     * Register a dummy bank so callers get a valid bank_id.  Particle
+     * effects that reference this bank will simply not fire. */
+    bank_id = sEFParticleBanksNum;
+    sEFParticleScriptBanks[bank_id] = scripts_lo;
+    sEFParticleBanksNum++;
+    return bank_id;
+#else
     script_size = scripts_hi - scripts_lo;
     texture_size = textures_hi - textures_lo;
 
@@ -110,4 +125,5 @@ s32 efParticleGetLoadBankID(uintptr_t scripts_lo, uintptr_t scripts_hi, uintptr_
     sEFParticleScriptBanks[bank_id] = scripts_lo;
 
     return bank_id;
+#endif
 }
