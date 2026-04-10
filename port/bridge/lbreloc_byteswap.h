@@ -143,6 +143,27 @@ int portRelocFixupTextureFromChain(void *file_base, size_t file_size,
                                    unsigned int slot_byte_off,
                                    unsigned int target_byte_off);
 
+/**
+ * Lazy vertex fixup at interpreter execute time (Option A).
+ *
+ * Called from libultraship's gfx_vtx_handler_f3dex2 with the resolved
+ * vertex array address and the cmd's num_vtx.  Only data the interpreter
+ * actually treats as vertices reaches this function — zero false positives
+ * by construction.
+ *
+ * If the address is inside a reloc file, applies the per-Vtx byte
+ * permutation (rotate16 for the three s16 pair words, BSWAP32 for the
+ * RGBA color word).  Idempotent across multiple frames via
+ * sStructU16Fixups; cleared on scene change by portResetStructFixups.
+ *
+ * Heap-built vertex arrays (e.g., runtime sprites) are skipped — they're
+ * already in correct host byte order.
+ *
+ * @param addr     Resolved vertex array pointer (post SegAddr).
+ * @param num_vtx  Vertex count from the G_VTX cmd's w0[19:12].
+ */
+void portRelocFixupVertexAtRuntime(const void *addr, unsigned int num_vtx);
+
 #ifdef __cplusplus
 }
 #endif

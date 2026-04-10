@@ -28,6 +28,14 @@
 #include <vector>
 
 extern "C" void port_log(const char *fmt, ...);
+extern "C" int  portRelocFindContainingFile(const void *ptr, uintptr_t *out_base, size_t *out_size);
+
+// Tracks which (base + offset) regions have been fixed to prevent
+// double-fixup. Used by per-struct fixups (Sprite, Bitmap, MObjSub, etc.),
+// pass2 vertex fixups, the chain-walk texture fixup, and the runtime
+// lazy vertex fixup. All paths share this set so they don't undo each
+// other's work. Cleared at scene change via portResetStructFixups.
+static std::unordered_set<uintptr_t> sStructU16Fixups;
 
 // F3DEX2 GBI opcodes (from gbi.h with F3DEX_GBI_2 defined)
 #define GBI_VTX         0x01
@@ -301,6 +309,16 @@ static void apply_fixups(void *data, size_t file_size,
 		{
 		case FIXUP_VERTEX:
 			apply_fixup_vertex(region_words, num_words);
+			// Per-vertex registration so the runtime lazy fixup
+			// (portRelocFixupVertexAtRuntime) skips each Vtx
+			// individually — handles overlapping sub-loads.
+			{
+				uintptr_t base = reinterpret_cast<uintptr_t>(region_words);
+				size_t n_vtx = num_words / 4;  // 4 u32 words per Vtx
+				for (size_t v = 0; v < n_vtx; v++) {
+					sStructU16Fixups.insert(base + v * 16);
+				}
+			}
 			break;
 		case FIXUP_TEX_BYTES:
 			apply_fixup_tex_bytes(region_words, num_words);
@@ -340,11 +358,6 @@ extern "C" void portRelocByteSwapBlob(void *data, size_t size)
 // ============================================================
 //  Struct u16 fixup — rotate16 for u16 fields in ROM structs
 // ============================================================
-
-// Tracks which (base + offset) regions have been fixed to prevent
-// double-fixup when the same struct pointer is loaded multiple times
-// from a cached file blob.
-static std::unordered_set<uintptr_t> sStructU16Fixups;
 
 extern "C" void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words)
 {
@@ -543,12 +556,14 @@ static int chain_fixup_vertex(void *file_base, size_t file_size,
 		if (flag != 0) return 0;
 	}
 
-	uintptr_t fixup_key = reinterpret_cast<uintptr_t>(file_base) + (uintptr_t)target_byte_off;
-	if (sStructU16Fixups.count(fixup_key)) return 1;
-	sStructU16Fixups.insert(fixup_key);
-
+	// Per-vertex idempotency (matches portRelocFixupVertexAtRuntime).
+	uintptr_t target_addr = reinterpret_cast<uintptr_t>(file_base) + (uintptr_t)target_byte_off;
 	for (uint32_t i = 0; i < num_vtx; i++)
 	{
+		uintptr_t vtx_key = target_addr + (uintptr_t)i * 16;
+		if (sStructU16Fixups.count(vtx_key)) continue;
+		sStructU16Fixups.insert(vtx_key);
+
 		region[i * 4 + 0] = (region[i * 4 + 0] << 16) | (region[i * 4 + 0] >> 16);
 		region[i * 4 + 1] = (region[i * 4 + 1] << 16) | (region[i * 4 + 1] >> 16);
 		region[i * 4 + 2] = (region[i * 4 + 2] << 16) | (region[i * 4 + 2] >> 16);
@@ -582,13 +597,66 @@ extern "C" int portRelocFixupTextureFromChain(void *file_base, size_t file_size,
 	if (opcode == GBI_VTX)
 	{
 		// Filter: real packed cmd w1 must be at 8*N+4 alignment.
-		// Reject struct-field chain entries whose preceding 4 bytes
-		// happen to look like a G_VTX cmd by coincidence.  Verified via
-		// runtime diagnostic that all legitimate vertex fixups satisfy this.
 		if ((slot_byte_off & 0x7) != 4) return 0;
 		return chain_fixup_vertex(file_base, file_size, slot_byte_off, target_byte_off, w0);
 	}
 	return 0;
+}
+
+// ============================================================
+//  Lazy runtime fixup (Option A)
+// ============================================================
+//
+// Called from the interpreter's gfx_vtx_handler_f3dex2 with the resolved
+// vertex array address and the cmd's num_vtx.  If the address is inside a
+// reloc file (i.e., not heap-built data), apply the per-Vtx byte permutation
+// idempotently.
+//
+// Why this is correct: only data the running interpreter actually treats as
+// vertices reaches this function — there's no guessing.  Each target's "type"
+// is unambiguously vertex because a real G_VTX cmd just dispatched it.
+
+extern "C" void portRelocFixupVertexAtRuntime(const void *addr, unsigned int num_vtx)
+{
+	if (addr == nullptr || num_vtx == 0 || num_vtx > 32) return;
+
+	// Only fix data that lives inside a reloc file blob.  Heap-built vertex
+	// arrays (e.g., dynamic UI sprites) are constructed by game code with
+	// already-correct byte order on the host LE side.
+	uintptr_t fileBase = 0;
+	size_t    fileSize = 0;
+	if (!portRelocFindContainingFile(addr, &fileBase, &fileSize))
+	{
+		return;
+	}
+
+	uintptr_t target = reinterpret_cast<uintptr_t>(addr);
+	size_t target_offset = target - fileBase;
+	size_t total_bytes = (size_t)num_vtx * 16;
+	if (target_offset + total_bytes > fileSize) return;
+
+	// PER-VERTEX idempotency.  Game code can re-load OVERLAPPING sub-ranges
+	// of the same vertex array (e.g. cmd 1 loads vertices 0..15 at addr A,
+	// cmd 2 loads vertices 1..14 at addr A+16).  Address-keyed tracking
+	// would treat these as distinct keys and double-fix the overlap region.
+	// Instead we mark each individual 16-byte Vtx; only un-marked vertices
+	// get fixed.
+	uint32_t *region = reinterpret_cast<uint32_t *>(target);
+	for (unsigned int i = 0; i < num_vtx; i++)
+	{
+		uintptr_t vtx_key = target + (uintptr_t)i * 16;
+		if (sStructU16Fixups.count(vtx_key)) continue;
+		sStructU16Fixups.insert(vtx_key);
+
+		// word 0: s16 ob[0] | s16 ob[1] → rotate16
+		region[i * 4 + 0] = (region[i * 4 + 0] << 16) | (region[i * 4 + 0] >> 16);
+		// word 1: s16 ob[2] | u16 flag → rotate16
+		region[i * 4 + 1] = (region[i * 4 + 1] << 16) | (region[i * 4 + 1] >> 16);
+		// word 2: s16 tc[0] | s16 tc[1] → rotate16
+		region[i * 4 + 2] = (region[i * 4 + 2] << 16) | (region[i * 4 + 2] >> 16);
+		// word 3: u8 cn[0..3] → bswap32 to restore byte order
+		region[i * 4 + 3] = BSWAP32(region[i * 4 + 3]);
+	}
 }
 
 // ============================================================
