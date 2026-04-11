@@ -220,7 +220,30 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
     DObj **p_joint = &fp->joints[nFTPartsJointXRotN];
     s32 joint_num;
     s32 i;
-    Vec3f *scale = &((Vec3f*)PORT_RESOLVE(fp->attr->translate_scales))[nFTPartsJointYRotN];
+    Vec3f *scale;
+#ifdef PORT
+    /* PORT: joints[TransN/XRotN/YRotN] are populated by ftMainUpdateHiddenPartID
+     * (the hidden-parts mechanism) which gets triggered by bits in
+     * motion_desc->anim_desc.word.  On PC, motion_desc is read from a file
+     * array of FTMotionDesc structs.  FTMotionDesc contains `intptr_t offset`
+     * which is 4 bytes on N64 but 8 bytes on x64, so the struct stride differs
+     * and reads after the first entry come from wrong offsets.  This results
+     * in joints[YRotN] being NULL even when the motion has the
+     * is_use_yrotn_joint flag set, because the wrong anim_desc.word is read.
+     *
+     * Until the FTMotionDesc layout is fixed (separate task — same class as
+     * project_addr64_relocation_bug.md), bail out gracefully when the YRotN
+     * joint isn't populated.  The visible effect is that shields don't render
+     * for affected fighters, but the game doesn't crash.
+     *
+     * This is the single chokepoint for the entire shield/guard joint update
+     * crash class — both the wait→guard transition and per-frame guard updates
+     * route through here. */
+    if (yrotn_joint == NULL) {
+        return;
+    }
+#endif
+    scale = &((Vec3f*)PORT_RESOLVE(fp->attr->translate_scales))[nFTPartsJointYRotN];
 
     if (fp->is_shield)
     {
@@ -418,6 +441,28 @@ void ftCommonGuardOnSetStatus(GObj *fighter_gobj, s32 slide_tics)
 
     ftMainSetStatus(fighter_gobj, nFTCommonStatusGuardOn, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
+
+#ifdef PORT
+    /* PORT: skip shield effect+joint setup when joints[YRotN] isn't populated.
+     * The hidden-parts mechanism that should populate joints[1..3] isn't
+     * working on PC due to a struct-size mismatch in FTMotionDesc (intptr_t
+     * is 4 bytes on N64 vs 8 bytes on x64) — same class as
+     * project_addr64_relocation_bug.md.  Until that's fixed, the shield
+     * mechanic is effectively disabled to prevent NULL derefs.
+     *
+     * Without this, the shield effect dobj attaches user_data.p = NULL
+     * which crashes in func_ovl0_800C994C → gcPrepDObjMatrix during the
+     * shield's per-frame display proc. */
+    if (fp->joints[nFTPartsJointYRotN] == NULL)
+    {
+        fp->status_vars.common.guard.release_lag = FTCOMMON_GUARD_RELEASE_LAG;
+        fp->status_vars.common.guard.shield_decay_wait = FTCOMMON_GUARD_DECAY_INT;
+        fp->status_vars.common.guard.is_release = FALSE;
+        fp->status_vars.common.guard.slide_tics = slide_tics;
+        fp->status_vars.common.guard.is_setoff = FALSE;
+        return;
+    }
+#endif
 
     if (fp->shield_health != 0)
     {

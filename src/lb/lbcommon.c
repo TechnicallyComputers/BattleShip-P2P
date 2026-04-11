@@ -1587,14 +1587,36 @@ sb32 func_ovl0_800C994C(Mtx *mtx, DObj *dobj, Gfx **dls)
 {
     s32 unused;
     DObj *attach_dobj = dobj->user_data.p;
-    FTParts *parts = attach_dobj->user_data.p;
+    FTParts *parts;
     Mtx44f f;
-    
+
+#ifdef PORT
+    /* PORT: this matrix-update callback is registered as the matrix proc for
+     * effect dobjs that are "attached" to a fighter joint via user_data.p =
+     * fighter->joints[N] (see efManagerShieldMakeEffect, ef-attach-to-joint
+     * variants in efmanager.c).  When the fighter joint is NULL on PC (which
+     * happens for joints 1..3 because the FTMotionDesc layout mismatch breaks
+     * the hidden-parts mechanism, and for various per-fighter joints because
+     * setup_parts data isn't fully populating), attach_dobj is NULL.
+     *
+     * Bail out gracefully — the effect just won't get a per-frame matrix
+     * update, which means its visual position won't track the fighter.  But
+     * the game stays alive.  This is the single chokepoint for ALL the
+     * NULL-joint effect crashes; once the upstream FTMotionDesc + parts data
+     * issues are fixed, this guard becomes a no-op.
+     *
+     * Same crash class as project_addr64_relocation_bug.md. */
+    if (attach_dobj == NULL || attach_dobj->user_data.p == NULL) {
+        return 0;
+    }
+#endif
+
+    parts = attach_dobj->user_data.p;
     func_ovl2_800EDBA4(attach_dobj);
     gmCollisionCopyMatrix(f, parts->mtx_translate);
     gGCScaleX = sqrtf(SQUARE(f[0][0]) + SQUARE(f[0][1]) + SQUARE(f[0][2]));
     syMatrixF2LFixedW(&f, mtx);
-    
+
     return 0;
 }
 

@@ -394,6 +394,22 @@ void ftPhysicsGetAirVelTransN(FTStruct *fp, f32 *z, f32 *y, f32 *x) // Ness / Yo
 {
     DObj *topn_joint = fp->joints[nFTPartsJointTopN];
     DObj *transn_joint = fp->joints[nFTPartsJointTransN];
+#ifdef PORT
+    /* PORT: bail if joints[TransN] isn't populated.  This joint is supposed
+     * to be created by the hidden-parts mechanism (ftMainUpdateHiddenPartID)
+     * driven by motion_desc->anim_desc.flags.is_use_transn_joint, but the
+     * hidden-parts mechanism has its own bugs (see project memory for the
+     * scene-32 fighter init investigation).  When TransN is missing, the
+     * fighter's air movement just won't get the animated velocity offset —
+     * usually a no-op for non-Yoshi/Ness fighters. */
+    if (transn_joint == NULL || topn_joint == NULL) {
+        if (z != NULL) *z = 0.0F;
+        if (y != NULL) *y = 0.0F;
+        if (x != NULL) *x = 0.0F;
+        return;
+    }
+#endif
+    {
     f32 anim_vel_z = (transn_joint->translate.vec.f.z - fp->anim_vel.z) * fp->lr * topn_joint->scale.vec.f.z;
     f32 anim_vel_y = (transn_joint->translate.vec.f.y - fp->anim_vel.y) * topn_joint->scale.vec.f.y;
     f32 cos = cosf(transn_joint->rotate.vec.f.z);
@@ -411,6 +427,7 @@ void ftPhysicsGetAirVelTransN(FTStruct *fp, f32 *z, f32 *y, f32 *x) // Ness / Yo
     {
         *x = (transn_joint->translate.vec.f.x - fp->anim_vel.x) * -fp->lr * topn_joint->scale.vec.f.x;
     }
+    }
 }
 
 // 0x800D938C
@@ -419,6 +436,9 @@ void ftPhysicsSetAirVelTransN(GObj *fighter_gobj)
     FTStruct *fp = ftGetStruct(fighter_gobj);
     DObj *topn_joint = fp->joints[nFTPartsJointTopN];
     DObj *transn_joint = fp->joints[nFTPartsJointTransN];
+#ifdef PORT
+    if (transn_joint == NULL || topn_joint == NULL) return;
+#endif
 
     fp->physics.vel_air.x = (transn_joint->translate.vec.f.x - fp->anim_vel.x) * topn_joint->scale.vec.f.x;
     fp->physics.vel_air.y = (transn_joint->translate.vec.f.y - fp->anim_vel.y) * topn_joint->scale.vec.f.y;
