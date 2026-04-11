@@ -55,14 +55,37 @@ if (-not $ExtractOnly) {
     if ($LASTEXITCODE -ne 0) { Write-Host "Submodule init failed" -ForegroundColor Red; exit 1 }
 }
 
-# ── Generate reloc_data.h ──
-# include/reloc_data.h is gitignored. Rebuild it from the vendored
-# symbols table before configuring CMake so every compiler sees real
-# file_id / offset values.
+# ── Generate reloc_data.h, Torch YAML configs, RelocFileTable.cpp ──
+# All three are downstream of tools/reloc_data_symbols.us.txt and the ROM.
+#
+# Pipeline:
+#   reloc_data_symbols.us.txt
+#     -> generate_reloc_stubs.py  -> include/reloc_data.h
+#          -> generate_yamls.py   -> yamls/us/reloc_*.yml       (gitignored)
+#               -> generate_reloc_table.py -> port/resource/RelocFileTable.cpp
+#                    -> Torch               -> ssb64.o2r
+#
+# reloc_data.h + yamls/us/reloc_*.yml are gitignored and must be rebuilt on
+# every fresh checkout. RelocFileTable.cpp is committed, but we still
+# regenerate it here so it stays in lock-step with whatever the YAML
+# generator emitted — if the two ever disagree at runtime, the resource
+# loader falls back to the file_NNNN fallback names and every fighter /
+# sprite / icon lookup silently returns NULL.
 if (-not $ExtractOnly) {
     Write-Step "Regenerating include/reloc_data.h"
     python "$Root\tools\generate_reloc_stubs.py"
     if ($LASTEXITCODE -ne 0) { Write-Host "reloc_data.h generation failed" -ForegroundColor Red; exit 1 }
+
+    Write-Step "Regenerating Torch YAML extraction configs"
+    python "$Root\tools\generate_yamls.py"
+    if ($LASTEXITCODE -ne 0) { Write-Host "generate_yamls.py failed" -ForegroundColor Red; exit 1 }
+
+    Write-Step "Regenerating port\resource\RelocFileTable.cpp"
+    Push-Location $Root
+    try {
+        python "$Root\tools\generate_reloc_table.py"
+        if ($LASTEXITCODE -ne 0) { Write-Host "generate_reloc_table.py failed" -ForegroundColor Red; exit 1 }
+    } finally { Pop-Location }
 }
 
 # ── Encode credits text ──

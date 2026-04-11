@@ -91,13 +91,31 @@ if [[ $EXTRACT_ONLY -eq 0 ]]; then
     git -C "$ROOT" submodule update --init --recursive
 fi
 
-# ── Generate reloc_data.h ──
-# `include/reloc_data.h` is gitignored — rebuild it from the vendored
-# symbols table before configuring CMake so every compiler sees the
-# real file_id / offset values.
+# ── Generate reloc_data.h, Torch YAML configs, RelocFileTable.cpp ──
+# All three are downstream of tools/reloc_data_symbols.us.txt and the ROM.
+#
+# Pipeline:
+#   reloc_data_symbols.us.txt
+#     └─► generate_reloc_stubs.py  → include/reloc_data.h
+#           └─► generate_yamls.py  → yamls/us/reloc_*.yml     (gitignored)
+#                 └─► generate_reloc_table.py → port/resource/RelocFileTable.cpp
+#                       └─► Torch                → ssb64.o2r
+#
+# reloc_data.h + yamls/us/reloc_*.yml are gitignored and must be rebuilt on
+# every fresh checkout. RelocFileTable.cpp is committed, but we still
+# regenerate it here so it stays in lock-step with whatever the YAML
+# generator emitted — if the two ever disagree at runtime, the resource
+# loader falls back to the `file_NNNN` fallback names and every fighter /
+# sprite / icon lookup silently returns NULL.
 if [[ $EXTRACT_ONLY -eq 0 ]]; then
     step "Regenerating include/reloc_data.h"
     python3 "$ROOT/tools/generate_reloc_stubs.py"
+
+    step "Regenerating Torch YAML extraction configs"
+    python3 "$ROOT/tools/generate_yamls.py"
+
+    step "Regenerating port/resource/RelocFileTable.cpp"
+    ( cd "$ROOT" && python3 "$ROOT/tools/generate_reloc_table.py" )
 fi
 
 # ── Encode credits text ──
