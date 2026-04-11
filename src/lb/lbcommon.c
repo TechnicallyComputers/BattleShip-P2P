@@ -3037,8 +3037,18 @@ SObj* lbCommonMakeSObjForGObj(GObj *gobj, Sprite *sprite)
     sobj->maskt = sobj->masks = 0;
     
     sobj->cmt = sobj->cms = 2;
-    
+
     sobj->pos.x = sobj->pos.y = 0.0F;
+
+    /*
+     * The decomp is missing the trailing `return sobj;` and relies on IDO /
+     * MSVC codegen happening to leave the value in the return register at
+     * fall-off. Clang/arm64 picks a stack slot that's never written, so the
+     * "return value" is uninitialised memory and callers (mnStartupFuncStart)
+     * crash immediately doing `sobj->sprite.attr &= ~SP_FASTCOPY`. Return
+     * explicitly so the behaviour is defined on every platform.
+     */
+    return sobj;
 }
 
 // 0x800CD050
