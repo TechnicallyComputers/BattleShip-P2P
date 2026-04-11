@@ -69,8 +69,21 @@ void ftShadowProcDisplay(GObj *shadow_gobj)
     f32 shadow_calc_right;
     s32 unused;
     f32 shadow_edge_left;
+#ifdef PORT
+    /* PORT: shadow_alt_{left,right} are conditionally assigned inside the
+     * for-loop below; if no coll vertex range contains shadow_edge_{left,
+     * right} the loop completes without setting them, and the vertex emit
+     * at the bottom of the function reads garbage.  N64 happened to land
+     * on sensible stack residue, MSVC's /RTCu catches it as
+     * "shadow_alt_left used without being initialized" and aborts.
+     * Fighter intro scenes hit this on whichever frame the fighter's
+     * x range doesn't overlap any single floor edge. */
+    f32 shadow_alt_left = 0.0F;
+    f32 shadow_alt_right = 0.0F;
+#else
     f32 shadow_alt_left;
     f32 shadow_alt_right;
+#endif
     f32 spF0;
     f32 spEC;
     f32 spE8;
