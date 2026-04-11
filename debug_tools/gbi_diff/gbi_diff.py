@@ -6,7 +6,13 @@ Parses .gbi trace files produced by:
   - Port-side gbi_trace system (debug_traces/port_trace.gbi)
   - Mupen64Plus trace plugin   (emu_trace.gbi)
 
-Aligns commands by frame, produces a structured diff highlighting divergences.
+Aligns commands by frame using LCS-based matching (difflib.SequenceMatcher),
+produces a structured diff highlighting only the real divergences.
+
+A single insertion/deletion in either trace does NOT cascade into thousands
+of false-positive "mismatches" on every following command — the matcher
+re-syncs at the next pair of identical commands and reports the missing/
+extra command as "extra in port" or "extra in emu".
 
 Usage:
     python gbi_diff.py <port_trace.gbi> <emu_trace.gbi> [options]
@@ -14,12 +20,28 @@ Usage:
 Options:
     --frame N          Only diff frame N (default: all frames)
     --frame-range A-B  Diff frames A through B inclusive
-    --context N        Show N matching commands around each divergence (default: 3)
-    --summary          Only show per-frame summary, not individual diffs
-    --ignore-addresses Don't flag address differences in G_DL/G_VTX/G_MTX etc.
+    --context N        Show N preceding commands around each divergence (default: 3)
+    --summary          Only show per-frame summary counts, not individual diffs
+    --ignore-addresses Don't flag w1 differences in G_DL/G_VTX/G_MTX/G_SETTIMG etc.
+                       (essential — port uses 32-bit PORT_RESOLVE tokens for what
+                       the emu trace shows as full N64 RDRAM 0x80XXXXXX addresses)
     --output FILE      Write diff to file instead of stdout
+
+Performance:
+  --frame N and --frame-range A-B activate a parse-time filter that skips
+  non-target frames entirely.  Without this a single-frame query against a
+  3.7 GB emu_trace.gbi takes ~100 s; with it, ~16 s.
+
+Divergence taxonomy (after LCS alignment):
+  opcode mismatches  - paired cmds with different opcodes
+  w0 mismatches      - paired cmds with same opcode, different w0
+  w1 mismatches      - paired cmds with same opcode/w0, different w1
+                       (suppressed for address opcodes when --ignore-addresses)
+  extra in port      - port cmd with no match in emu
+  extra in emu       - emu cmd with no match in port
 """
 import argparse
+import difflib
 import re
 import sys
 from dataclasses import dataclass
@@ -75,11 +97,19 @@ FRAME_START_RE = re.compile(r'^=== FRAME (\d+) ===$')
 FRAME_END_RE = re.compile(r'^=== END FRAME (\d+)\s*(?:—|-)\s*(\d+) commands ===$')
 
 
-def parse_trace(filepath: str) -> dict[int, Frame]:
-    """Parse a .gbi trace file into a dict of frame_number -> Frame."""
+def parse_trace(filepath: str,
+                want_frames: Optional[set] = None) -> dict[int, Frame]:
+    """Parse a .gbi trace file into a dict of frame_number -> Frame.
+
+    If `want_frames` is supplied, only frames whose number is in the set
+    are kept and the parser skips line work entirely for other frames.
+    For multi-GB emu traces this brings single-frame queries from
+    ~100s to ~5s by avoiding regex matching on ~6M unrelated cmd lines.
+    """
     frames: dict[int, Frame] = {}
     current_frame: Optional[int] = None
     current_cmds: list[GbiCommand] = []
+    keep_current = True  # whether the current frame is in want_frames
 
     with open(filepath, 'r', encoding='utf-8') as f:
         for line in f:
@@ -94,6 +124,8 @@ def parse_trace(filepath: str) -> dict[int, Frame]:
             if m:
                 current_frame = int(m.group(1))
                 current_cmds = []
+                keep_current = (want_frames is None or
+                                current_frame in want_frames)
                 continue
 
             # Frame end
@@ -101,16 +133,17 @@ def parse_trace(filepath: str) -> dict[int, Frame]:
             if m:
                 frame_num = int(m.group(1))
                 total = int(m.group(2))
-                frames[frame_num] = Frame(
-                    number=frame_num,
-                    commands=current_cmds,
-                    total_cmds=total,
-                )
+                if keep_current:
+                    frames[frame_num] = Frame(
+                        number=frame_num,
+                        commands=current_cmds,
+                        total_cmds=total,
+                    )
                 current_frame = None
                 continue
 
-            # Command line
-            if current_frame is not None:
+            # Command line — skip the regex work entirely for filtered frames
+            if current_frame is not None and keep_current:
                 m = CMD_RE.match(line)
                 if m:
                     w1_64 = ""
@@ -159,80 +192,137 @@ ADDRESS_OPCODES = {
 
 @dataclass
 class Divergence:
-    """A single command divergence between port and emu."""
+    """A single command divergence between port and emu.
+
+    After LCS-based alignment, port_cmd and emu_cmd may correspond to
+    different physical positions in their respective traces.  We store
+    the parser-list position on each side (port_pos / emu_pos) so the
+    output can show context cheaply without an O(N) lookup.
+    `cmd_index` is the *port-side* index when present, else the emu
+    index, used only for display ordering.
+    """
     cmd_index: int
     port_cmd: Optional[GbiCommand]
     emu_cmd: Optional[GbiCommand]
-    reason: str  # What diverged: opcode, w0, w1, params, missing
+    reason: str  # What diverged: opcode, w0, w1, extra in port, extra in emu
+    port_pos: Optional[int] = None
+    emu_pos: Optional[int] = None
 
 
-def compare_commands(port_cmd: GbiCommand, emu_cmd: GbiCommand,
-                     ignore_addresses: bool) -> Optional[Divergence]:
-    """Compare two commands. Returns a Divergence if they differ, else None."""
+def cmd_key(cmd: GbiCommand, ignore_addresses: bool) -> tuple:
+    """Build a hashable key used by SequenceMatcher to align cmds.
 
-    # Different opcode = definite divergence
+    Two cmds with the same key are treated as identical for alignment
+    purposes.  We deliberately exclude depth and decoded params: depth
+    can drift on the emu side because the rsp_trace plugin walks past
+    G_ENDDL into garbage, and params are derived from w0/w1 anyway.
+    """
+    if ignore_addresses and cmd.opcode in ADDRESS_OPCODES:
+        return (cmd.opcode, cmd.w0, "*")
+    return (cmd.opcode, cmd.w0, cmd.w1)
+
+
+def _classify_replace_reason(port_cmd: GbiCommand, emu_cmd: GbiCommand) -> str:
+    """Build a reason string for two cmds at the same logical slot."""
     if port_cmd.opcode != emu_cmd.opcode:
-        return Divergence(
-            cmd_index=port_cmd.index,
-            port_cmd=port_cmd,
-            emu_cmd=emu_cmd,
-            reason=f"opcode: {port_cmd.opcode} vs {emu_cmd.opcode}",
-        )
-
-    # Same opcode — compare w0 (always comparable)
+        return f"opcode: {port_cmd.opcode} vs {emu_cmd.opcode}"
     if port_cmd.w0 != emu_cmd.w0:
-        return Divergence(
-            cmd_index=port_cmd.index,
-            port_cmd=port_cmd,
-            emu_cmd=emu_cmd,
-            reason=f"w0: {port_cmd.w0} vs {emu_cmd.w0}",
-        )
-
-    # Compare w1 — skip for address opcodes if requested
-    if not (ignore_addresses and port_cmd.opcode in ADDRESS_OPCODES):
-        if port_cmd.w1 != emu_cmd.w1:
-            return Divergence(
-                cmd_index=port_cmd.index,
-                port_cmd=port_cmd,
-                emu_cmd=emu_cmd,
-                reason=f"w1: {port_cmd.w1} vs {emu_cmd.w1}",
-            )
-
-    return None
+        return f"w0: {port_cmd.w0} vs {emu_cmd.w0}"
+    return f"w1: {port_cmd.w1} vs {emu_cmd.w1}"
 
 
 def diff_frame(port_frame: Frame, emu_frame: Frame,
                ignore_addresses: bool) -> list[Divergence]:
-    """Diff two frames command-by-command. Returns list of divergences."""
+    """Diff two frames using LCS-based alignment.
+
+    Uses difflib.SequenceMatcher so a single insertion or deletion in
+    one trace doesn't cascade into thousands of false-positive mismatches
+    on every subsequent command.  The matcher walks both sequences and
+    re-syncs at the next pair of identical commands after any divergence.
+    """
+    port_cmds = port_frame.commands
+    emu_cmds = emu_frame.commands
+
+    port_keys = [cmd_key(c, ignore_addresses) for c in port_cmds]
+    emu_keys = [cmd_key(c, ignore_addresses) for c in emu_cmds]
+
+    # autojunk=False keeps SequenceMatcher from heuristically dropping
+    # frequent items (e.g. G_RDPPIPESYNC), which would corrupt alignment.
+    matcher = difflib.SequenceMatcher(a=port_keys, b=emu_keys, autojunk=False)
+
     divergences: list[Divergence] = []
 
-    max_len = max(len(port_frame.commands), len(emu_frame.commands))
-
-    for i in range(max_len):
-        port_cmd = port_frame.commands[i] if i < len(port_frame.commands) else None
-        emu_cmd = emu_frame.commands[i] if i < len(emu_frame.commands) else None
-
-        if port_cmd is None:
-            divergences.append(Divergence(
-                cmd_index=i,
-                port_cmd=None,
-                emu_cmd=emu_cmd,
-                reason="missing in port trace",
-            ))
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
             continue
 
-        if emu_cmd is None:
-            divergences.append(Divergence(
-                cmd_index=i,
-                port_cmd=port_cmd,
-                emu_cmd=None,
-                reason="missing in emu trace",
-            ))
+        if tag == "replace":
+            # Items at logically-corresponding slots that differ.  The
+            # spans (i2-i1) and (j2-j1) need not be equal — pair them up
+            # element-by-element and emit any leftovers as inserts/deletes.
+            n_port = i2 - i1
+            n_emu = j2 - j1
+            n_pair = min(n_port, n_emu)
+            for k in range(n_pair):
+                pi = i1 + k
+                ej = j1 + k
+                pc = port_cmds[pi]
+                ec = emu_cmds[ej]
+                divergences.append(Divergence(
+                    cmd_index=pc.index,
+                    port_cmd=pc,
+                    emu_cmd=ec,
+                    reason=_classify_replace_reason(pc, ec),
+                    port_pos=pi,
+                    emu_pos=ej,
+                ))
+            for k in range(n_pair, n_port):
+                pi = i1 + k
+                pc = port_cmds[pi]
+                divergences.append(Divergence(
+                    cmd_index=pc.index,
+                    port_cmd=pc,
+                    emu_cmd=None,
+                    reason="extra in port",
+                    port_pos=pi,
+                ))
+            for k in range(n_pair, n_emu):
+                ej = j1 + k
+                ec = emu_cmds[ej]
+                divergences.append(Divergence(
+                    cmd_index=ec.index,
+                    port_cmd=None,
+                    emu_cmd=ec,
+                    reason="extra in emu",
+                    emu_pos=ej,
+                ))
             continue
 
-        div = compare_commands(port_cmd, emu_cmd, ignore_addresses)
-        if div:
-            divergences.append(div)
+        if tag == "delete":
+            # Cmds present in port but absent in emu.
+            for k in range(i1, i2):
+                pc = port_cmds[k]
+                divergences.append(Divergence(
+                    cmd_index=pc.index,
+                    port_cmd=pc,
+                    emu_cmd=None,
+                    reason="extra in port",
+                    port_pos=k,
+                ))
+            continue
+
+        if tag == "insert":
+            # Cmds present in emu but absent in port.
+            for k in range(j1, j2):
+                ec = emu_cmds[k]
+                divergences.append(Divergence(
+                    cmd_index=ec.index,
+                    port_cmd=None,
+                    emu_cmd=ec,
+                    reason="extra in emu",
+                    emu_pos=k,
+                ))
+            continue
 
     return divergences
 
@@ -246,6 +336,21 @@ def format_cmd(label: str, cmd: Optional[GbiCommand]) -> str:
     if cmd is None:
         return f"  {label}: (absent)"
     return f"  {label}: [{cmd.index:04d}] d={cmd.depth} {cmd.opcode:<18s} w0={cmd.w0} w1={cmd.w1}  {cmd.params}"
+
+
+def _div_category(div: Divergence) -> str:
+    """Bucket a Divergence into one of the summary categories."""
+    if div.reason.startswith("opcode"):
+        return "opcode"
+    if div.reason.startswith("w0"):
+        return "w0"
+    if div.reason.startswith("w1"):
+        return "w1"
+    if "extra in port" in div.reason:
+        return "extra_port"
+    if "extra in emu" in div.reason:
+        return "extra_emu"
+    return "other"
 
 
 def print_diff(port_frames: dict[int, Frame], emu_frames: dict[int, Frame],
@@ -295,7 +400,15 @@ def print_diff(port_frames: dict[int, Frame], emu_frames: dict[int, Frame],
 
         port_count = len(port_frame.commands)
         emu_count = len(emu_frame.commands)
-        matching = max(port_count, emu_count) - len(divergences)
+        # After LCS alignment "matching" is the count of paired-equal cmds.
+        # Each replace divergence consumes one cmd from each side; each
+        # extra-in-port consumes one port cmd; each extra-in-emu consumes
+        # one emu cmd.  So matching = port_count - (replaces + extra_port).
+        n_replace = sum(1 for d in divergences
+                        if d.port_cmd is not None and d.emu_cmd is not None)
+        n_extra_port = sum(1 for d in divergences
+                           if d.port_cmd is not None and d.emu_cmd is None)
+        matching = port_count - n_replace - n_extra_port
 
         out.write(f"\n{'='*72}\n")
         out.write(f"FRAME {fnum}: {len(divergences)} divergences "
@@ -304,41 +417,54 @@ def print_diff(port_frames: dict[int, Frame], emu_frames: dict[int, Frame],
         out.write(f"{'='*72}\n")
 
         if args.summary:
-            # Just list divergence types
-            opcode_divs = sum(1 for d in divergences if d.reason.startswith("opcode"))
-            w0_divs = sum(1 for d in divergences if d.reason.startswith("w0"))
-            w1_divs = sum(1 for d in divergences if d.reason.startswith("w1"))
-            missing = sum(1 for d in divergences if "missing" in d.reason)
-            out.write(f"  opcode mismatches: {opcode_divs}\n")
-            out.write(f"  w0 mismatches:     {w0_divs}\n")
-            out.write(f"  w1 mismatches:     {w1_divs}\n")
-            out.write(f"  missing commands:  {missing}\n")
+            buckets = {"opcode": 0, "w0": 0, "w1": 0,
+                       "extra_port": 0, "extra_emu": 0, "other": 0}
+            for d in divergences:
+                buckets[_div_category(d)] += 1
+            out.write(f"  opcode mismatches: {buckets['opcode']}\n")
+            out.write(f"  w0 mismatches:     {buckets['w0']}\n")
+            out.write(f"  w1 mismatches:     {buckets['w1']}\n")
+            out.write(f"  extra in port:     {buckets['extra_port']}\n")
+            out.write(f"  extra in emu:      {buckets['extra_emu']}\n")
+            if buckets["other"]:
+                out.write(f"  other:             {buckets['other']}\n")
             continue
 
-        # Detailed divergence output with context
+        # Detailed divergence output with context.
+        # After LCS alignment, surrounding context comes from each side's
+        # own neighbors — we no longer assume port[i] and emu[i] are paired.
         for div in divergences:
-            out.write(f"\n  DIVERGENCE at cmd #{div.cmd_index} — {div.reason}\n")
+            label = "DIVERGENCE"
+            port_idx = div.port_cmd.index if div.port_cmd else None
+            emu_idx = div.emu_cmd.index if div.emu_cmd else None
+            if port_idx is not None and emu_idx is not None:
+                where = f"port[{port_idx:04d}] vs emu[{emu_idx:04d}]"
+            elif port_idx is not None:
+                where = f"port[{port_idx:04d}] (no emu pair)"
+            else:
+                where = f"emu[{emu_idx:04d}] (no port pair)"
+            out.write(f"\n  {label} {where} — {div.reason}\n")
             out.write(format_cmd("PORT", div.port_cmd) + "\n")
             out.write(format_cmd("EMU ", div.emu_cmd) + "\n")
 
-            # Show context (surrounding matching commands)
             if args.context > 0:
-                ctx_start = max(0, div.cmd_index - args.context)
-                ctx_end = min(max(port_count, emu_count),
-                              div.cmd_index + args.context + 1)
-
-                has_context = False
-                for ci in range(ctx_start, ctx_end):
-                    if ci == div.cmd_index:
-                        continue
-                    pc = port_frame.commands[ci] if ci < port_count else None
-                    ec = emu_frame.commands[ci] if ci < emu_count else None
-                    if pc and ec and pc.opcode == ec.opcode:
-                        if not has_context:
-                            out.write("  context:\n")
-                            has_context = True
-                        out.write(f"    [{ci:04d}] {pc.opcode:<18s} "
+                # Show the cmds immediately before each side of the divergence.
+                # Uses parser-list positions stored on the Divergence so we
+                # don't pay an O(N) lookup or get confused by duplicate cmds.
+                if div.port_pos is not None and div.port_pos > 0:
+                    lo = max(0, div.port_pos - args.context)
+                    out.write("  port context:\n")
+                    for k in range(lo, div.port_pos):
+                        pc = port_frame.commands[k]
+                        out.write(f"    [{pc.index:04d}] {pc.opcode:<18s} "
                                   f"w0={pc.w0} w1={pc.w1}  {pc.params}\n")
+                if div.emu_pos is not None and div.emu_pos > 0:
+                    lo = max(0, div.emu_pos - args.context)
+                    out.write("  emu context:\n")
+                    for k in range(lo, div.emu_pos):
+                        ec = emu_frame.commands[k]
+                        out.write(f"    [{ec.index:04d}] {ec.opcode:<18s} "
+                                  f"w0={ec.w0} w1={ec.w1}  {ec.params}\n")
 
     # Summary
     out.write(f"\n{'='*72}\n")
@@ -372,12 +498,22 @@ def main():
 
     args = parser.parse_args()
 
+    # Build a frame filter so the parser can skip irrelevant frames in
+    # huge emu traces (~3.7 GB / 6M lines).  Without this a single-frame
+    # query parses the entire file end-to-end.
+    want_frames: Optional[set] = None
+    if args.frame is not None:
+        want_frames = {args.frame}
+    elif args.frame_range:
+        a, b = map(int, args.frame_range.split('-'))
+        want_frames = set(range(a, b + 1))
+
     print(f"Parsing port trace: {args.port_trace}")
-    port_frames = parse_trace(args.port_trace)
+    port_frames = parse_trace(args.port_trace, want_frames=want_frames)
     print(f"  -> {len(port_frames)} frames parsed")
 
     print(f"Parsing emu trace: {args.emu_trace}")
-    emu_frames = parse_trace(args.emu_trace)
+    emu_frames = parse_trace(args.emu_trace, want_frames=want_frames)
     print(f"  -> {len(emu_frames)} frames parsed")
 
     out = open(args.output, 'w') if args.output else sys.stdout
