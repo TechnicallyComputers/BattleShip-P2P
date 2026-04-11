@@ -30,11 +30,21 @@
 #include <cstdio>
 #include <chrono>
 #include <unordered_map>
+#include <unordered_set>
+#include <filesystem>
+#include <string>
+#include <cstdlib>
+#include <cstring>
 
 /* GBI trace system */
 #include "../debug_tools/gbi_trace/gbi_trace.h"
 
 #include "port_log.h"
+#include "renderdoc_trigger.h"
+
+/* Backbuffer screenshot capture — implemented in libultraship's DX11 backend.
+ * Returns 1 on success, 0 on failure (silent). Never throws. */
+extern "C" int portFastCaptureBackbufferPNG(const char *path);
 
 /* ========================================================================= */
 /*  External game symbols (C linkage)                                        */
@@ -205,6 +215,108 @@ void PortGameInit(void)
 
 static int sFrameCount = 0;
 
+/* ========================================================================= */
+/*  Screenshot capture (env-var driven)                                      */
+/* ========================================================================= */
+/*
+ * Env vars:
+ *   SSB64_SCREENSHOT_FRAMES=10,55,100  — frames to capture
+ *   SSB64_SCREENSHOT_FRAMES=all        — capture every frame (heavy!)
+ *   SSB64_SCREENSHOT_DIR=<path>        — output dir (default debug_traces/screenshots)
+ *
+ * When unset/empty, feature is OFF and adds only one bool check per frame.
+ */
+
+static bool sScreenshotInited = false;
+static bool sScreenshotEnabled = false;
+static bool sScreenshotAllFrames = false;
+static std::unordered_set<int> sScreenshotFrames;
+static std::string sScreenshotDir;
+
+static void port_screenshot_init_once(void)
+{
+	if (sScreenshotInited) {
+		return;
+	}
+	sScreenshotInited = true;
+
+	const char *frames_env = std::getenv("SSB64_SCREENSHOT_FRAMES");
+	if (frames_env == nullptr || frames_env[0] == '\0') {
+		sScreenshotEnabled = false;
+		return;
+	}
+
+	const char *dir_env = std::getenv("SSB64_SCREENSHOT_DIR");
+	sScreenshotDir = (dir_env != nullptr && dir_env[0] != '\0')
+		? dir_env
+		: "debug_traces/screenshots";
+
+	if (std::strcmp(frames_env, "all") == 0) {
+		sScreenshotAllFrames = true;
+	} else {
+		/* Parse comma-separated integer list. Ignores malformed tokens. */
+		const char *p = frames_env;
+		while (*p != '\0') {
+			while (*p == ',' || *p == ' ' || *p == '\t') {
+				p++;
+			}
+			if (*p == '\0') {
+				break;
+			}
+			char *end = nullptr;
+			long v = std::strtol(p, &end, 10);
+			if (end != p && v >= 0 && v <= 0x7FFFFFFF) {
+				sScreenshotFrames.insert(static_cast<int>(v));
+			}
+			if (end == p) {
+				/* Couldn't parse — skip a char to avoid infinite loop. */
+				p++;
+			} else {
+				p = end;
+			}
+		}
+	}
+
+	sScreenshotEnabled = sScreenshotAllFrames || !sScreenshotFrames.empty();
+
+	if (sScreenshotEnabled) {
+		std::error_code ec;
+		std::filesystem::create_directories(sScreenshotDir, ec);
+		if (ec) {
+			port_log("SSB64: screenshot: failed to create dir '%s': %s\n",
+				sScreenshotDir.c_str(), ec.message().c_str());
+		}
+		if (sScreenshotAllFrames) {
+			port_log("SSB64: screenshot capture ENABLED (all frames) dir='%s'\n",
+				sScreenshotDir.c_str());
+		} else {
+			port_log("SSB64: screenshot capture ENABLED (%zu frames) dir='%s'\n",
+				sScreenshotFrames.size(), sScreenshotDir.c_str());
+		}
+	}
+}
+
+static void port_screenshot_maybe_capture(int frame)
+{
+	if (!sScreenshotEnabled) {
+		return;
+	}
+	if (!sScreenshotAllFrames && sScreenshotFrames.count(frame) == 0) {
+		return;
+	}
+
+	char path[1024];
+	std::snprintf(path, sizeof(path), "%s/frame_%d.png",
+		sScreenshotDir.c_str(), frame);
+
+	int ok = portFastCaptureBackbufferPNG(path);
+	if (ok) {
+		port_log("SSB64: screenshot frame %d -> %s\n", frame, path);
+	} else {
+		port_log("SSB64: screenshot frame %d FAILED -> %s\n", frame, path);
+	}
+}
+
 void PortPushFrame(void)
 {
 	/* Pump SDL events so the window stays responsive and WindowIsRunning
@@ -230,6 +342,18 @@ void PortPushFrame(void)
 	port_resume_service_threads();
 
 	sFrameCount++;
+
+	/* Screenshot capture: env-var driven, zero cost when disabled. */
+	port_screenshot_init_once();
+	port_screenshot_maybe_capture(sFrameCount);
+
+	/* RenderDoc capture trigger: env-var driven, zero cost when disabled.
+	 * TriggerCapture() tells RenderDoc to capture the NEXT Present interval,
+	 * so calling it here causes frame (sFrameCount + 1) to be captured.
+	 * The one-frame lag is small and consistent — document it in the
+	 * feature's env-var contract. */
+	portRenderDocOnFrame(static_cast<unsigned int>(sFrameCount));
+
 	{
 		static auto sStartTime = std::chrono::steady_clock::now();
 		auto now = std::chrono::steady_clock::now();
