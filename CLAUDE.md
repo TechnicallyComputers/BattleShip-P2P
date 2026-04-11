@@ -189,14 +189,28 @@ In the port, this threading model is collapsed. libultraship runs a single main 
 - libultraship and Torch are git submodules
 - MSVC on Windows, Apple Clang on macOS, GCC/Clang on Linux
 - The decomp's original MIPS toolchain (IDO 7.1) is NOT used for the port
-- Build script: `build.ps1` (PowerShell) — supports `-Clean`, `-SkipExtract`, `-ExtractOnly`
-- Manual build: `cmake -S . -B build && cmake --build build --target ssb64 --config Debug`
+- Build scripts:
+  - **Windows**: `build.ps1` (PowerShell) — supports `-Clean`, `-SkipExtract`, `-ExtractOnly`
+  - **macOS / Linux**: `build.sh` (bash) — supports `--clean`, `--skip-extract`, `--extract-only`, `--release`
+- Manual build: `cmake -S . -B build && cmake --build build --target ssb64`
+- macOS generator: uses Ninja if installed, otherwise Unix Makefiles (single-config, so binary is `build/ssb64`, not `build/Debug/ssb64`)
+
+### Regenerating the reloc symbol table
+`include/reloc_data.h` is **generated** (it's in `.gitignore`). It declares ~3900 `ll*` linker symbols that the decomp references as file offsets inside the compressed `relocData` ROM blob. The port serves file contents through libultraship's RelocFile resource factory keyed by `file_id`, so the scalar values don't matter at runtime, but the symbols still have to exist at compile time.
+
+Regenerate after adding new decomp sources with:
+
+```bash
+python3 tools/generate_reloc_stubs.py
+```
+
+The script scans `src/` for `ll[A-Z_][A-Za-z0-9_]*` identifiers and emits `#define <name> ((intptr_t)0)` entries. `#define` is required (not `extern intptr_t`) because the decomp uses these symbols as file-scope struct-literal initializers, which C11 rejects for non-constant expressions.
 
 ### Runtime Logs
-After running `build/Debug/ssb64.exe`:
-- **Game trace log**: `build/Debug/ssb64.log` — `port_log()` output (boot sequence, thread creation, frame milestones)
-- **LUS/spdlog log**: `build/Debug/logs/Super Smash Bros. 64.log` — libultraship logging (resource loading, rendering, errors)
-- The game trace log is overwritten each run; the spdlog log is cumulative
+After running the game:
+- **Game trace log**: `ssb64.log` in the cwd — `port_log()` output (boot sequence, thread creation, frame milestones). Overwritten each run.
+- **LUS/spdlog log**: `logs/Super Smash Bros. 64.log` — libultraship logging (resource loading, rendering, errors). Cumulative.
+- On Windows the binary lives at `build/Debug/ssb64.exe` (multi-config MSVC), on macOS/Linux at `build/ssb64` (single-config Make/Ninja).
 
 ### IDO 7.1 Compiler Patterns
 The decompiled C code contains patterns that are artifacts of the original IDO 7.1 MIPS compiler. These are intentional and should be preserved in decomp code:
@@ -207,10 +221,29 @@ The decompiled C code contains patterns that are artifacts of the original IDO 7
 - These exist to produce matching assembly output against the original ROM and should NOT be "cleaned up" in the decomp source files
 
 ### Compiler Compatibility
-When modifying decomp code for the port:
-- `ultratypes.h` defines `u32` as `unsigned long` and `s32` as `long` — on modern 64-bit compilers, `long` is 8 bytes on LP64 (Linux/macOS) but 4 bytes on LLP64 (Windows/MSVC). This must be addressed in the port's type definitions.
+
+**The LP64 `long` class of bug.** The N64 SDK headers type several fixed-width 32-bit fields as `long`, which is 4 bytes under MSVC LLP64 and 8 bytes under clang/gcc LP64. Every such field silently doubles in size on macOS/Linux, corrupting every struct that mirrors N64 file data or that gets shared with libultraship (which uses 32-bit field types internally). A full sweep of `include/` and `src/` under the `\blong\b` pattern found only three real offenders — all fixed:
+
+- **`include/PR/ultratypes.h`** — `u32`/`s32`/`vu32`/`vs32` were `unsigned long`/`long`. Every decomp struct that packed N64 file data is affected. Fixed under `#ifdef PORT && !defined(_MSC_VER)` to use `unsigned int`/`int`. MSVC keeps the original definitions.
+- **`include/PR/gbi.h`** — `Mtx_t` was `long[4][4]`. Doubles the matrix from 64 to 128 bytes on LP64, so `guMtxF2L`'s 4-byte-stride int writes land in alternating padding slots and Fast3D's reader sees garbage. The smoking gun was that `libultraship/include/fast/types.h:3` *already* defined `Mtx_t` as `int[4][4]` — LUS and the decomp headers disagreed about the matrix element size, and MSVC accidentally reconciled them because `long == int` under LLP64. On LP64 the two headers diverge and every 3D transform collapses to `x==y, z=0, w=0`. Fixed by aligning `gbi.h`'s `Mtx_t` to `int[4][4]` under `PORT && !_MSC_VER`.
+- **`include/PR/gbi.h`** — `Gsetcolor::color`, `TexRect::w{0..3}`, `Hilite::force_structure_alignment`, `Gsetcolor`-family typed union views — all declared as `long` but **never accessed by field name** anywhere in `src/` / `port/` / `libultraship/`. The decomp builds display lists exclusively through the raw `Gwords` view (`g->words.w0`/`w1`), so the typed-struct LP64 drift is invisible and harmless. Left as-is.
+
+**Audit clean at time of writing:**
+- `src/` contains no `long`-typed struct fields (comment / macro-name matches only).
+- `include/PR/ramrom.h`, `u64gio.h`, `PRimage.h`, `stdlib.h::ldiv_t` are `long`-typed but none of them are referenced by any compiled translation unit — the port never pulls in the N64 ramrom debug I/O path or the SGI image format.
+- `include/PR/gu.h`'s `FTOFIX32(x)` macro returns `long`, but every caller assigns the result to an `int` before further use, so the extra width is truncated harmlessly.
+- `stdarg.h`'s `(long)list` alignment macros use `long` as a pointer-sized integer; LP64 actually makes that *more* correct than LLP64.
+- Every `_Static_assert(sizeof(X) == N)` struct (Bitmap, Sprite, DObjDesc, MObjSub, FTAccessPart, …) compiles clean, which means the reconciled types produce the correct byte layouts on both ABIs.
+
+When adding new decomp sources or vendored SDK headers, re-run this sweep (`grep -rn '\blong\b' include/ src/ | grep -v 'long long'`) before assuming the new code is LP64-safe.
+
+Other compiler-compat notes:
+- `ultratypes.h` defines `u32`/`s32` as `unsigned int`/`int` under `#ifdef PORT && !defined(_MSC_VER)` (and as `unsigned long`/`long` everywhere else). This is the LP64 fix: on clang/gcc `long` is 8 bytes, which silently corrupts every file-backed N64 struct the decomp touches. MSVC (LLP64) keeps the original SDK definitions.
+- `size_t` is provided in the same header via `__SIZE_TYPE__` (GCC/Clang builtin) when `_MIPS_SZLONG` isn't defined, so the decomp can use `size_t` without pulling in the system `<stddef.h>`.
 - The `__attribute__((aligned(x)))` macro in `macros.h` is immediately undefined by `#define __attribute__(x)` — this is an IDO compatibility hack. The port will need to fix this for GCC/Clang/MSVC.
 - `#ifdef __sgi` guards IDO-specific code paths. The port uses `__GNUC__` or `_MSC_VER` paths.
+- Clang ≥16 promotes `-Wimplicit-function-declaration`, `-Wint-conversion`, `-Wincompatible-pointer-types`, `-Wreturn-mismatch`, etc. to errors by default. The decomp relies on IDO-era loose typing for all of these, so `ssb64_game` (the decomp object library) carries a bundle of `-Wno-…` overrides in `CMakeLists.txt`. Keep new decomp compile errors contained to that target — do not spread the overrides to the port layer, which should stay strict.
+- `gmColCommandGotoS2` / `SubroutineS2` / `ParallelS2` narrow a 64-bit address to `u32` inside a file-scope `u32[]` initializer. That's legal on N64 (32-bit `void*`) and tolerated by MSVC, but clang/gcc C11 rejects it as a non-constant initializer. Under `PORT && !_MSC_VER` these macros expand to `((u32)0)` — color-script goto targets would need to be patched at runtime if that feature is ever re-enabled.
 
 ---
 
@@ -380,6 +413,41 @@ This section documents significant bugs encountered during the port, their sympt
 2. `mpcollision.c`: Added `portFixupStructU16` calls in `mpCollisionInitGroundData` for: `MPGeometryData` u16 fields, `MPMapObjData` array, `MPLineInfo` array, `MPVertexLinks` array, and `MPGroundData` camera/map/team bounds (using runtime offsetof via pointer arithmetic). `MPVertexData` fixup deferred (needs safe vertex count).
 
 **Files:** `src/gr/grdisplay.c`, `src/mp/mpcollision.c`
+
+### OSMesg Union/Pointer Type Split (2026-04-11) — FIXED
+
+**Symptoms:** On macOS/arm64, the scheduler crashed in `sySchedulerExecuteTasksAll + 0x200` with SIGBUS: `blr x8` where `x8 = curr->fnCheck` pointed to an invalid code address. `curr` itself was garbage — not a heap pointer but a stack-range address with low bits looking like `0x16f...01`. This surfaced immediately after "Boot sequence yielded — entering frame loop" as the first task dispatch. The same build worked on Windows because MSVC-x64 happened to leave the relevant stack slots zero.
+
+**Root cause:** `OSMesg` has **two conflicting definitions** visible in the same program:
+- `include/PR/os.h` (decomp): `typedef void* OSMesg;`
+- `libultraship/include/libultraship/libultra/message.h`: `typedef union { u8 data8; u16 data16; u32 data32; void* ptr; } OSMesg;`
+
+Both are 8 bytes with 8-byte alignment, so the ABI matches across translation units. But the semantics of a **C-style cast from integer to OSMesg** differ by a mile:
+- In C TUs that see `void*`: `(OSMesg)INTR_VRETRACE` → well-defined int-to-pointer conversion, always zero-extends.
+- In C++ TUs that see the union (e.g. `port/gameloop.cpp` via the LUS header chain): clang treats `(OSMesg)1` as a brace-init-like conversion that writes the low union member (`data8`/`data32`) and leaves the remaining bytes **uninitialised** — i.e., whatever the register/stack happened to hold. On MSVC/x64 those bytes were zero by luck; on macOS/arm64 they were a fresh stack pointer.
+
+So `PortPushFrame()` posted `{data32 = 1, upper_bytes = <stack garbage>}` to `gSYSchedulerTaskMesgQueue`. The scheduler read it back, saw a value that was neither `INTR_VRETRACE (1)` nor any other interrupt code, and fell through to `default:` where it casts to `SYTaskInfo*`. The "task pointer" pointed into the stack, `curr->type`/`priority`/`fnCheck` were all garbage, and the first `curr->fnCheck(curr)` call jumped to an invalid address.
+
+**Fix:** `port/gameloop.cpp` grew a `port_make_os_mesg_int(uint32_t code)` helper that `OSMesg{}`-zero-initialises a fresh union and then sets `data32`. Every integer-to-OSMesg send in the port (C++) layer should go through that helper so all 8 bytes are well-defined on every platform. C callers of `osSendMesg` keep using `(OSMesg)(intptr_t)code` because they see the `void*` typedef.
+
+**Why it also matters on Windows:** It doesn't crash today but the same UB is present — any future code change that shifts the stack layout could unmask it. The helper makes it deterministic.
+
+**Files:**
+- `port/gameloop.cpp` — `port_make_os_mesg_int()` + call site in `PortPushFrame()`.
+
+**Diagnostic that cracked it:** `port_log` inside the scheduler's task loop printed `task=0x16f...2d01 type=24103981 fnCheck=0x10000000...` — obvious "stack pointer OR'd with an int". Then logging `osSendMesg`/`osRecvMesg` on the task queue showed the queue was round-tripping that same value, meaning the sender was writing it. Adding a dedicated send debug print at `PortPushFrame` confirmed the C-style cast was producing garbage upper bytes.
+
+### bzero Infinite Recursion on macOS/arm64 (2026-04-11) — FIXED
+
+**Symptoms:** On macOS Apple Silicon the port segfaulted inside `std::make_shared<Fast::Fast3dWindow>()` → `Interpreter::Interpreter()` → first `new RSP()`. The crash report showed dozens of stack frames of `bzero → bzero → bzero → …` and terminated with `EXC_BAD_ACCESS: Could not determine thread index for stack guard region` (i.e. thread stack overflow).
+
+**Root cause:** `port/stubs/libc_compat.c` previously provided `void bzero(void *p, unsigned int n) { memset(p, 0, n); }`. Two problems:
+1. The final macOS binary exported `_bzero`, shadowing libSystem's `bzero` for every module that dynamically resolved it.
+2. Clang lowers `memset(ptr, 0, len)` back to a `bzero()` call as a peephole optimization. With the shadowing stub in place, `bzero → memset → bzero → memset → …` recursed forever. The value-initialized `new RSP()` (which the compiler implements via zero-fill memset) was the first caller large enough to trip the stack guard.
+
+**Fix:** Delete the bzero stub entirely — every libc we target (glibc, musl, libSystem, MSVC's BSD compatibility shims) already provides `bzero`, so there is nothing to emulate. Decomp call sites that use `bzero` resolve to the platform version via `<PR/os.h>` as they did before.
+
+**Files:** `port/stubs/libc_compat.c`.
 
 ### Sprite Texel Byteswap + TMEM Line Swizzle (2026-04-10) — FIXED
 

@@ -40,13 +40,36 @@ f32 __sinf(f32 angle)
 
 /*
  * bzero is the BSD equivalent of memset(ptr, 0, len).
- * Used throughout the decomp for clearing memory regions.
+ *
+ * Platform handling:
+ *
+ *   - macOS / Linux (clang/gcc): every libc we target (glibc, musl, macOS
+ *     libSystem) already exports `bzero`, so we must NOT provide our own.
+ *     A previous version of this file shipped
+ *         void bzero(void *p, unsigned int n) { memset(p, 0, n); }
+ *     which had two fatal problems on macOS/arm64:
+ *
+ *       1. `unsigned int` dropped the upper 32 bits of the `size_t` length
+ *          system callers pass in register x1.
+ *       2. Clang recognises `memset(ptr, 0, len)` and lowers it back to a
+ *          `bzero()` call — which re-entered our stub, recursed forever,
+ *          and blew the thread stack inside `new Interpreter()` in Fast3D.
+ *          See the "bzero infinite recursion" entry in CLAUDE.md.
+ *
+ *   - MSVC (Windows): the UCRT does NOT export `bzero` (Microsoft removed
+ *     the deprecated POSIX names long ago), and MSVC does not perform the
+ *     clang `memset(p,0,n) -> bzero` peephole, so a thin `memset` wrapper
+ *     is safe and necessary. Use `size_t` for the length so 64-bit callers
+ *     don't get truncated, matching the BSD prototype.
  */
-
-void bzero(void *ptr, unsigned int len)
+#if defined(_MSC_VER)
+/* Signature matches `extern void bzero(void*, int)` declared in
+ * include/PR/os.h, which is what every decomp call site sees. */
+void bzero(void *ptr, int len)
 {
-	memset(ptr, 0, len);
+	memset(ptr, 0, (size_t)len);
 }
+#endif
 
 /* ========================================================================= */
 /*  IDO printf backend                                                       */

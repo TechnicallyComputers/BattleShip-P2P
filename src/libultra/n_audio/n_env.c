@@ -4475,7 +4475,7 @@ void func_80027458_28058(void)
 
 s32 func_800264A4_270A4();
 void func_8002668C_2728C(ALWhatever8009EE0C*);
-ALWhatever8009EDD0_siz34* func_80026844_27444(void *id);
+static ALWhatever8009EDD0_siz34* func_80026844_27444(void *id);
 ALWhatever8009EDD0_siz34* func_80026958_27558(void *id);
 ALWhatever8009EE0C* func_80026A6C_2766C(void *arg0);
 ALWhatever8009EE0C* func_80026B40_27740(u16 id);
@@ -5299,6 +5299,31 @@ s32 func_800264A4_270A4(void)
   ALWhatever8009EE0C *var_v1;
   ALWhatever8009EDD0_siz34 *var_v1_2;
   u32 im = osSetIntMask(1);
+#ifdef PORT
+  /*
+   * Short-circuit under PORT: on macOS/arm64 the first call into this
+   * function crashes with a NULL-plus-1 deref (fault addr 0x1) walking
+   * `D_8009EDD0_406D0.unk_alsound_0x60`. The field holds the value 1
+   * before func_800264A4_270A4 is ever entered, which means something
+   * earlier writes it — almost certainly via one of the several
+   * duplicated / inconsistent audio-state typedefs the decomp carries
+   * (see the three different `alSoundEffect` typedefs in n_env.c,
+   * sys/audio.c and gm/gmsound.h, and the `extern alSoundEffect
+   * D_8009EDD0_406D0` in sc1pmode/sc1pgame.c that disagrees with the
+   * real type `ALWhatever8009EDD0`). Tracking down which typedef
+   * aliases which byte of the real struct is deep n_audio archaeology
+   * and blocks every attempt to see the intro cinematic render.
+   *
+   * This function walks the pending-delete queues and moves their
+   * contents to the free lists; skipping it means those queues never
+   * drain on the port. For the rendering-validation pass that is
+   * fine — audio is not the feature we are proving out today. Revisit
+   * once we have a visible game loop and can reason about the n_audio
+   * state machine more carefully.
+   */
+  osSetIntMask(im);
+  return 0;
+#endif
     
     var_v1 = D_8009EDD0_406D0.unk_alsound_0x5C;
     

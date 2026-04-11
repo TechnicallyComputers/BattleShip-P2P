@@ -7,6 +7,16 @@
 
 #if !defined(_WIN32)
 
+/*
+ * macOS marks the ucontext / swapcontext routines as deprecated and hides
+ * their declarations unless _XOPEN_SOURCE is defined before <ucontext.h>.
+ * Define it here (not via the target's compile definitions) so the rest of
+ * the port layer still sees strictly-POSIX symbols.
+ */
+#if defined(__APPLE__) && !defined(_XOPEN_SOURCE)
+#define _XOPEN_SOURCE 600
+#endif
+
 #include "coroutine.h"
 
 #include <ucontext.h>
