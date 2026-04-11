@@ -5057,7 +5057,18 @@ ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
 	{
 		return NULL;
 	}
-	else return func_80026958_27558(D_8009EDD0_406D0.fgm_ucode_data[id]);
+#ifdef PORT
+	/* PORT: same class of stub as func_80026B40_27740 above. The FGM
+	 * sound-effect dispatch reads fgm_ucode_data[id] and walks a linked
+	 * list that relies on audio-heap state we don't build on PC yet.
+	 * Scene 38 (OpeningRun) calls this directly at tic 190 for the
+	 * explosion effect, which hangs the audio list walk on PC.
+	 * Returning NULL here is consistent with the already-stubbed sibling
+	 * function — callers already handle a NULL return. */
+	return NULL;
+#else
+	return func_80026958_27558(D_8009EDD0_406D0.fgm_ucode_data[id]);
+#endif
 }
 
 ALWhatever8009EDD0_siz34* func_80026958_27558(void *id)

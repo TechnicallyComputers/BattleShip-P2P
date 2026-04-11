@@ -2399,11 +2399,31 @@ void lbCommonDrawSObjBitmap
 
     if (PORT_RESOLVE(bitmap->buf) == NULL)
     {
+#ifdef PORT
+        /* Don't panic on NULL texel pointers — the original N64 code spins
+         * in a debug crash screen, but on PC we want to keep rendering and
+         * surface a diagnostic so we can chase the resource plumbing bug.
+         * Log the first handful of occurrences with enough context to find
+         * the offending sprite, then silently skip subsequent ones. */
+        static int sNullBufLogCount = 0;
+        if (sNullBufLogCount < 20) {
+            sNullBufLogCount++;
+            port_log("SSB64: lbCommonDrawSObjBitmap NULL bitmap->buf #%d "
+                     "sobj=%p sprite=%p bitmap=%p raw_buf=%p nbitmaps=%d "
+                     "bmfmt=%u bmsiz=%u w=%d h=%d\n",
+                     sNullBufLogCount, sobj, sprite, bitmap,
+                     (void*)bitmap->buf, sprite->nbitmaps,
+                     sprite->bmfmt, sprite->bmsiz,
+                     bitmap->width, bitmap->actualHeight);
+        }
+        return;
+#else
         while (TRUE)
         {
             syDebugPrintf("drawBitMap: no bitmap data!\n");
             scManagerRunPrintGObjStatus();
         }
+#endif
     }
     if (yy >= sLBCommonScissorYMin)
     {

@@ -392,6 +392,26 @@ static void tex_dump_chain(int file_id, uint32_t file_off,
 // other's work. Cleared at scene change via portResetStructFixups.
 static std::unordered_set<uintptr_t> sStructU16Fixups;
 
+// Tracks memory ranges of decoded struct arrays that runtime texture/palette
+// BSWAPs must NOT touch. Certain N64 sprite files intentionally overlap the
+// tail of a CI8 palette (which Fast3D loads as a fixed 512-byte block even if
+// the actual palette is smaller) with the start of the bitmap array — on
+// hardware the unused palette entries don't matter, but on the port the
+// runtime-path BSWAP would corrupt the bitmap/sprite structs we already
+// byte-swap-fixed up.
+//
+// Entries are (begin, end) pairs. Cleared at scene change via
+// portResetStructFixups.
+struct ProtectedRange { uintptr_t begin; uintptr_t end; };
+static std::vector<ProtectedRange> sProtectedStructRanges;
+
+static void portRegisterProtectedStructRange(const void *begin, size_t size)
+{
+	if (begin == nullptr || size == 0) return;
+	uintptr_t b = reinterpret_cast<uintptr_t>(begin);
+	sProtectedStructRanges.push_back({ b, b + size });
+}
+
 // F3DEX2 GBI opcodes (from gbi.h with F3DEX_GBI_2 defined)
 #define GBI_VTX         0x01
 #define GBI_DL          0xDE
@@ -739,6 +759,7 @@ extern "C" void portFixupStructU16(void *base, unsigned int byte_offset, unsigne
 extern "C" void portResetStructFixups(void)
 {
 	sStructU16Fixups.clear();
+	sProtectedStructRanges.clear();
 }
 
 // ============================================================
@@ -1052,6 +1073,37 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 	{
 		num_bytes = (unsigned int)(fileSize - target_offset);
 	}
+
+	// Clip the fix range so it can't enter a previously-registered protected
+	// struct array (bitmap array, sprite, mobjsub, ...). These are already in
+	// native byte order and a blind BSWAP32 pass would corrupt them. The
+	// typical offender is a CI8 palette load that Fast3D treats as a fixed
+	// 512-byte read even when the actual palette is smaller; the extra bytes
+	// happen to overlap the bitmap/sprite struct region on sprite files.
+	{
+		uintptr_t clip_end = target + num_bytes;
+		for (const auto &r : sProtectedStructRanges)
+		{
+			if (r.begin >= clip_end) continue;
+			if (r.end <= target) continue;
+			// Overlap. Only clip if the protected range starts *after* target,
+			// so we still fix the prefix that lives outside the struct. If
+			// the protected range starts at or before target, shrink num_bytes
+			// to zero — the whole range overlaps a struct and we should skip it.
+			if (r.begin > target)
+			{
+				if (r.begin < clip_end)
+					clip_end = r.begin;
+			}
+			else
+			{
+				clip_end = target;
+				break;
+			}
+		}
+		num_bytes = (clip_end > target) ? (unsigned int)(clip_end - target) : 0u;
+	}
+
 	num_bytes &= ~3u;
 	if (num_bytes == 0) return;
 
@@ -1250,6 +1302,13 @@ extern "C" void portFixupBitmapArray(void *bitmaps, unsigned int count)
 	if (bitmaps == NULL || count == 0)
 		return;
 
+	// Protect the bitmap array bytes from runtime texture/palette BSWAP
+	// over-reads. N64 sprite files sometimes sit a full 512-byte CI8 palette
+	// load on top of the bitmap array (the useful palette entries fit before
+	// the array; the tail past the array start is effectively garbage). See
+	// the wallpaper handling in mvOpeningRun for the concrete case.
+	portRegisterProtectedStructRange(bitmaps, (size_t)count * 16);
+
 	uint8_t *ptr = static_cast<uint8_t *>(bitmaps);
 	for (unsigned int i = 0; i < count; i++)
 	{
@@ -1276,6 +1335,10 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 {
 	if (sprite_v == NULL || bitmaps_v == NULL)
 		return;
+
+	// Also protect the 68-byte Sprite struct from runtime-texture over-reads
+	// for the same reason as the bitmap array above.
+	portRegisterProtectedStructRange(sprite_v, 68);
 
 	uint8_t *sprite = static_cast<uint8_t *>(sprite_v);
 	uint8_t *bitmaps = static_cast<uint8_t *>(bitmaps_v);
