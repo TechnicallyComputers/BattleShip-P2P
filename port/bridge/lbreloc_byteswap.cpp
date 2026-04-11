@@ -803,6 +803,7 @@ static int chain_fixup_settimg(void *file_base, size_t file_size,
 	// Walk forward up to 8 cmds (64 bytes) to find G_LOADBLOCK or G_LOADTLUT.
 	uint32_t loadblock_w1 = 0;
 	uint32_t loadtlut_w1  = 0;
+	size_t   loadtlut_w1_off = 0;  // byte offset of the LOADTLUT cmd's w1 (for in-place patch)
 	int      found_load   = 0;
 	for (int step = 1; step <= 8; step++)
 	{
@@ -820,12 +821,70 @@ static int chain_fixup_settimg(void *file_base, size_t file_size,
 		if (walk_op == GBI_LOADTLUT)
 		{
 			loadtlut_w1 = walk_w1;
+			loadtlut_w1_off = walk_off + 4;
 			found_load = 2;
 			break;
 		}
 		if (walk_op == GBI_SETTIMG) return 0;
 	}
 	if (!found_load) return 0;
+
+	// ---- PORT: CI8 LOADTLUT high_index fixup ----
+	// Fast3D's GfxDpLoadTlut only populates BOTH halves of the CI8 palette
+	// staging buffer when high_index == 255 (see libultraship interpreter.cpp
+	// ~line 2627 — the CI8 "full 256-entry palette spanning both halves"
+	// path).  For stored DLs whose authors used gDPLoadTLUTCmd with a
+	// non-standard high_index in the [128, 254] range — observed in MVCommon
+	// for the textbook CI8 materials (high_index=254) and the poster-like
+	// wall quads (high_index=212/226) — only palette_staging[0] receives
+	// data.  palette_staging[1] retains stale data from the previous TLUT
+	// load (or zeros), so ImportTextureCi8 reads garbage for any pixel with
+	// idx >= 128.  Half of each affected texture then samples from a stale
+	// or empty palette, which presents as scrambled colors.
+	//
+	// We can't change libultraship from this layer, so rewrite the LOADTLUT
+	// w1 field in-place to high_index=255.  Effects:
+	//   - Fast3D sees high_index==255 and takes the pal256 branch which
+	//     memcpy's 256 bytes into palette_staging[0] AND another 256 bytes
+	//     into palette_staging[1], fully populating both halves.
+	//   - Chain walk and runtime LoadTlut both compute tex_bytes = 512 from
+	//     the patched value, and the chain walk round-up to 4-byte alignment
+	//     was already 512 bytes anyway — the BSWAP32 coverage is unchanged.
+	//   - Fast3D memcpy's bytes at `src[256..512]` into palette_staging[1].
+	//     For MVCommon's three problematic TLUTs this overlap either lands
+	//     on zero padding (Books 0xA588/0xA680) or on the next adjacent
+	//     palette/data — but the affected textures never sample any palette
+	//     index beyond their original max (verified: Books tex @ 0x9D70 max
+	//     idx=255 with only 4 unused pixels, unknown tex @ 0x19E8 max idx
+	//     matches hi=226 exactly, tex @ 0x21F0 max idx matches hi=212).
+	//     Any "wrong" entries written into palette_staging[1]'s upper end
+	//     are simply not sampled.
+	//
+	// Idempotent: once w1 is 0x3FC000-tagged (hi=255) the branch is skipped.
+	if (found_load == 2)
+	{
+		uint32_t hi = (loadtlut_w1 >> 14) & 0x3FF;
+		if (hi >= 128 && hi < 255 && loadtlut_w1_off > 0 &&
+		    loadtlut_w1_off + 4 <= file_size)
+		{
+			// Clear bits [23:14] (10-bit count field) and set high_index=255.
+			// gDPLoadTLUTCmd layout:
+			//   w1 = _SHIFTL(tile, 24, 3) | _SHIFTL(count, 14, 10)
+			uint32_t patched = (loadtlut_w1 & ~0x00FFC000u) | (0xFFu << 14);
+			*(uint32_t *)((uint8_t *)file_base + loadtlut_w1_off) = patched;
+			loadtlut_w1 = patched;
+			if (tex_log_enabled())
+			{
+				int patch_file_id = portRelocFindFileIdAndBase(file_base, nullptr);
+				char note[64];
+				std::snprintf(note, sizeof(note),
+				              "promote hi %u->255 for CI8", (unsigned)hi);
+				tex_log_emit("chain.patchtlut", patch_file_id,
+				             (uint32_t)loadtlut_w1_off, 4,
+				             -1, -1, -1, NULL, note);
+			}
+		}
+	}
 
 	uint32_t tex_bytes = 0;
 	if (found_load == 1)
