@@ -8,6 +8,7 @@ extern void portFixupSprite(void *sprite);
 extern void portFixupBitmap(void *bitmap);
 extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
 extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
+extern void portFixupMObjSub(void *mobjsub);
 #endif
 
 extern void syInterpCubic(void*, void*, f32);
@@ -1027,6 +1028,7 @@ void lbCommonAddMObjForFighterPartsDObj
 
         while (mobjsub != NULL)
         {
+            portFixupMObjSub(mobjsub);
             MObj *mobj = gcAddMObjForDObj(dobj, mobjsub);
 
             if (costume_matanim_joints != NULL)
@@ -1260,6 +1262,7 @@ void lbCommonSetupCustomTreeDObjsWithMObj
                 MObjSub *mobjsub = (MObjSub *)PORT_RESOLVE_ARRAY(mobjsubs_inner, inner_idx);
                 while (mobjsub != NULL)
                 {
+                    portFixupMObjSub(mobjsub);
                     gcAddMObjForDObj(dobj, mobjsub);
                     inner_idx++;
                     mobjsub = (MObjSub *)PORT_RESOLVE_ARRAY(mobjsubs_inner, inner_idx);
@@ -1310,6 +1313,7 @@ void lbCommonAddMObjForTreeDObjs(DObj *root_dobj, MObjSub ***p_mobjsubs)
                 MObjSub *mobjsub = (MObjSub *)PORT_RESOLVE_ARRAY(mobjsubs_inner, inner_idx);
                 while (mobjsub != NULL)
                 {
+                    portFixupMObjSub(mobjsub);
                     gcAddMObjForDObj(current_dobj, mobjsub);
                     inner_idx++;
                     mobjsub = (MObjSub *)PORT_RESOLVE_ARRAY(mobjsubs_inner, inner_idx);

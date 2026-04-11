@@ -1441,11 +1441,32 @@ void gcDrawMObjForDObj(DObj *dobj, Gfx **dl_head)
         }
         if (flags & MOBJ_FLAG_LIGHT1)
         {
+#ifdef PORT
+            /* PORT: SYColorPack.pack is a LE u32 read of the in-memory byte
+             * layout [R, G, B, A], which numerically equals
+             * (a<<24)|(b<<16)|(g<<8)|r — *not* the N64 packcol format Fast3D
+             * expects.  Rebuild an N64-format packcol by hand so
+             * (r<<24)|(g<<16)|(b<<8)|a lands in the Gfx command's w1 field. */
+            gSPLightColor(branch_dl++, LIGHT_1,
+                (((u32)mobj->sub.light1color.s.r) << 24) |
+                (((u32)mobj->sub.light1color.s.g) << 16) |
+                (((u32)mobj->sub.light1color.s.b) <<  8) |
+                 ((u32)mobj->sub.light1color.s.a));
+#else
             gSPLightColor(branch_dl++, LIGHT_1, mobj->sub.light1color.pack);
+#endif
         }
         if (flags & MOBJ_FLAG_LIGHT2)
         {
+#ifdef PORT
+            gSPLightColor(branch_dl++, LIGHT_2,
+                (((u32)mobj->sub.light2color.s.r) << 24) |
+                (((u32)mobj->sub.light2color.s.g) << 16) |
+                (((u32)mobj->sub.light2color.s.b) <<  8) |
+                 ((u32)mobj->sub.light2color.s.a));
+#else
             gSPLightColor(branch_dl++, LIGHT_2, mobj->sub.light2color.pack);
+#endif
         }
         if (flags & (MOBJ_FLAG_PRIMCOLOR | MOBJ_FLAG_FRAC | 0x8))
         {

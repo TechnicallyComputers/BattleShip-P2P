@@ -808,13 +808,21 @@ void ftParamSetModelPartID(GObj *fighter_gobj, s32 joint_id, s32 modelpart_id)
 
                     if (detail_p_mobjsubs != NULL)
                     {
+#ifdef PORT
+                        mobjsubs = (MObjSub **)PORT_RESOLVE_ARRAY(detail_p_mobjsubs, joint_id - nFTPartsJointCommonStart);
+#else
                         mobjsubs = detail_p_mobjsubs[joint_id - nFTPartsJointCommonStart];
+#endif
                     }
                     else mobjsubs = NULL;
 
                     if (detail_p_costume_matanim_joints != NULL)
                     {
+#ifdef PORT
+                        costume_matanim_joints = (AObjEvent32 **)PORT_RESOLVE_ARRAY(detail_p_costume_matanim_joints, joint_id - nFTPartsJointCommonStart);
+#else
                         costume_matanim_joints = detail_p_costume_matanim_joints[joint_id - nFTPartsJointCommonStart];
+#endif
                     }
                     else costume_matanim_joints = NULL;
 
@@ -914,13 +922,21 @@ void ftParamResetModelPartAll(GObj *fighter_gobj)
 
                         if (detail_p_mobjsubs != NULL)
                         {
+#ifdef PORT
+                            mobjsubs = (MObjSub **)PORT_RESOLVE_ARRAY(detail_p_mobjsubs, i);
+#else
                             mobjsubs = detail_p_mobjsubs[i];
+#endif
                         }
                         else mobjsubs = NULL;
 
                         if (detail_p_costume_matanim_joints != NULL)
                         {
+#ifdef PORT
+                            costume_matanim_joints = (AObjEvent32 **)PORT_RESOLVE_ARRAY(detail_p_costume_matanim_joints, i);
+#else
                             costume_matanim_joints = detail_p_costume_matanim_joints[i];
+#endif
                         }
                         else costume_matanim_joints = NULL;
 
@@ -1059,13 +1075,21 @@ void ftParamInitAllParts(GObj *fighter_gobj, s32 costume, s32 shade)
 
                     if (detail_p_mobjsubs != NULL)
                     {
+#ifdef PORT
+                        mobjsubs = (MObjSub **)PORT_RESOLVE_ARRAY(detail_p_mobjsubs, i);
+#else
                         mobjsubs = detail_p_mobjsubs[i];
+#endif
                     }
                     else mobjsubs = NULL;
 
                     if (detail_p_costume_matanim_joints != NULL)
                     {
+#ifdef PORT
+                        costume_matanim_joints = (AObjEvent32 **)PORT_RESOLVE_ARRAY(detail_p_costume_matanim_joints, i);
+#else
                         costume_matanim_joints = detail_p_costume_matanim_joints[i];
+#endif
                     }
                     else costume_matanim_joints = NULL;
 

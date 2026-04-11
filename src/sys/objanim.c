@@ -1593,6 +1593,39 @@ void gcPlayMObjMatAnim(MObj *mobj)
                         color = (aobj->length_invert <= aobj->length) ? *(SYColorPack*)&aobj->value_target : *(SYColorPack*)&aobj->value_base;
 #endif
                         break;
+
+#ifdef PORT
+                    /* PORT: the IDO original has no case for nGCAnimKindCubic
+                     * on color tracks, so `color` falls through with whatever
+                     * stack residue happened to be sitting in that slot.  In
+                     * practice fighter costume scripts use SetVal0Rate*/
+                    /* SetValRate* (which the parser marks Cubic) to select
+                     * costume-specific colors — on N64 the stack residue
+                     * happened to hold a sensible previous color, so shoes/
+                     * hats/tunics came out right; on PC the `color = white`
+                     * init makes every such material render solid white.
+                     *
+                     * Cubic Hermite on a packed RGBA u32 isn't meaningful
+                     * per-channel, and when gcPlayMObjMatAnim fires after
+                     * the parser has advanced past the keyframe, `length`
+                     * is already at or past `1/length_invert`, so the
+                     * Hermite basis collapses to (base=0, target=1, rate*=0):
+                     * value = value_target.  Treat Cubic as Step-at-boundary
+                     * for color tracks. */
+                    case nGCAnimKindCubic:
+                        {
+                            u32 src_bits;
+                            if (aobj->length * aobj->length_invert >= 1.0F)
+                                memcpy(&src_bits, &aobj->value_target, 4);
+                            else
+                                memcpy(&src_bits, &aobj->value_base, 4);
+                            color.s.r = (u8)(src_bits >> 24);
+                            color.s.g = (u8)(src_bits >> 16);
+                            color.s.b = (u8)(src_bits >>  8);
+                            color.s.a = (u8)(src_bits      );
+                        }
+                        break;
+#endif
                     }
                     switch (aobj->track)
                     {
