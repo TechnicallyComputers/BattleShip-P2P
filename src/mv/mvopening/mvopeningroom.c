@@ -391,6 +391,13 @@ void mvOpeningRoomMakePulledFighter(s32 fkind)
 	desc.pos.y = 0.0F;
 	desc.pos.z = 0.0F;
 	desc.figatree_heap = sMVOpeningRoomPluckedFigatreeHeap;
+#ifdef PORT
+	/* PORT: the default FTDesc's copy_kind doesn't carry a sane value on x64
+	 * (bitfield/init-list layout differs), so without this Kirby spawns in
+	 * the opening scene wearing a stale "copied" face (most visibly Samus's).
+	 * Force copy_kind to Kirby so he renders normally here. */
+	desc.copy_kind = nFTKindKirby;
+#endif
 	sMVOpeningRoomPulledFighterGObj = fighter_gobj = ftManagerMakeFighter(&desc);
 
 	DObjGetStruct(fighter_gobj)->scale.vec.f.x = 1.0F;
@@ -525,6 +532,12 @@ void mvOpeningRoomMakeDroppedFighter(s32 fkind)
 	desc.pos.x = 872.3249512F;
 	desc.pos.y = 4038.864014F;
 	desc.pos.z = -4734.600098F;
+#ifdef PORT
+	/* PORT: see mvOpeningRoomMakePulledFighter — default copy_kind is stale
+	 * on x64, force to Kirby so the dropped fighter doesn't inherit a
+	 * "copied" face. */
+	desc.copy_kind = nFTKindKirby;
+#endif
 	sMVOpeningRoomDroppedFighterGObj = fighter_gobj = ftManagerMakeFighter(&desc);
 
 	scSubsysFighterSetStatus(fighter_gobj, nFTDemoStatusFigureDropped);

@@ -5,6 +5,7 @@
 #include <reloc_data.h>
 #ifdef PORT
 extern void portFixupFTAttributes(void *attr);
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
 #endif
 
 // // // // // // // // // // // //
@@ -633,7 +634,15 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
         if (fp->fkind == nFTKindKirby)
         {
             FTKirbyCopy *copy = lbRelocGetFileData(FTKirbyCopy*, gFTDataKirbyMainMotion, llKirbyMainMotionSpecialNFTKirbyCopy);
-
+#ifdef PORT
+            /* PORT: FTKirbyCopy's first u32 word is [u16 copy_id][s16 copy_modelpart_id]
+             * — adjacent u16s in one word.  Pass1's blanket BSWAP32 position-swaps the
+             * two halves, so without this fixup `copy[8].copy_modelpart_id` returns
+             * what should be `copy[8].copy_id` and Kirby ends up wearing the wrong
+             * model part (e.g. Samus's helmet) in the opening scene.  Idempotent
+             * via sStructU16Fixups (keyed on the entry pointer). */
+            portFixupStructU16(&copy[fp->passive_vars.kirby.copy_id], 0, 1);
+#endif
             ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy[fp->passive_vars.kirby.copy_id].copy_modelpart_id);
         }
         break;
