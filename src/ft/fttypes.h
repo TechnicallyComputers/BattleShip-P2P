@@ -15,7 +15,15 @@
 #include <ft/ftdef.h>
 
 #include <ft/ftcommon.h>
-#include <ft/ftchar.h>
+/*
+ * NOTE: <ft/ftchar.h> intentionally included *after* the core struct
+ * definitions below. Character headers declare arrays like
+ *     extern FTStatusDesc dFTMarioSpecialStatusDescs[];
+ * which requires the element type to be complete. On MSVC the incomplete
+ * type is accepted at extern-array scope, but clang (correctly) rejects it,
+ * so we delay the include until FTStatusDesc/FTMotionDesc are defined. See
+ * the secondary include at the bottom of this file.
+ */
 #ifdef PORT
 #include <stddef.h>
 #endif
@@ -784,6 +792,13 @@ struct FTStatusDesc
     void (*proc_physics)(GObj*);
     void (*proc_map)(GObj*);
 };
+
+/*
+ * Character headers need FTStatusDesc / FTMotionDesc to be complete for their
+ * `extern FTStatusDesc dFTMarioSpecialStatusDescs[]` style declarations; they
+ * also provide the fighter-specific *StatusVars types used in the union below.
+ */
+#include <ft/ftchar.h>
 
 struct FTOpeningDesc
 {

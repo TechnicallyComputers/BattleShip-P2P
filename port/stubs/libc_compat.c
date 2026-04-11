@@ -39,14 +39,27 @@ f32 __sinf(f32 angle)
 /* ========================================================================= */
 
 /*
- * bzero is the BSD equivalent of memset(ptr, 0, len).
- * Used throughout the decomp for clearing memory regions.
+ * bzero is the BSD equivalent of memset(ptr, 0, len). It is still provided
+ * by every libc we target (glibc, musl, macOS libSystem, MSVC CRT via the
+ * BSD compatibility shims) so there is no need to stub it. Previously this
+ * file shipped `void bzero(void *p, unsigned int n) { memset(p, 0, n); }`,
+ * which had two fatal problems on macOS/arm64:
+ *
+ *   1. `unsigned int` dropped the upper 32 bits of the `size_t` length that
+ *      system callers (e.g. the C++ runtime's allocator internals) pass in
+ *      register x1, so any bzero of a large buffer would zero the wrong
+ *      amount of memory.
+ *
+ *   2. Clang recognises `memset(ptr, 0, len)` and lowers it back to a
+ *      `bzero()` call — which then re-entered our stub, recursed forever,
+ *      and blew the thread stack. The crash surfaced as a SIGSEGV deep
+ *      inside `new Interpreter()` in Fast3D. See the "bzero infinite
+ *      recursion" entry in CLAUDE.md for details.
+ *
+ * The decomp only references bzero/bcopy/bcmp through `<PR/os.h>`, which the
+ * C compiler resolves against libc's existing symbols. So we simply do not
+ * provide one and let the platform handle it.
  */
-
-void bzero(void *ptr, unsigned int len)
-{
-	memset(ptr, 0, len);
-}
 
 /* ========================================================================= */
 /*  IDO printf backend                                                       */

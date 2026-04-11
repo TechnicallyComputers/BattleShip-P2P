@@ -189,6 +189,33 @@ target_include_directories(ssb64_game PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/debug_tools # Acmd trace (mixer.h calls acmd_trace_log_cmd)
 )
 
+# Clang 16+ promoted several historically-warning diagnostics to errors by
+# default, which breaks the decomp C code on macOS/Linux. The decomp was
+# written against IDO 7.1 and relies on implicit function declarations, loose
+# int/pointer conversions, and incompatible library redeclarations — all of
+# which MSVC merely warns about. Downgrade those here so the port can build
+# without modifying every decomp source file.
+if (NOT MSVC)
+    target_compile_options(ssb64_game PRIVATE
+        -Wno-implicit-function-declaration
+        -Wno-implicit-int
+        -Wno-int-conversion
+        -Wno-incompatible-pointer-types
+        -Wno-incompatible-library-redeclaration
+        -Wno-shift-negative-value
+        -Wno-parentheses-equality
+        -Wno-pointer-sign
+        -Wno-unused-value
+        -Wno-unused-variable
+        -Wno-unused-but-set-variable
+        -Wno-unused-function
+        -Wno-constant-conversion
+        -Wno-tautological-constant-out-of-range-compare
+        -Wno-return-mismatch
+        -Wno-return-type
+    )
+endif()
+
 ################################################################################
 # Executable target — port C++ code + decomp object library
 ################################################################################
