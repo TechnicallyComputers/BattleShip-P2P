@@ -4031,7 +4031,47 @@ void mpCollisionInitGroundData(void)
     {
         portFixupStructU16(gMPCollisionVertexLinks, 0, (unsigned int)gMPCollisionLinesNum);
     }
-    // TODO: MPVertexData fixup deferred — need safe vertex count to avoid overrun
+
+    // Fix MPVertexIDs (u16 vertex_id[]) — all-u16 packed array. The size is
+    // max(vlinks->vertex1 + vlinks->vertex2) across all lines. vertex2 is the
+    // number of consecutive vertex indices starting at vertex1. After this
+    // fixup we can walk vertex_id[] to find the highest referenced vpos index.
+    if ((gMPCollisionVertexIDs != NULL) && (gMPCollisionVertexLinks != NULL) && (gMPCollisionLinesNum > 0))
+    {
+        unsigned int max_vid_index = 0;
+        s32 li;
+        for (li = 0; li < gMPCollisionLinesNum; li++)
+        {
+            unsigned int end = (unsigned int)gMPCollisionVertexLinks[li].vertex1
+                             + (unsigned int)gMPCollisionVertexLinks[li].vertex2;
+            if (end > max_vid_index) max_vid_index = end;
+        }
+        if (max_vid_index > 0)
+        {
+            unsigned int vid_bytes = max_vid_index * 2;
+            unsigned int vid_words = (vid_bytes + 3) / 4;
+            portFixupStructU16(gMPCollisionVertexIDs, 0, vid_words);
+        }
+
+        // Fix MPVertexData (vpos[]) — 6 bytes per entry {Vec2h pos; u16 vertex_flags}.
+        // Count = max vertex_id across all links + 1.
+        if ((gMPCollisionVertexData != NULL) && (max_vid_index > 0))
+        {
+            unsigned int max_vpos_index = 0;
+            unsigned int j;
+            for (j = 0; j < max_vid_index; j++)
+            {
+                unsigned int v = (unsigned int)gMPCollisionVertexIDs->vertex_id[j];
+                if (v > max_vpos_index) max_vpos_index = v;
+            }
+            {
+                unsigned int vpos_count = max_vpos_index + 1;
+                unsigned int vpos_bytes = vpos_count * 6;
+                unsigned int vpos_words = (vpos_bytes + 3) / 4;
+                portFixupStructU16(gMPCollisionVertexData, 0, vpos_words);
+            }
+        }
+    }
 #endif
 
     mpCollisionInitLineIDsAll();
