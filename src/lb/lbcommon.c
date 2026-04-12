@@ -8,6 +8,7 @@ extern void portFixupSprite(void *sprite);
 extern void portFixupBitmap(void *bitmap);
 extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
 extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
+extern void portDeswizzleDecodedSprite4c(void *sprite, void *bitmaps);
 extern void portFixupMObjSub(void *mobjsub);
 #endif
 
@@ -3050,6 +3051,15 @@ SObj* lbCommonMakeSObjForGObj(GObj *gobj, Sprite *sprite)
     if (sprite->bmsiz == G_IM_SIZ_4c)
     {
         lbCommonDecodeSpriteBitmapsSiz4b(sprite);
+#ifdef PORT
+        {
+            Bitmap *bitmaps = (Bitmap*)PORT_RESOLVE(sprite->bitmap);
+            if (bitmaps != NULL)
+            {
+                portDeswizzleDecodedSprite4c(sprite, bitmaps);
+            }
+        }
+#endif
     }
     sobj = gcAddSObjForGObj(gobj, sprite);
     

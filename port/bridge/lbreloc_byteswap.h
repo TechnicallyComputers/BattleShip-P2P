@@ -111,6 +111,20 @@ void portFixupBitmapArray(void *bitmaps, unsigned int count);
 void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v);
 
 /**
+ * Apply TMEM line deswizzle to 4c sprite bitmap data AFTER decode.
+ *
+ * 4c sprites store compressed 2bpp data whose decoded 4bpp output inherits
+ * the N64 DRAM pre-swizzle layout (odd rows have qword halves swapped).
+ * portFixupSpriteBitmapData skips the deswizzle for 4c because the byte
+ * layout pre-decode is wrong for it. This function applies the same XOR-4
+ * inverse on the post-decode 4bpp data.
+ *
+ * Must be called AFTER lbCommonDecodeSpriteBitmapsSiz4b.
+ * Idempotent via separate tracking set.
+ */
+void portDeswizzleDecodedSprite4c(void *sprite_v, void *bitmaps_v);
+
+/**
  * Fix byte order for a MObjSub struct (0x78 bytes) after blanket u32 swap.
  *
  * Handles the mixed u16/u8 fields: pad00+fmt+siz, unk08-unk0E,

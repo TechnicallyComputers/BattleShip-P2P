@@ -405,6 +405,11 @@ static std::unordered_set<uintptr_t> sStructU16Fixups;
 struct ProtectedRange { uintptr_t begin; uintptr_t end; };
 static std::vector<ProtectedRange> sProtectedStructRanges;
 
+// Separate tracking for post-decode 4c sprite deswizzle (portDeswizzleDecodedSprite4c).
+// Needs its own set because portFixupSpriteBitmapData already inserted the same buf
+// addresses during the pre-decode BSWAP32 pass.
+static std::unordered_set<uintptr_t> sDeswizzle4cFixups;
+
 static void portRegisterProtectedStructRange(const void *begin, size_t size)
 {
 	if (begin == nullptr || size == 0) return;
@@ -760,6 +765,7 @@ extern "C" void portResetStructFixups(void)
 {
 	sStructU16Fixups.clear();
 	sProtectedStructRanges.clear();
+	sDeswizzle4cFixups.clear();
 }
 
 // ============================================================
@@ -1391,26 +1397,32 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 		if (buf == NULL || width_img <= 0 || actualHeight <= 0)
 			continue;
 
-		// Idempotency: skip if this buf was already fixed up.
+		// Idempotency for the BSWAP32 pass: skip if pass2 (or a prior
+		// sprite fixup call) already restored the byte order.
 		uintptr_t key = reinterpret_cast<uintptr_t>(buf);
-		if (sStructU16Fixups.count(key))
-			continue;
-		sStructU16Fixups.insert(key);
+		bool bswap_already_done = sStructU16Fixups.count(key) != 0;
+		if (!bswap_already_done)
+		{
+			sStructU16Fixups.insert(key);
 
-		size_t num_texels = static_cast<size_t>(width_img) *
-		                    static_cast<size_t>(actualHeight);
-		size_t tex_bytes = (num_texels * bpp + 7) / 8;
-		// Word-align so we can iterate as u32
-		tex_bytes = (tex_bytes + 3) & ~size_t{3};
+			size_t num_texels = static_cast<size_t>(width_img) *
+			                    static_cast<size_t>(actualHeight);
+			size_t tex_bytes = (num_texels * bpp + 7) / 8;
+			// Word-align so we can iterate as u32
+			tex_bytes = (tex_bytes + 3) & ~size_t{3};
 
-		uint32_t *words = static_cast<uint32_t *>(buf);
-		size_t num_words = tex_bytes / 4;
+			uint32_t *words = static_cast<uint32_t *>(buf);
+			size_t num_words = tex_bytes / 4;
 
-		// All non-32bpp formats: undo pass1 BSWAP32 to restore N64 BE byte order.
-		for (size_t j = 0; j < num_words; j++)
-			words[j] = BSWAP32(words[j]);
+			// Undo pass1 BSWAP32 to restore N64 BE byte order.
+			for (size_t j = 0; j < num_words; j++)
+				words[j] = BSWAP32(words[j]);
+		}
 
-		if (tex_log_enabled() || tex_dump_enabled()) {
+		if (!bswap_already_done && (tex_log_enabled() || tex_dump_enabled())) {
+			size_t log_tex_bytes = (static_cast<size_t>(width_img) *
+			                        static_cast<size_t>(actualHeight) * bpp + 7) / 8;
+			log_tex_bytes = (log_tex_bytes + 3) & ~size_t{3};
 			uintptr_t bm_base = 0;
 			int sprite_file_id = portRelocFindFileIdAndBase(buf, &bm_base);
 			uint32_t off = (sprite_file_id >= 0)
@@ -1420,64 +1432,42 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 			std::snprintf(note, sizeof(note),
 			              "sprite bm=%d w=%d h=%d", i, (int)width_img, (int)actualHeight);
 			tex_log_emit("sprite.bitmap", sprite_file_id,
-			             off, (uint32_t)tex_bytes,
-			             -1, (int)bmsiz, bpp, words, note);
+			             off, (uint32_t)log_tex_bytes,
+			             -1, (int)bmsiz, bpp, static_cast<uint32_t *>(buf), note);
 			tex_dump_known_dims(sprite_file_id, off,
 			                    (int)bmfmt, (int)bmsiz, bpp,
 			                    reinterpret_cast<const uint8_t *>(buf),
-			                    (size_t)tex_bytes,
+			                    (size_t)log_tex_bytes,
 			                    (uint32_t)width_img,
 			                    (uint32_t)actualHeight);
 		}
 
 		// N64 RDP TMEM line swizzle: textures stored in DRAM are pre-swizzled
-		// to avoid TMEM bank conflicts when sampled. The hardware applies an
-		// XOR to the byte address based on the row parity (bit 0 of t):
-		//
-		//   16bpp / IA / CI:    odd rows XOR address with 0x4 (swap the two
-		//                       4-byte halves within each 8-byte qword)
-		//
-		// LOAD_BLOCK with dxt=0 loads the data into TMEM as-is (still swizzled).
-		// On real hardware, the sampler reads with the inverse XOR and gets the
-		// correct linear pixel order. Fast3D doesn't emulate TMEM addressing,
-		// so it would read the swizzled data linearly and produce a corrupted
-		// (zigzag/sheared) image. Pre-unswizzle here so Fast3D sees a normal
-		// linear texture.
-		//
-		// Each Bitmap is loaded as one independent LOAD_BLOCK in
-		// lbCommonDrawSObjBitmap, so the swizzle row index is strip-local.
-		//
-		// Why this also fires for 4b and 8b sprites (not just 16b):
-		// lbCommonDrawSObjBitmap builds runtime LOAD_BLOCK commands using
-		// G_IM_SIZ_{4b,8b,16b}_LOAD_BLOCK, all of which are #defined to
-		// G_IM_SIZ_16b.  So every non-32bpp sprite is loaded into TMEM as
-		// 16bpp, and the same odd-row XOR-0x4 swizzle applies to the DRAM
-		// storage regardless of the sprite's logical bit depth.  The 4b/8b
-		// case surfaces on fighter-intro title card text (e.g. "MARIO",
-		// "YOSHI") where each letter is a 4b/8b sprite rendered via this
-		// path; those letters were sheared until this fix was extended
-		// beyond 16b.
+		// to avoid TMEM bank conflicts when sampled. lbCommonDrawSObjBitmap
+		// loads ALL sprite formats (4b/8b/16b/32b) via LOAD_BLOCK with
+		// G_IM_SIZ_*_LOAD_BLOCK which are all #defined to G_IM_SIZ_16b.
+		// The same odd-row XOR-0x4 swizzle applies regardless of bpp.
 		//
 		// 4c (compressed) is excluded because the on-disk data is 2bpp
-		// compressed source; the N64 game decodes it to 4b via
-		// lbCommonDecodeSpriteBitmapsSiz4b AFTER this fixup runs, so the
-		// swizzle would target the wrong byte layout.  The decoder emits
-		// linear 4b output, and if any 4c sprite turns out to be swizzled
-		// after decode it needs a separate post-decode fixup.
+		// compressed source; the decoder runs AFTER this fixup and produces
+		// data that needs a separate post-decode deswizzle.
+		//
+		// Uses sDeswizzle4cFixups (separate from the BSWAP set) so that
+		// textures whose byte-swap was already handled by pass2 still get
+		// the deswizzle applied.
 		if (bpp > 0 && bpp < 32 && bmsiz != 4 &&
-		    width_img > 0 && actualHeight > 0)
+		    width_img > 0 && actualHeight > 0 &&
+		    !sDeswizzle4cFixups.count(key))
 		{
-			// row_bytes = DRAM bytes per pixel row. For 4b this is width/2
-			// (rounded up for odd widths); 8b is width; 16b is width*2.
+			sDeswizzle4cFixups.insert(key);
+
+			// row_bytes = DRAM bytes per pixel row.
 			size_t row_bytes = ((size_t)width_img * (size_t)bpp + 7) / 8;
 			// The swizzle operates on 8-byte qwords. Require the row to
-			// hold at least one full qword and be qword-aligned so we
-			// don't mis-swap partial trailing bytes.  Anything narrower
-			// than 8 bytes (e.g. a 4b 12-wide sprite → row_bytes=6) has
-			// no qword to swap, and a non-qword-aligned row would leave
-			// the tail bytes in an inconsistent state.  In practice, real
-			// font-style sprites are almost always power-of-2 or 8-aligned.
-			if (row_bytes >= 8 && (row_bytes % 8) == 0)
+			// hold at least one full qword. The inner loop only processes
+			// complete 8-byte groups (`qw + 8 <= row_bytes`), so any
+			// trailing bytes past the last full qword are left untouched.
+			if (row_bytes >= 8)
 			{
 				uint8_t *bytes = static_cast<uint8_t *>(buf);
 				for (int row = 1; row < actualHeight; row += 2)
@@ -1555,6 +1545,54 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 						            row_bytes - first_zero);
 					}
 				}
+			}
+		}
+	}
+}
+
+extern "C" void portDeswizzleDecodedSprite4c(void *sprite_v, void *bitmaps_v)
+{
+	if (sprite_v == NULL || bitmaps_v == NULL)
+		return;
+
+	uint8_t *sprite = static_cast<uint8_t *>(sprite_v);
+	uint8_t *bitmaps = static_cast<uint8_t *>(bitmaps_v);
+
+	int16_t nbitmaps = *reinterpret_cast<int16_t *>(sprite + 0x28);
+	if (nbitmaps <= 0)
+		return;
+
+	for (int i = 0; i < nbitmaps; i++)
+	{
+		uint8_t *bm = bitmaps + (i * 16);
+		int16_t  width_img    = *reinterpret_cast<int16_t *>(bm + 0x02);
+		uint32_t buf_token    = *reinterpret_cast<uint32_t *>(bm + 0x08);
+		int16_t  actualHeight = *reinterpret_cast<int16_t *>(bm + 0x0C);
+
+		void *buf = portRelocResolvePointer(buf_token);
+		if (buf == NULL || width_img <= 0 || actualHeight <= 0)
+			continue;
+
+		uintptr_t key = reinterpret_cast<uintptr_t>(buf);
+		if (sDeswizzle4cFixups.count(key))
+			continue;
+		sDeswizzle4cFixups.insert(key);
+
+		// After decode, data is 4bpp: row_bytes = width_img / 2
+		size_t row_bytes = (size_t)width_img / 2;
+		if (row_bytes < 8)
+			continue;
+
+		uint8_t *bytes = static_cast<uint8_t *>(buf);
+		for (int row = 1; row < actualHeight; row += 2)
+		{
+			uint8_t *row_p = bytes + (size_t)row * row_bytes;
+			for (size_t qw = 0; qw + 8 <= row_bytes; qw += 8)
+			{
+				uint8_t tmp[4];
+				std::memcpy(tmp, row_p + qw, 4);
+				std::memcpy(row_p + qw, row_p + qw + 4, 4);
+				std::memcpy(row_p + qw + 4, tmp, 4);
 			}
 		}
 	}

@@ -11,6 +11,9 @@ extern void dbMenuUpdateMenuInputs();
 extern u32 sySchedulerGetTicCount();
 #ifdef PORT
 extern void port_coroutine_yield(void);
+extern void portFixupSprite(void *sprite);
+extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
+extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
 #endif
 
 // // // // // // // // // // // //
@@ -910,6 +913,17 @@ void mnTitleUpdateFireSprite(SObj *sobj, sb32 is_next)
 {
 	Sprite *sprite = lbRelocGetFileData(Sprite*, sMNTitleFiles[1], dMNTitleFireSpriteOffsets[sobj->user_data.s]);
 
+#ifdef PORT
+	portFixupSprite(sprite);
+	{
+		Bitmap *bitmaps = (Bitmap*)PORT_RESOLVE(sprite->bitmap);
+		if (bitmaps != NULL)
+		{
+			portFixupBitmapArray(bitmaps, sprite->nbitmaps);
+			portFixupSpriteBitmapData(sprite, bitmaps);
+		}
+	}
+#endif
 	sobj->sprite = *sprite;
 	sobj->sprite.attr = SP_TRANSPARENT;
 
