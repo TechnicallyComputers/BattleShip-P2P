@@ -297,6 +297,12 @@ void ftCommonGuardInitJoints(GObj *fighter_gobj)
     }
     fp->anim_desc.flags.is_anim_joint = TRUE;
 
+#ifdef PORT
+    if (fp->joints[nFTPartsJointXRotN] == NULL)
+    {
+        return;
+    }
+#endif
     lbCommonAddDObjAnimJointAll
     (
         fp->joints[nFTPartsJointXRotN],
