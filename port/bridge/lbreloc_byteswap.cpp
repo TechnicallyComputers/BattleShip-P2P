@@ -27,6 +27,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -391,6 +392,13 @@ static void tex_dump_chain(int file_id, uint32_t file_off,
 // lazy vertex fixup. All paths share this set so they don't undo each
 // other's work. Cleared at scene change via portResetStructFixups.
 static std::unordered_set<uintptr_t> sStructU16Fixups;
+
+// Tracks the extent (number of bytes) already fixed at each texture base
+// address.  When a LOADBLOCK requests a larger region from the same start
+// address, the delta (new_size - old_size) is fixed incrementally.  Without
+// this, N64 RGBA32 multi-row progressive loads only fix the first row and
+// leave subsequent rows in BSWAP32'd byte order (garbled colors).
+static std::unordered_map<uintptr_t, unsigned int> sTexFixupExtent;
 
 // Tracks memory ranges of decoded struct arrays that runtime texture/palette
 // BSWAPs must NOT touch. Certain N64 sprite files intentionally overlap the
@@ -764,6 +772,7 @@ extern "C" void portFixupStructU16(void *base, unsigned int byte_offset, unsigne
 extern "C" void portResetStructFixups(void)
 {
 	sStructU16Fixups.clear();
+	sTexFixupExtent.clear();
 	sProtectedStructRanges.clear();
 	sDeswizzle4cFixups.clear();
 }
@@ -1114,11 +1123,19 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 	if (num_bytes == 0) return;
 
 	uintptr_t fixup_key = target;
-	bool already_fixed = sStructU16Fixups.count(fixup_key) != 0;
-	if (already_fixed) {
-		// Still record that the runtime path SAW this texture, even if some
-		// earlier path already fixed it.  Distinguishes "wrong fmt fixup
-		// applied earlier" from "never reached this path at all".
+
+	// Check if this address was already fixed (by chain walk, pass2, or a
+	// previous runtime call).  If so, check whether the new request covers
+	// MORE bytes than previously fixed — N64 RGBA32 textures often issue
+	// multiple LOADBLOCKs from the same base address with increasing sizes
+	// (progressive row loads).  Only the delta needs fixing.
+	auto extent_it = sTexFixupExtent.find(fixup_key);
+	unsigned int already_fixed_bytes = 0;
+	if (extent_it != sTexFixupExtent.end()) {
+		already_fixed_bytes = extent_it->second;
+	} else if (sStructU16Fixups.count(fixup_key)) {
+		// Fixed by chain walk or pass2 (no extent tracked).
+		// Conservatively assume the full requested size was fixed.
 		if (tex_log_enabled()) {
 			int rt_file_id = portRelocFindFileIdAndBase(addr, nullptr);
 			tex_log_emit("runtime.skip", rt_file_id,
@@ -1127,20 +1144,36 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 		}
 		return;
 	}
-	sStructU16Fixups.insert(fixup_key);
 
-	uint32_t *region = reinterpret_cast<uint32_t *>(target);
-	size_t num_words = num_bytes / 4;
+	if (num_bytes <= already_fixed_bytes) {
+		if (tex_log_enabled()) {
+			int rt_file_id = portRelocFindFileIdAndBase(addr, nullptr);
+			tex_log_emit("runtime.skip", rt_file_id,
+			             (uint32_t)target_offset, num_bytes,
+			             -1, -1, -1, addr, "already-fixed");
+		}
+		return;
+	}
+
+	// Fix the delta: bytes from already_fixed_bytes to num_bytes.
+	unsigned int fix_start = already_fixed_bytes & ~3u;
+	uint32_t *region = reinterpret_cast<uint32_t *>(target + fix_start);
+	size_t fix_bytes = num_bytes - fix_start;
+	size_t num_words = fix_bytes / 4;
 	for (size_t i = 0; i < num_words; i++)
 	{
 		region[i] = BSWAP32(region[i]);
 	}
 
+	sStructU16Fixups.insert(fixup_key);
+	sTexFixupExtent[fixup_key] = num_bytes;
+
 	if (tex_log_enabled()) {
 		int rt_file_id = portRelocFindFileIdAndBase(addr, nullptr);
 		tex_log_emit("runtime.fix", rt_file_id,
 		             (uint32_t)target_offset, num_bytes,
-		             -1, -1, -1, region, "loadblock/loadtile/loadtlut");
+		             -1, -1, -1, reinterpret_cast<uint32_t *>(target),
+		             already_fixed_bytes > 0 ? "extend" : "loadblock/loadtile/loadtlut");
 	}
 }
 
