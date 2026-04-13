@@ -5048,7 +5048,26 @@ ALWhatever8009EDD0_siz34* func_80026A10_27610(u16 id)
 	{
 		return NULL;
 	}
-	else return func_80026844_27444(D_8009EDD0_406D0.fgm_ucode_data[id]);
+#ifdef PORT
+	/* PORT: same class of stub as func_800269C0_275C0 / func_80026B40_27740.
+	 * This is the positional-FGM allocator used by lbCommonMakePositionFGM,
+	 * which ftMainPlayHitSFX (src/ft/ftmain.c:2184) calls on every attack
+	 * that connects.  It pops a siz34 from the free pool, sets its ucode
+	 * pointer to fgm_ucode_data[id], and hands it to the caller, which
+	 * then adds it to the active FGM list via func_800267F4_273F4.  On
+	 * the next audio frame, func_80026B90_27790 walks that list and
+	 * parses the ucode bytes — reading from fgm_ucode_data which is not
+	 * set up correctly on PC, so the parser eventually dereferences
+	 * garbage via arg0->_0x28->unk30 and faults.
+	 *
+	 * Until FGM playback is phase-implemented (see the handoff doc's
+	 * "audio implementation reaches Phase 5/6" note), return NULL so the
+	 * active list never grows and the ucode parser never runs.
+	 * lbCommonMakePositionFGM's caller already NULL-checks. */
+	return NULL;
+#else
+	return func_80026844_27444(D_8009EDD0_406D0.fgm_ucode_data[id]);
+#endif
 }
 
 ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
