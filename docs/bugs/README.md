@@ -1,0 +1,21 @@
+# Known Bugs & Resolved Issues
+
+This directory documents significant bugs encountered during the port, their symptoms, root causes, and fixes. When fixing a new bug, add an entry here so future sessions can recognize the same class of issue.
+
+## Index
+
+| Date | Slug | Summary |
+|------|------|---------|
+| 2026-04-13 | [samus_charge_shot_hit_detection](samus_charge_shot_hit_detection_2026-04-13.md) | **OPEN** — Jungle intro bypass spawns charge shot via `is_release=TRUE` path with uninitialised `attack_pos[0]` (stale NaN in pos_prev from pool memory). Root cause found, fix not yet working visually |
+| 2026-04-11 | [mpvertex_byte_swap](mpvertex_byte_swap_2026-04-11.md) | MPVertexData / MPVertexIDs byte-swap deferral broke Jungle floor collision |
+| 2026-04-11 | [controller_motorevt_lp64](controller_motorevt_lp64_2026-04-11.md) | Unk80045268 ContMotorEvt struct pun faults on LP64 |
+| 2026-04-11 | [fighter_tile_masks_wrap](fighter_tile_masks_wrap_2026-04-11.md) | Missing SetTile masks/maskt clamp → black squares on fighter body parts |
+| 2026-04-11 | [loadtlut_cross_boundary](loadtlut_cross_boundary_2026-04-11.md) | LOADTLUT spillover across 256-byte palette boundary dropped entries |
+| 2026-04-11 | [osmesg_union](osmesg_union_2026-04-11.md) | OSMesg `void*` vs union type split produced uninitialized upper bytes |
+| 2026-04-11 | [bzero_recursion_arm64](bzero_recursion_arm64_2026-04-11.md) | Stubbed bzero on macOS/arm64 recursed infinitely via memset lowering |
+| 2026-04-10 | [sprite_texel_tmem_swizzle](sprite_texel_tmem_swizzle_2026-04-10.md) | Sprite byteswap deferral + N64 RDP TMEM line swizzle left sprites sheared |
+| 2026-04-08 | [segment_0e_gdl](segment_0e_gdl_2026-04-08.md) | Segment 0x0E G_DL resolution exception branched into the graphics heap |
+| 2026-04-08 | [particle_bank_dma](particle_bank_dma_2026-04-08.md) | efParticleGetLoadBankID read stale heap bytes for particle bank descriptor |
+| 2026-04-08 | [ground_geometry_collision](ground_geometry_collision_2026-04-08.md) | PORT_RESOLVE + all-u16 collision struct byte-swap fixes |
+| 2026-04-07 | [dl_normalization_guard](dl_normalization_guard_2026-04-07.md) | Heuristic guard mis-detected packed DLs starting with w1=0 sync commands |
+| 2026-04-06 | [display_list_widening](display_list_widening_2026-04-06.md) | Packed 8-byte resource DLs needed widening to 16-byte native format |
