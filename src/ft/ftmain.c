@@ -4224,8 +4224,19 @@ void ftMainUpdateHiddenPartID(FTStruct *fp, s32 hiddenpart_id)
         lbCommonAddMObjForFighterPartsDObj
         (
             root_joint,
+#ifdef PORT
+            /* PORT: FTPARTS_GET_MOBJSUBS resolves to a pointer into an in-file
+             * u32-token array.  Native `[joint_off]` indexing would stride
+             * 8 bytes on LP64 and read two adjacent tokens as one garbage
+             * 8-byte pointer. PORT_RESOLVE_ARRAY reads the correct u32 and
+             * resolves it. Matches the fix already present in
+             * lbcommon.c:1188 / ftparam.c:812 / ftparam.c:926 / ftparam.c:1079. */
+            (commonpart_p_mobjsubs != NULL) ? (MObjSub **)PORT_RESOLVE_ARRAY(commonpart_p_mobjsubs, hiddenpart->root_joint_id - nFTPartsJointCommonStart) : NULL,
+            (commonpart_p_costume_matanim_joints != NULL) ? (AObjEvent32 **)PORT_RESOLVE_ARRAY(commonpart_p_costume_matanim_joints, hiddenpart->root_joint_id - nFTPartsJointCommonStart) : NULL,
+#else
             (commonpart_p_mobjsubs != NULL) ? commonpart_p_mobjsubs[hiddenpart->root_joint_id - nFTPartsJointCommonStart] : NULL,
             (commonpart_p_costume_matanim_joints != NULL) ? commonpart_p_costume_matanim_joints[hiddenpart->root_joint_id - nFTPartsJointCommonStart] : NULL,
+#endif
             NULL,
             fp->costume
         );

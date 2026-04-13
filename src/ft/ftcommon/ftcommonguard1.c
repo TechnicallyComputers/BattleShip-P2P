@@ -222,23 +222,10 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
     s32 i;
     Vec3f *scale;
 #ifdef PORT
-    /* PORT: joints[TransN/XRotN/YRotN] are populated by ftMainUpdateHiddenPartID
-     * (the hidden-parts mechanism) which gets triggered by bits in
-     * motion_desc->anim_desc.word.  On PC, motion_desc is read from a file
-     * array of FTMotionDesc structs.  FTMotionDesc contains `intptr_t offset`
-     * which is 4 bytes on N64 but 8 bytes on x64, so the struct stride differs
-     * and reads after the first entry come from wrong offsets.  This results
-     * in joints[YRotN] being NULL even when the motion has the
-     * is_use_yrotn_joint flag set, because the wrong anim_desc.word is read.
-     *
-     * Until the FTMotionDesc layout is fixed (separate task — same class as
-     * project_addr64_relocation_bug.md), bail out gracefully when the YRotN
-     * joint isn't populated.  The visible effect is that shields don't render
-     * for affected fighters, but the game doesn't crash.
-     *
-     * This is the single chokepoint for the entire shield/guard joint update
-     * crash class — both the wait→guard transition and per-frame guard updates
-     * route through here. */
+    /* PORT: fighters whose active motion doesn't request a YRotN joint
+     * (is_use_yrotn_joint == 0 in anim_desc.word) never populate
+     * joints[YRotN] via ftMainUpdateHiddenPartID.  That's a legitimate
+     * no-op case — just return without running the shield joint update. */
     if (yrotn_joint == NULL) {
         return;
     }
@@ -258,7 +245,24 @@ void ftCommonGuardUpdateJoints(GObj *fighter_gobj)
         }
         joint_num--;
 
+#ifdef PORT
+        /* PORT: the resolved `shield_anim_joints[angle_i]` points at a file-data
+         * array of `AObjEvent32*` entries.  On N64 those entries are 4-byte
+         * pointers; on LP64 a plain `[joint_num]` cast would stride 8 bytes and
+         * read past the end (or concatenate two adjacent tokens into a garbage
+         * pointer — which is exactly what crashes `gcParseDObjAnimJoint` when
+         * the shield joint update reaches a real animation post-FTMotionFlags
+         * fix).  PORT_RESOLVE_ARRAY reads the correct u32 entry and resolves
+         * it. */
+        gcAddDObjAnimJoint(
+            yrotn_joint,
+            (AObjEvent32*)PORT_RESOLVE_ARRAY(
+                PORT_RESOLVE(fp->attr->shield_anim_joints[fp->status_vars.common.guard.angle_i]),
+                joint_num),
+            fp->status_vars.common.guard.angle_f);
+#else
         gcAddDObjAnimJoint(yrotn_joint, ((AObjEvent32**)PORT_RESOLVE(fp->attr->shield_anim_joints[fp->status_vars.common.guard.angle_i]))[joint_num], fp->status_vars.common.guard.angle_f);
+#endif
         gcParseDObjAnimJoint(yrotn_joint);
 
         if (fp->is_have_translate_scale)
