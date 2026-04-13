@@ -387,13 +387,22 @@ struct FTMotionEventMakeAttack5
 	u32 fgm_level : 3;
 	u32 fgm_kind : 4;
 	u32 knockback_base : 10;
+	u32 pad : 7;
 #else
+	/* LE mirror: the 25 declared bits don't fill a u32, so a naive reversal
+	 * would start `knockback_base` at bit 0 and leave the unused 7 bits at
+	 * the TOP of the word — the opposite of where BE leaves them (bottom).
+	 * Every field would then land at the wrong physical position.
+	 * Leading `pad : 7` pushes the real fields up into the same bit
+	 * positions the BE layout produces. */
+	u32 pad : 7;
 	u32 knockback_base : 10;
 	u32 fgm_kind : 4;
 	u32 fgm_level : 3;
 	s32 shield_damage : 8;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventMakeAttack5) == 4, "FTMotionEventMakeAttack5 must be 4 bytes — pad bits missing or bitfield packing broken");
 
 struct FTMotionEventMakeAttack
 {
@@ -410,12 +419,15 @@ struct FTMotionEventSetAttackOffset1
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	s32 off_x : 16;
+	u32 pad : 7;
 #else
+	u32 pad : 7;    /* see FTMotionEventMakeAttack5 for rationale */
 	s32 off_x : 16;
 	u32 attack_id: 3;
 	u32 opcode : 6;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventSetAttackOffset1) == 4, "FTMotionEventSetAttackOffset1 must be 4 bytes");
 
 struct FTMotionEventSetAttackOffset2
 {
@@ -440,12 +452,15 @@ struct FTMotionEventSetAttackCollDamage
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 damage : 8;
+	u32 pad : 15;
 #else
+	u32 pad : 15;   /* see FTMotionEventMakeAttack5 for rationale */
 	u32 damage : 8;
 	u32 attack_id: 3;
 	u32 opcode : 6;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventSetAttackCollDamage) == 4, "FTMotionEventSetAttackCollDamage must be 4 bytes");
 
 struct FTMotionEventSetAttackCollSize
 {
@@ -453,12 +468,15 @@ struct FTMotionEventSetAttackCollSize
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 size : 16;
+	u32 pad : 7;
 #else
+	u32 pad : 7;    /* see FTMotionEventMakeAttack5 for rationale */
 	u32 size : 16;
 	u32 attack_id: 3;
 	u32 opcode : 6;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventSetAttackCollSize) == 4, "FTMotionEventSetAttackCollSize must be 4 bytes");
 
 struct FTMotionEventSetAttackCollSound
 {
@@ -466,12 +484,15 @@ struct FTMotionEventSetAttackCollSound
 	u32 opcode : 6;
 	u32 attack_id: 3;
 	u32 fgm_level : 3;
+	u32 pad : 20;
 #else
+	u32 pad : 20;   /* see FTMotionEventMakeAttack5 for rationale */
 	u32 fgm_level : 3;
 	u32 attack_id: 3;
 	u32 opcode : 6;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventSetAttackCollSound) == 4, "FTMotionEventSetAttackCollSound must be 4 bytes");
 
 struct FTMotionEventSetThrow1
 {
@@ -567,11 +588,14 @@ struct FTMotionEventSetDamageCollPartID1
 #if IS_BIG_ENDIAN
 	u32 opcode : 6;
 	s32 joint_id : 7;
+	u32 pad : 19;
 #else
+	u32 pad : 19;   /* see FTMotionEventMakeAttack5 for rationale */
 	s32 joint_id : 7;
 	u32 opcode : 6;
 #endif
 };
+_Static_assert(sizeof(struct FTMotionEventSetDamageCollPartID1) == 4, "FTMotionEventSetDamageCollPartID1 must be 4 bytes");
 
 struct FTMotionEventSetDamageCollPartID2
 {
