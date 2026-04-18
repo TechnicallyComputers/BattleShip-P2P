@@ -12,6 +12,33 @@ extern alSoundEffect* func_800269C0_275C0(u16);
 
 extern void syAudioSetBGMVolume(u32, u32);
 
+#ifdef PORT
+extern void portFixupSprite(void *sprite);
+extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
+extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
+
+/* Ensure a Sprite* read from reloc file data has its header, bitmap
+ * array, and texel data in the correct byte order for LE rendering.
+ * Idempotent — portFixupSprite / portFixupBitmap use visited sets to
+ * avoid double-applying. Matches the sequence inside
+ * lbCommonMakeSObjForGObj so file-data Sprites that are copied
+ * byte-for-byte into SObjs (instead of being attached via
+ * lbCommonMakeSObjForGObj) still get the same treatment. */
+static void ifCommonPortFixupSpriteFull(Sprite *sprite)
+{
+    if (sprite == NULL) return;
+    portFixupSprite(sprite);
+    {
+        Bitmap *bitmaps = (Bitmap*)PORT_RESOLVE(sprite->bitmap);
+        if (bitmaps != NULL)
+        {
+            portFixupBitmapArray(bitmaps, sprite->nbitmaps);
+            portFixupSpriteBitmapData(sprite, bitmaps);
+        }
+    }
+}
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -885,6 +912,16 @@ void ifCommonPlayerDamageSetDigitAttr(void)
 
     for (i = 0; i < ARRAY_COUNT(dIFCommonPlayerDamageDigitSpriteOffsets); i++)
     {
+#ifdef PORT
+        /* Only digit 0 ever goes through lbCommonMakeSObjForGObj, so
+         * digits 1-9, %, and HP would otherwise never get byte-order
+         * fixup applied to their Sprite/Bitmap headers or texel data.
+         * That left their attr write below landing at the wrong halfword
+         * and runtime copies (ifcommon.c:828/856) reading garbled fields,
+         * showing the % symbol as blank and digits with broken
+         * transparency. */
+        ifCommonPortFixupSpriteFull(lbRelocGetFileData(Sprite*, gGMCommonFiles[2], dIFCommonPlayerDamageDigitSpriteOffsets[i]));
+#endif
         lbRelocGetFileData(Sprite*, gGMCommonFiles[2], dIFCommonPlayerDamageDigitSpriteOffsets[i])->attr = SP_TEXSHUF | SP_TRANSPARENT;
     }
 }
@@ -1147,6 +1184,9 @@ void ifCommonPlayerStockSetIconAttr(void)
 
     for (i = 0; i < ARRAY_COUNT(dIFCommonPlayerStockDigitSpriteOffsets); i++)
     {
+#ifdef PORT
+        ifCommonPortFixupSpriteFull(lbRelocGetFileData(Sprite*, gGMCommonFiles[4], dIFCommonPlayerStockDigitSpriteOffsets[i]));
+#endif
         lbRelocGetFileData(Sprite*, gGMCommonFiles[4], dIFCommonPlayerStockDigitSpriteOffsets[i])->attr = SP_TEXSHUF | SP_TRANSPARENT;
     }
 }
@@ -1179,6 +1219,7 @@ void ifCommonPlayerStockMultiMakeInterface(s32 player)
 
 #ifdef PORT
         sprite = (Sprite*)PORT_RESOLVE(_spr->stock_sprite);
+        ifCommonPortFixupSpriteFull(sprite);
 #else
         sprite = fp->attr->sprites->stock_sprite;
 #endif
@@ -2022,6 +2063,9 @@ void ifCommonItemArrowSetAttr(void)
 
     lbRelocGetFileData(Sprite*, lbRelocGetExternHeapFile((intptr_t)llIFCommonItemFileID, syTaskmanMalloc(lbRelocGetFileSize((intptr_t)llIFCommonItemFileID), 0x10)), llIFCommonItemArrowSprite);
 
+#ifdef PORT
+    ifCommonPortFixupSpriteFull(sprite);
+#endif
     sprite->attr = SP_TEXSHUF | SP_TRANSPARENT;
 
     sprite->red   = 0xFF;
@@ -2499,6 +2543,9 @@ void ifCommonTimerSetAttr(void)
 
     for (i = 0; i < ARRAY_COUNT(dIFCommonTimerDigitSpriteOffsets); i++)
     {
+#ifdef PORT
+        ifCommonPortFixupSpriteFull(lbRelocGetFileData(Sprite*, gGMCommonFiles[3], dIFCommonTimerDigitSpriteOffsets[i]));
+#endif
         lbRelocGetFileData(Sprite*, gGMCommonFiles[3], dIFCommonTimerDigitSpriteOffsets[i])->attr = SP_TEXSHUF | SP_TRANSPARENT;
     }
 }
