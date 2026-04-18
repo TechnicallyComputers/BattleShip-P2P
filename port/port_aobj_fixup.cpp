@@ -212,6 +212,8 @@ void walk(uint32_t *head) {
     ScanCtx ctx;
     ctx.total_steps = 0;
     if (scan(head, ctx)) {
+        /* Stream scans cleanly as halfswap-corrupted EVENT32 — apply
+         * the fix in one pass over the collected slot addresses. */
         for (uint32_t *p : ctx.pending) {
             *p = unhalfswap(*p);
         }
@@ -219,6 +221,14 @@ void walk(uint32_t *head) {
             sUnswappedHeads.insert(k);
         }
     } else {
+        /* Scan couldn't confirm halfswap-corrupted EVENT32 layout.
+         * The stream is either (a) already in native u32 form (some
+         * slots are written by other fixup passes that undo the
+         * halfswap for specific struct fields, so EVENT32 bitfield
+         * reads of the raw u32 give valid opcodes directly), or
+         * (b) not EVENT32 at all.  Either way, leave the data
+         * untouched and let the parser handle it — it'll succeed on
+         * case (a) and fall into the UNHANDLED guard on case (b). */
         sRejectedHeads.insert(key);
     }
 }
