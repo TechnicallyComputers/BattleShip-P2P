@@ -6,6 +6,26 @@
 #include <sys/rdp.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+extern void portFixupSprite(void *sprite);
+extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
+extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
+
+static void scExplainPortFixupSpriteFull(Sprite *sprite)
+{
+    if (sprite == NULL) return;
+    portFixupSprite(sprite);
+    {
+        Bitmap *bitmaps = (Bitmap*)PORT_RESOLVE(sprite->bitmap);
+        if (bitmaps != NULL)
+        {
+            portFixupBitmapArray(bitmaps, sprite->nbitmaps);
+            portFixupSpriteBitmapData(sprite, bitmaps);
+        }
+    }
+}
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -518,7 +538,16 @@ void scExplainSetPhaseSObjs(void)
 void scExplainUpdateTextBoxSprite(void)
 {
 #ifdef PORT
-    sSCExplainStruct.textbox_sobj->sprite = *(Sprite *)PORT_RESOLVE(sSCExplainPhase->sprite);
+    /* Each tutorial phase has its own textbox sprite (sSCExplainPhase[i].sprite
+     * resolves to a Sprite* in SCExplainGraphics). Only the initial
+     * Sprite used in scExplainMakeSObjOffset got a portFixupSprite pass;
+     * the per-phase swapped-in sprites are file data that was never
+     * reached by the Sprite/Bitmap fixup path, so their header halfwords
+     * and texel data are still in pass1-BSWAP32 state. Fix them up on
+     * first use (idempotent via visited set inside the helpers). */
+    Sprite *phase_sprite = (Sprite *)PORT_RESOLVE(sSCExplainPhase->sprite);
+    scExplainPortFixupSpriteFull(phase_sprite);
+    sSCExplainStruct.textbox_sobj->sprite = *phase_sprite;
 #else
     sSCExplainStruct.textbox_sobj->sprite = *sSCExplainPhase->sprite;
 #endif
