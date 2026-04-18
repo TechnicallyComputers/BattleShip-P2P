@@ -45,6 +45,15 @@ void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_w
 void portResetStructFixups(void);
 
 /**
+ * Undo pass1 BSWAP32 on a raw texture blob so its bytes return to N64
+ * BE order.  Use for raw-texel file regions that the Sprite/Bitmap fixup
+ * path never reaches and that pass2 can't discover statically (e.g. the
+ * magnify-frame image, whose SETTIMG is emitted at runtime in C code, not
+ * inside a stored display list).  Idempotent: tracked by base pointer.
+ */
+void portFixupRawTextureBSWAP32(void *base, size_t bytes);
+
+/**
  * Fix byte order for a Sprite struct (68 bytes) after blanket u32 swap.
  *
  * rotate16 for s16/u16 pair words (x/y, width/height, etc.)

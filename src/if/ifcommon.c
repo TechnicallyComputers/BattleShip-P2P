@@ -13,9 +13,11 @@ extern alSoundEffect* func_800269C0_275C0(u16);
 extern void syAudioSetBGMVolume(u32, u32);
 
 #ifdef PORT
+#include <stddef.h>
 extern void portFixupSprite(void *sprite);
 extern void portFixupBitmapArray(void *bitmaps, unsigned int count);
 extern void portFixupSpriteBitmapData(void *sprite, void *bitmaps);
+extern void portFixupRawTextureBSWAP32(void *base, size_t bytes);
 
 /* Ensure a Sprite* read from reloc file data has its header, bitmap
  * array, and texel data in the correct byte order for LE rendering.
@@ -1731,6 +1733,22 @@ void ifCommonPlayerMagnifyProcDisplay(FTStruct *fp)
 void ifCommonPlayerMagnifyMakeInterface(void)
 {
     GObj *fighter_gobj = gGCCommonLinks[nGCCommonLinkIDFighter];
+
+#ifdef PORT
+    /* The magnify-frame IA16 texels are raw in the file and only ever
+     * get loaded via a runtime-built SETTIMG in ifCommonPlayerMagnifyUpdateRender.
+     * pass2's DL scan can't see that SETTIMG (it isn't in a stored DL)
+     * so the blob is left with pass1's blanket BSWAP32 applied, which
+     * byte-reverses each 4-byte group — for IA16 that swaps intensity/
+     * alpha per-texel AND swaps adjacent texel pairs.  Result on LE:
+     * the magnifying-glass border appears opaque black instead of
+     * transparent at its alpha-zero edge.  Undo BSWAP32 once. Size = 128
+     * texels * 2 bytes/IA16 = 256 bytes, matching the gDPLoadBlock
+     * (texels=127, DXT=1024) in ifCommonPlayerMagnifyUpdateRender. */
+    portFixupRawTextureBSWAP32(
+        lbRelocGetFileData(void*, gGMCommonFiles[0], llIFCommonPlayerMagnifyFrameImage),
+        256);
+#endif
 
     while (fighter_gobj != NULL)
     {

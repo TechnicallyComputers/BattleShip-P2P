@@ -777,6 +777,30 @@ extern "C" void portResetStructFixups(void)
 	sDeswizzle4cFixups.clear();
 }
 
+// For raw texel blobs loaded via a runtime-built SETTIMG (where pass2's
+// DL scan never saw the SETTIMG inside a stored display list) — apply
+// BSWAP32 again to restore N64 BE byte order that pass1 destroyed.
+// Tracked by base so repeat calls on the same blob are no-ops.
+extern "C" void portFixupRawTextureBSWAP32(void *base, size_t bytes)
+{
+	if (base == nullptr || bytes == 0)
+		return;
+
+	uintptr_t key = reinterpret_cast<uintptr_t>(base);
+	if (sStructU16Fixups.count(key))
+		return;
+	sStructU16Fixups.insert(key);
+
+	// Round down to full u32s — pass1 only touched 4-byte-aligned words,
+	// so any trailing tail bytes were never swapped and shouldn't be now.
+	size_t num_words = bytes / 4;
+	uint32_t *words = static_cast<uint32_t *>(base);
+	for (size_t i = 0; i < num_words; i++)
+	{
+		words[i] = BSWAP32(words[i]);
+	}
+}
+
 // ============================================================
 //  Chain-walk fixup (textures and vertices)
 // ============================================================
