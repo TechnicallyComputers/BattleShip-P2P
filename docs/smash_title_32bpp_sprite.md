@@ -1,10 +1,12 @@
 # SMASH Title Screen 32bpp Sprite — Rendering Artifact
 
-## Status: OPEN — root cause identified, fix needed in Fast3D
+## Status: OPEN — root cause unknown; two fixup approaches tried and ineffective
 
 ## Symptom
 
 The "SMASH" text on the title screen (scene 1, `nSCKindTitle`) renders with fine horizontal combing/interlacing lines through the letters. The gradient colors (red top to yellow bottom) and letter shapes are correct — only the scanline-level structure is wrong. All other sprites on the title screen (SUPER, BROS, TM, copyright, background wallpaper) render correctly.
+
+The visual pattern is similar to the XOR-4 TMEM deswizzle artifact seen on other sprites before that fix was applied.
 
 ## Sprite Details
 
@@ -13,56 +15,65 @@ The "SMASH" text on the title screen (scene 1, `nSCKindTitle`) renders with fine
 - Layout: 21 bitmap strips, each `w=172 h=4`, total sprite ~172x84
 - The sprite scales during the title animation (gets larger, shrinks back)
 
-## What Was Ruled Out
+## Confirmed Facts
 
-### Not a TMEM line deswizzle issue
+### portFixupSpriteBitmapData IS called
 
-Byte-level analysis of the texture data in `portFixupSpriteBitmapData` confirmed the 32bpp pixel data is stored **linearly** (not pre-swizzled). Adjacent pixel pairs on odd rows form a smooth gradient:
+`SSB64_TEX_FIXUP_LOG=1` output from a title-screen session (file=167) shows all 21 RGBA32 bitmaps logged as `[sprite.bitmap]` entries (bpp=32, w=172, h=4). BSWAP32 is applied. `first16=FF001100FF001100...` — correct N64 big-endian RGBA byte order.
 
-```
-PRE  bm=9 @320 row0=FF0011FF FF0011FF  row1=FFB424FF FFD529FF
-POST bm=9 @320 row0=FF0011FF FF0011FF  row1=FFD529FF FFB424FF
-```
+### BSWAP is correct
 
-Applying XOR-4 deswizzle **reverses** the gradient on odd rows, corrupting the data. XOR-2 was also tested and made things worse (corrupted the background wallpaper too). The 32bpp sprite data must be left as-is — `bpp < 32` exclusion in the deswizzle condition is correct.
+Pixel bytes like `FF0011FF` decode to R=255,G=0,B=17,A=255 (opaque dark-red), consistent with the visible gradient. Fast3D's `ImportTextureRgba32` reads `addr[0]=R, addr[1]=G, addr[2]=B, addr[3]=A` sequentially.
 
-Why 32bpp is different from 4b/8b/16b: on the N64, 32bpp textures loaded via `LOAD_BLOCK` with `G_IM_SIZ_32b` are handled differently by the hardware than the 16bpp-format loads that 4b/8b/16b sprites use. The 4b/8b/16b sprites all use `G_IM_SIZ_*_LOAD_BLOCK = G_IM_SIZ_16b`, which requires DRAM pre-swizzle. SSB64's `gbi.h` defines `G_IM_SIZ_32b_LOAD_BLOCK = G_IM_SIZ_32b` (not 16b), and the data is stored linearly.
+### XOR-4 TMEM deswizzle is NOT applied to 32bpp — this is correct
 
-### Not a byte-swap issue
-
-The BSWAP32 restore in `portFixupSpriteBitmapData` correctly restores N64 big-endian RGBA order. Fast3D's `ImportTextureRgba32` reads `addr[0]=R, addr[1]=G, addr[2]=B, addr[3]=A` sequentially, which matches. Pixel values like `FFCA28FF` decode to R=255,G=202,B=40,A=255 (opaque orange) — consistent with the visible red-to-yellow gradient.
-
-### Not an idempotency collision
-
-The 32bpp textures showed `bswap_skipped=0` in the diagnostic log — they were NOT previously processed by pass2 or the chain-walk. The BSWAP32 and deswizzle both run fresh (no stale tracking set entries blocking them).
-
-## Probable Root Cause: Fast3D tile stride for 32bpp
-
-The N64 GBI defines `G_IM_SIZ_32b_LINE_BYTES = 2` (not 4). This is because RGBA32 textures on the N64 are split across two TMEM banks (high 16 bits in one bank, low 16 bits in the other), and the `line` parameter in `gDPSetTile` represents qwords per row in a single bank.
-
-The sprite rendering code computes the render tile's `line` as:
+`include/PR/gbi.h` defines:
 ```c
-((tex_width * G_IM_SIZ_32b_LINE_BYTES) + 7) >> 3
-= ((172 * 2) + 7) >> 3
-= 43 qwords
+#define G_IM_SIZ_32b_LOAD_BLOCK  G_IM_SIZ_32b   // NOT G_IM_SIZ_16b
 ```
 
-Fast3D stores this as `line_size_bytes = 43 * 8 = 344 bytes` (`GfxDpSetTile`, line 2688 of interpreter.cpp).
+4b/8b/16b sprites all use `G_IM_SIZ_*_LOAD_BLOCK = G_IM_SIZ_16b`, which triggers the DRAM pre-swizzle. 32bpp uses its own load format (`G_IM_SIZ_32b`), which the hardware handles differently. The XOR-4 deswizzle in `portFixupSpriteBitmapData` correctly excludes `bpp >= 32` via the `bpp < 32` guard.
 
-The actual row stride for 172-pixel RGBA32 is `172 * 4 = 688 bytes`. Fast3D's `ImportTextureRgba32` compensates by passing `line_size_bytes * 2` to `GetEffectiveLineSize`, which produces the correct `widthBytes = 688`. So the texture **import** computes the right dimensions (172x4).
+Empirical test confirmed: applying XOR-4 to 32bpp data reversed the gradient on odd rows, corrupting the image.
 
-However, the `line_size_bytes = 344` stored in the tile descriptor may be used elsewhere in the rendering pipeline (texture rectangle stride, cache keying, or shader parameters) without the `*2` correction, causing the renderer to interpret the texture with half the correct row stride — interleaving the left and right halves of each row as separate rows, producing the horizontal combing artifact.
+### `line_size *= 2` fix in interpreter.cpp is present and correct
+
+`G_IM_SIZ_32b_LINE_BYTES = 2` means the SetTile `line` field is half the actual DRAM stride. The fix at `libultraship/src/fast/interpreter.cpp:2149-2152` doubles `line_size` for G_IM_SIZ_32b tiles before computing tex_width/tex_height:
+- line=43 bytes → ×8 = 344 → ×2 = 688 → ÷4 = tex_width=172 ✓
+- tex_size_bytes=2752 / 688 = tex_height=4 ✓
+
+This fix is necessary and correct. It predates the current investigation.
+
+## Approaches Tried (Both Ineffective)
+
+### Fix A: Separate tracking sets for portFixupSprite / portFixupBitmap
+
+`portFixupSprite` and `portFixupBitmap` both used `sStructU16Fixups` for idempotency, keyed on the struct's base address. Since `sStructU16Fixups` also tracks bitmap buf addresses for BSWAP, a struct pointer coinciding with a buf address could theoretically suppress a BSWAP. Added `sSpriteTouched` and `sBitmapStructTouched` sets to separate these concerns. Applied, tested, no visible change. **Reverted to HEAD.**
+
+### Fix B: Apply XOR-4 deswizzle to 32bpp
+
+Removed the `bpp < 32` guard so XOR-4 applies to RGBA32 bitmaps. Applied, tested, no visible change. Confirmed analytically incorrect per the G_IM_SIZ_32b hardware path. **Reverted to HEAD.**
+
+## Current Code State
+
+All code is at HEAD. No pending changes. The deswizzle condition in `portFixupSpriteBitmapData` is:
+```cpp
+if (bpp > 0 && bpp < 32 && bmsiz != 4 && width_img > 0 && actualHeight > 0 && !sDeswizzle4cFixups.count(key))
+```
+This is correct. No change needed here.
 
 ## Files Involved
 
 - `src/mn/mncommon/mntitle.c` — title screen sprite creation
-- `src/lb/lbcommon.c:2629-2675` — `lbCommonDrawSObjBitmap` 32bpp LOAD_BLOCK + SetTile
+- `src/lb/lbcommon.c:2629-2675` — `lbCommonDrawSObjBitmap` 32bpp LOAD_BLOCK + SetTile GBI sequence
 - `include/PR/gbi.h:455,460` — `G_IM_SIZ_32b_LINE_BYTES=2`, `G_IM_SIZ_32b_LOAD_BLOCK=G_IM_SIZ_32b`
-- `libultraship/src/fast/interpreter.cpp:2688` — `GfxDpSetTile` stores `line * 8` without 32bpp correction
-- `libultraship/src/fast/interpreter.cpp:831-880` — `ImportTextureRgba32` (import is correct, uses `*2`)
+- `libultraship/src/fast/interpreter.cpp:2143-2173` — `line_size *= 2` for G_IM_SIZ_32b (present, correct)
+- `libultraship/src/fast/interpreter.cpp:863-912` — `ImportTextureRgba32`
+- `port/bridge/lbreloc_byteswap.cpp` — `portFixupSpriteBitmapData` (BSWAP + deswizzle logic)
 
-## Suggested Fix Direction
+## Next Investigation Steps
 
-The fix should be in Fast3D (`libultraship/src/fast/interpreter.cpp`). When `GfxDpSetTile` receives a tile with `siz = G_IM_SIZ_32b`, the stored `line_size_bytes` should be doubled to reflect the full RGBA32 row width (since the N64's `line` parameter represents only one TMEM bank's worth of data for 32bpp). This would make the tile descriptor consistent with what `ImportTextureRgba32` already computes internally.
-
-Alternatively, audit every consumer of `texture_tile[tile].line_size_bytes` and ensure they account for the 32bpp half-width convention.
+1. Capture `SSB64_TEX_FIXUP_LOG=1` log while rendering the SMASH sprite specifically (not just title scene load — include animation frames where combing is visible).
+2. Capture `SSB64_GBI_TRACE=1` GBI trace for the SMASH draw call and diff against expected N64 reference to check for dimension, format, or load sequence discrepancies.
+3. Investigate `ImportTextureRgba32` in interpreter.cpp — verify it correctly handles the flat LOAD_BLOCK case (width=1, full strip in one block) for all 21 bitmaps. Check whether `GetEffectiveLineSize` returns 688 consistently.
+4. Check whether the combing is a UV mapping issue (wrong tex_width/tex_height at render time) vs. a texel data issue (wrong bytes reaching Import).
