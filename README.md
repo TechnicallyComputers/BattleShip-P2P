@@ -176,7 +176,7 @@ PRs are welcome but please don't be offended if responses are slow — this is a
 ## Credits & licensing
 
 - Game code, data, sound, textures, models, and trademarks: **© Nintendo / HAL Laboratory.** Not included in this repository, not redistributed, and not endorsed by them.
-- Decompilation: [Killian-C/ssb-decomp-re](https://github.com/Killian-C/ssb-decomp-re) and its contributors.
+- Decompilation: [VetriTheRetri//ssb-decomp-re](https://github.com/VetriTheRetri/ssb-decomp-re) and its contributors.
 - Runtime framework: [libultraship](https://github.com/Kenix3/libultraship) (Kenix3 and the Harbour Masters team).
 - Asset pipeline: [Torch](https://github.com/HarbourMasters/Torch) (Harbour Masters).
 - Reference ports I learned from: [Starship](https://github.com/HarbourMasters/Starship) (SF64), [SpaghettiKart](https://github.com/HarbourMasters/SpaghettiKart) (MK64).
