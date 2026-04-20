@@ -114,20 +114,27 @@ struct ITAttackColl
 
 struct ITAttackEvent 	// Miniature hitbox subaction event? Commonly Used by explosions.
 {
-	u8 timer;
-	// On LE (PORT), all fields use u32 base type to prevent MSVC from
-	// splitting allocation units at signed/unsigned type boundaries.
-	// angle is read-as-unsigned; use BITFIELD_SEXT10() at read sites.
 #if IS_BIG_ENDIAN
+	u8 timer;
 	s32 angle : 10;
 	u32 damage : 8;
 	u32 : 14;
+	u16 size;
 #else
-	u32 : 14;
+	// IDO packs `u8 timer` into the top byte of the same u32 storage
+	// that holds the angle/damage/pad bitfields, giving sizeof=8 with
+	// size at offset 0x06. Replicate that physical layout on LE by
+	// promoting timer to a u32:8 bitfield and filling the remaining
+	// 2 bytes of BE ":14 pad" (plus alignment) with an explicit u16 pad.
+	// Callers use scalar reads (`ev->timer`), so promotion is safe.
+	// angle is read-as-unsigned; use BITFIELD_SEXT10() at read sites.
+	u32 : 6;
 	u32 damage : 8;
 	u32 angle : 10;
-#endif
+	u32 timer : 8;
+	u16 _pad_0x04;
 	u16 size;
+#endif
 };
 
 struct ITMonsterEvent	// Full-scale hitbox subaction event? Used by Venusaur and Porygon.
