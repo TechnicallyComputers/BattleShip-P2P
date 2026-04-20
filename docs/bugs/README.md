@@ -6,6 +6,7 @@ This directory documents significant bugs encountered during the port, their sym
 
 | Date | Slug | Summary |
 |------|------|---------|
+| 2026-04-20 | [item_arrow_gobj_implicit_int](item_arrow_gobj_implicit_int_2026-04-20.md) | Dropped-item despawn segfault: `ifCommonItemArrowMakeInterface` called without prototype → implicit-int rule truncates the 64-bit `GObj*` return to 32 bits on LP64 |
 | 2026-04-19 | [rumble_event_bitfield_init](rumble_event_bitfield_init_2026-04-19.md) | Battle-start hang: positional initializers on endian-conditional bitfield stored opcode as param; gmRumbleUpdateEventExecute spins on phantom End |
 | 2026-04-18 | [aobjevent32_halfswap](aobjevent32_halfswap_2026-04-18.md) | Fighter figatree u16-halfswap corrupts AObjEvent32 command bitfields; lazy per-stream un-halfswap walker at EVENT32 reader entry |
 | 2026-04-14 | [title_border_right_edge_slice](title_border_right_edge_slice_2026-04-14.md) | ce89700's zero-fill of sprite trailing columns dimmed the right edge of the title-screen border sprite; fix replicates edge pixel instead |

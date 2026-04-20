@@ -4,6 +4,18 @@
 #include "ittypes.h"
 #include "itfunctions.h"
 
+/* PORT: without this include, every item .c file calls
+ * ifCommonItemArrowMakeInterface without a prototype in scope. Under
+ * C's implicit-function rule it then gets treated as returning `int`,
+ * and the 64-bit GObj* return is truncated to 32 bits at the call site:
+ *   ip->arrow_gobj = ifCommonItemArrowMakeInterface(ip);
+ * On LP64 the stored pointer has its upper 32 bits zeroed, so the next
+ * time gcEjectGObj(ip->arrow_gobj) runs (inside itMainDestroyItem), it
+ * dereferences a bogus sub-4GiB address and segfaults on item despawn.
+ * CMakeLists silences -Wimplicit-function-declaration for decomp
+ * compatibility, which is what let this slip through. */
+#include <if/ifcommon.h>
+
 // Global variables declared here as extern for easy access
 
 // 0x8018D040

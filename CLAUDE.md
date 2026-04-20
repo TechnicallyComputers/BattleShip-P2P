@@ -35,7 +35,7 @@ When you fix a new significant bug, add an entry under `docs/bugs/` using the sl
 
 4. **FORCED VERIFICATION**: Do not report a task complete until you have run the build and fixed all errors. If no build is configured yet, state that explicitly.
 
-5. **DECOMP PRESERVATION**: Never "clean up" or "modernize" decompiled game code in `src/` unless it is necessary for compilation on modern toolchains. IDO patterns (goto, odd casts, temp variables) exist for matching and must be preserved. Port-specific modifications should be wrapped in `#ifdef PORT` / `#endif` guards where possible.
+5. **DECOMP PRESERVATION — preserve behavior, not byte-matching**: The decomp describes the *game*, not the build. Keep IDO idioms (goto, odd casts, temp variables) that encode original N64 semantics — those are load-bearing and must not be "modernized." But don't preserve **compiler compat shims** (warning suppressions, permissive flags, header shortcuts) that hurt port stability just to avoid touching decomp source. If a suppressed diagnostic is masking real bugs on modern LP64 toolchains (e.g., `-Wno-implicit-function-declaration` silently truncating 64-bit pointer returns to `int`), fix the root cause — add the missing include, wrap a port fix in `#ifdef PORT`, or adjust the decomp file itself — rather than keeping the suppression. **Accuracy to game behavior > accuracy to ROM bytes.** When choosing between stability and ROM-matching, choose stability and document the deviation in `docs/bugs/`.
 
 ### Context Management
 
