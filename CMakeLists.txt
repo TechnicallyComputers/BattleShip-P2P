@@ -211,7 +211,7 @@ if (NOT MSVC)
         -Wno-unused-function
         -Wno-constant-conversion
         -Wno-tautological-constant-out-of-range-compare
-        -Wno-return-mismatch
+        -Werror=return-mismatch
         -Werror=return-type
     )
 endif()
