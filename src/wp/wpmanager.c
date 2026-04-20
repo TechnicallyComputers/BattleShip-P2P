@@ -117,12 +117,6 @@ GObj* wpManagerMakeWeapon(GObj *parent_gobj, WPDesc *wp_desc, Vec3f *spawn_pos, 
     attr = lbRelocGetFileData(WPAttributes*, *wp_desc->p_weapon, wp_desc->o_attributes); // I hope this is correct?
 #ifdef PORT
     portFixupStructU16(attr, 0x10, 6); // Rotate16 u16 fields: Vec3h[2] + s16[4] + u16 + pad
-    port_log("SSB64: wpMake kind=%d damage=%u kb_scale=%u angle=%d attack_count=%u can_rehit_fighter=%u\n",
-        wp_desc->kind,
-        (unsigned)attr->damage, (unsigned)attr->knockback_scale,
-        (int)BITFIELD_SEXT10(attr->angle),
-        (unsigned)attr->attack_count,
-        (unsigned)attr->can_rehit_fighter);
 #endif
     weapon_gobj->user_data.p = wp;
     wp->weapon_gobj = weapon_gobj;

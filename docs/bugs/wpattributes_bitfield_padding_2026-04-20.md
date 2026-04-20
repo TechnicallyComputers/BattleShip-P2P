@@ -56,15 +56,20 @@ On SGI IDO BE, bitfields are packed MSB-first and the compiler's storage-unit se
 
 ## Still Open: damage value too high
 
-After the padding fix, Mario Fireball's decoded fields are:
-- `damage=64, knockback_scale=28, angle=25, attack_count=2, can_rehit_fighter=0`
+After the padding fix, Mario Fireball deals exactly **64% damage per hit** (one wpMake = one hit = Link's % goes up by 64). Expected is ~5-6%. Ruled out:
 
-On the test build, fireballs now **hit** opponents — but Link went from 5% to 249% after a sequence of fireballs (approx +244% over a visually single-ish exchange). Expected behavior is ~5-6% per hit.
+1. **Not multi-hit.** The wpMake log confirms one weapon spawn per B-press, and `ftMainSearchHitWeapon`'s hit loop has `goto next_gobj` after a hit registers — same weapon can't hit same victim twice in one frame even with `attack_count=2`.
+2. **Not staling.** `wpMainGetStaledDamage` returns `damage * stale + 0.999`; `stale=1.0` for fresh moves, so the raw `damage=64` goes through unchanged.
+3. **Not victim damage_mul.** `ftParamGetCapturedDamage` only scales when `fp->capture_gobj != NULL` or `fp->damage_mul != 1.0F`. Default path is pass-through.
 
-Hypotheses to investigate:
-1. `attack_count=2` causes the fighter hit-search loop to register two hits per frame of contact (`ftMainSearchHitWeapon` iterates `i < attack_count` and calls `gmCollisionTestRectangle` for each). `can_rehit_fighter=0` protects against *re*-hit across frames via `attack_records`, but not against same-frame double-hits through two separate hitboxes at the same world position.
-2. The raw `damage=64` may be scaled somewhere we haven't found. `wpMainGetStaledDamage` multiplies by `attack_coll.stale` (1.0 for fresh moves) + 0.999, and `ftParamUpdateDamage` applies the result directly — no scaling. The ROM value `64` is suspicious; maybe a separate scaling factor (e.g., damage-in-quarters, ×0.25) exists that the port is missing.
-3. Fireball lingers in the contact volume for multiple frames. If each frame re-registers (because `attack_records` isn't being populated correctly), 4 frames × 64 = 256 ≈ 249. Need to verify `wpProcessUpdateHitPositions` walks `attack_state: New → Transfer → Interpolate` correctly so the per-victim record is set on first hit.
+The raw `damage=64` appears to be what the ROM stores in the decomp-declared bit position (bits 4-11 of Word 1). On N64 hardware this same value is read and produces ~5% in-game, so either:
+
+(a) The decomp's Word 1 layout is wrong for `damage` — it's actually at a different bit position (e.g., bits 24-31 of Word 1 gives `0x06 = 6` for Mario, much closer to 5-6%), but Fox Blaster's 0x19018001 at those bits gives `25` which doesn't match Fox's 3% per shot — so no single alternate layout fits all weapons.
+(b) There's a runtime damage scaling factor somewhere in the N64 binary that the decomp/port doesn't perform. Unidentified.
+
+Also suspicious: `element=0` for Mario Fireball (should be 1 = `nGMHitElementFire`). At bits 16-19 the value is `1`, matching Fire — another hint the decomp bit positions may be off for Word 1 beyond just the packing issue.
+
+**Recommendation for the next session:** extract 5-6 weapons' Word 1 bytes via `reloc_extract.py`, cross-reference each weapon's expected damage/element with every plausible bit arrangement, and find the layout that satisfies all of them simultaneously. My single-weapon guesses aren't enough data.
 
 ## Impact beyond Mario Fireball
 
