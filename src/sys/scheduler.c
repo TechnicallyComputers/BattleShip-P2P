@@ -64,8 +64,11 @@ SYTaskInfo *sSYSchedulerMainQueueHead; // largest priority/unk04?
 SYTaskInfo *sSYSchedulerMainQueueTail; // smallest priority/unk04?
 SYTaskGfx *sSYSchedulerCurrentTaskGfx;  // actually a pointer to SYTaskGfx?
 SYTaskAudio *sSYSchedulerCurrentTaskAudio;  // largest priority queue 2
-SYTaskGfx *sSYSchedulerPausedQueueHead;  // smallest priority queue 2
-SYTaskGfx *sSYSchedulerPausedQueueTail;  // largest priority queue 3
+// Paused queue is polymorphic: entries are any SYTaskInfo subtype
+// (SYTaskGfx, SYTaskGfxEnd, SYTaskType9, ...). Type is checked via ->type at
+// use sites before downcasting to Gfx-specific fields.
+SYTaskInfo *sSYSchedulerPausedQueueHead;  // smallest priority queue 2
+SYTaskInfo *sSYSchedulerPausedQueueTail;  // largest priority queue 3
 SYTaskGfx *scQueue3Head;  // smallest priority queue 3
 SYTaskGfx *D_80044EE0_406F0;  // standard linked list head
 SYTaskGfx *scCurrentQueue3Task;  // standard linked list tail
@@ -230,7 +233,7 @@ s32 func_80000B54(UNUSED SYTaskInfo *t)
     {
         return FALSE;
     }
-    curr = &sSYSchedulerPausedQueueHead->info;
+    curr = sSYSchedulerPausedQueueHead;
 
     while (curr != NULL)
     {
@@ -322,7 +325,7 @@ void sySchedulerRemoveMainQueue(SYTaskInfo *task)
 // 0x80000D44 - Add to sSYSchedulerPausedQueueHead/sSYSchedulerPausedQueueTail priority queue
 void sySchedulerAddPausedQueue(SYTaskInfo *this_info)
 {
-    SYTaskInfo *tail_info = &sSYSchedulerPausedQueueTail->info;
+    SYTaskInfo *tail_info = sSYSchedulerPausedQueueTail;
 
     while ((tail_info != NULL) && (tail_info->priority < this_info->priority))
     {
@@ -337,8 +340,8 @@ void sySchedulerAddPausedQueue(SYTaskInfo *this_info)
     }
     else
     {
-        this_info->next = &sSYSchedulerPausedQueueHead->info;
-        sSYSchedulerPausedQueueHead = (SYTaskGfx *)this_info;
+        this_info->next = sSYSchedulerPausedQueueHead;
+        sSYSchedulerPausedQueueHead = this_info;
     }
     tail_info = this_info->next;
 
@@ -346,7 +349,7 @@ void sySchedulerAddPausedQueue(SYTaskInfo *this_info)
     {
         tail_info->prev = this_info;
     }
-    else sSYSchedulerPausedQueueTail = (SYTaskGfx *)this_info;
+    else sSYSchedulerPausedQueueTail = this_info;
 }
 
 // remove from sSYSchedulerPausedQueueHead/sSYSchedulerPausedQueueTail queue
@@ -356,13 +359,13 @@ void sySchedulerRemovePausedQueue(SYTaskInfo *this_info)
     {
         this_info->prev->next = this_info->next;
     }
-    else sSYSchedulerPausedQueueHead = (SYTaskGfx *)this_info->next;
+    else sSYSchedulerPausedQueueHead = this_info->next;
 
     if (this_info->next != NULL)
     {
         this_info->next->prev = this_info->prev;
     }
-    else sSYSchedulerPausedQueueTail = (SYTaskGfx *)this_info->prev;
+    else sSYSchedulerPausedQueueTail = this_info->prev;
 }
 
 // scQueue3Add
@@ -875,7 +878,7 @@ s32 sySchedulerExecuteTask(SYTaskInfo *task)
                 v1 = sSYSchedulerCurrentTaskGfx;
             }
 
-            v0 = (sSYSchedulerPausedQueueHead != NULL) ? &sSYSchedulerPausedQueueHead->info : NULL;
+            v0 = sSYSchedulerPausedQueueHead;
             while (v0 != NULL) {
                 if (v0->type == nSYTaskTypeGfx) {
                     if (((SYTaskGfx*) v0)->task_id == t->task_id) {
@@ -1002,7 +1005,7 @@ void sySchedulerExecuteTasksAll(void)
     {
         av_priority = sSYSchedulerCurrentTaskAudio->info.priority;
     }
-    paused_priority = (sSYSchedulerPausedQueueHead != NULL) ? sSYSchedulerPausedQueueHead->info.priority : -1;
+    paused_priority = (sSYSchedulerPausedQueueHead != NULL) ? sSYSchedulerPausedQueueHead->priority : -1;
 
     curr = sSYSchedulerMainQueueHead;
 
@@ -1027,12 +1030,18 @@ void sySchedulerExecuteTasksAll(void)
         else switch (is_task_ready)
         {
         case FALSE:
-            osSpTaskStart(&sSYSchedulerPausedQueueHead->task);
+        {
+            // Paused queue head is always Gfx when this branch fires; downcast
+            // to touch the Gfx-specific OSTask/task_id fields.
+            SYTaskGfx *head_gfx = (SYTaskGfx *)sSYSchedulerPausedQueueHead;
+
+            osSpTaskStart(&head_gfx->task);
             is_task_started = TRUE;
-            sSYSchedulerPausedQueueHead->info.state = nSYSchedulerStatusTaskRunning;
-            sSYSchedulerCurrentTaskGfx = sSYSchedulerPausedQueueHead;
-            sySchedulerRemovePausedQueue((SYTaskInfo *)sSYSchedulerPausedQueueHead);
+            sSYSchedulerPausedQueueHead->state = nSYSchedulerStatusTaskRunning;
+            sSYSchedulerCurrentTaskGfx = head_gfx;
+            sySchedulerRemovePausedQueue(sSYSchedulerPausedQueueHead);
             break;
+        }
                 
         case TRUE:
             if ((curr->fnCheck == NULL) || (curr->fnCheck(curr) != FALSE))
@@ -1172,19 +1181,21 @@ void sySchedulerDpFullSync(void)
         scCurrentQueue3Task = NULL;
         func_80001FF4();
     }
-    else if ((sSYSchedulerPausedQueueHead != NULL) && (sSYSchedulerPausedQueueHead->info.unk18 == 2))
+    else if ((sSYSchedulerPausedQueueHead != NULL) && (sSYSchedulerPausedQueueHead->unk18 == 2))
     {
-        if (sSYSchedulerPausedQueueHead->info.type == nSYTaskTypeGfx)
+        if (sSYSchedulerPausedQueueHead->type == nSYTaskTypeGfx)
         {
-            if (sSYSchedulerPausedQueueHead->fb != NULL)
+            SYTaskGfx *head_gfx = (SYTaskGfx *)sSYSchedulerPausedQueueHead;
+
+            if (head_gfx->fb != NULL)
             {
-                sySchedulerSetNextFramebuffer(sSYSchedulerPausedQueueHead->fb);
+                sySchedulerSetNextFramebuffer(head_gfx->fb);
             }
-            if (sSYSchedulerPausedQueueHead->info.mq != NULL)
+            if (sSYSchedulerPausedQueueHead->mq != NULL)
             {
-                osSendMesg(sSYSchedulerPausedQueueHead->info.mq, (OSMesg)(intptr_t)sSYSchedulerPausedQueueHead->info.retVal, OS_MESG_NOBLOCK);
+                osSendMesg(sSYSchedulerPausedQueueHead->mq, (OSMesg)(intptr_t)sSYSchedulerPausedQueueHead->retVal, OS_MESG_NOBLOCK);
             }
-            sySchedulerRemovePausedQueue((SYTaskInfo *)sSYSchedulerPausedQueueHead);
+            sySchedulerRemovePausedQueue(sSYSchedulerPausedQueueHead);
         }
         sySchedulerExecuteTasksAll();
     }
