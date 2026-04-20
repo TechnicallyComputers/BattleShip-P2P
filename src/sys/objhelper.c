@@ -1,5 +1,7 @@
 #include <sys/obj.h>
 
+extern void port_log(const char *fmt, ...);
+
 // // // // // // // // // // // //
 //                               //
 //           FUNCTIONS           //
@@ -253,8 +255,17 @@ void gcEndProcessAll(GObj *gobj)
     }
     current_gobjproc = gobj->gobjproc_head;
 
+    /* PORT crash-diag: warn if any proc pointer looks like a zombie before
+     * we dereference it (low address or misaligned). Non-blocking. */
     while (current_gobjproc != NULL)
     {
+        uintptr_t p = (uintptr_t)current_gobjproc;
+        if (p < (uintptr_t)0x100000000ULL || (p & 0x7) != 0) {
+            port_log("SSB64: gcEndProcessAll SUSPECT proc=%p gobj=%p "
+                     "(low addr or unaligned)\n",
+                     (void*)current_gobjproc, (void*)gobj);
+        }
+
         next_gobjproc = current_gobjproc->link_next;
 
         gcEndGObjProcess(current_gobjproc);

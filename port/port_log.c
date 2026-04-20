@@ -19,6 +19,12 @@ void port_log_close(void)
 	}
 }
 
+int port_log_get_fd(void)
+{
+	if (sLogFile == NULL) return -1;
+	return fileno(sLogFile);
+}
+
 void port_log(const char *fmt, ...)
 {
 	if (sLogFile == NULL) return;

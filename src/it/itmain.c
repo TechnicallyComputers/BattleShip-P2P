@@ -6,6 +6,7 @@
 #ifdef PORT
 #include <config.h>
 extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
+extern void port_log(const char *fmt, ...);
 #endif
 
 // // // // // // // // // // // //
@@ -297,7 +298,41 @@ sb32 itMainCheckShootNoAmmo(GObj *item_gobj)
 // 0x801728D4
 void itMainDestroyItem(GObj *item_gobj)
 {
+#ifdef PORT
+    /* PORT crash-diag: bail loudly if the caller handed us a zombie
+     * GObj (on the free list with our sentinel) or a pointer too low to
+     * be a valid user-space address on LP64. Either case would fault on
+     * the very next field read. */
+    if (item_gobj == NULL) {
+        port_log("SSB64: itMainDestroyItem NULL gobj — bailing\n");
+        return;
+    }
+    if ((uintptr_t)item_gobj < (uintptr_t)0x100000000ULL) {
+        port_log("SSB64: itMainDestroyItem SUSPECT gobj=%p (low addr) — bailing\n",
+                 (void*)item_gobj);
+        return;
+    }
+    if (item_gobj->obj_kind == 0xFE /* GOBJ_PORT_EJECTED_SENTINEL */) {
+        port_log("SSB64: itMainDestroyItem ZOMBIE gobj=%p id=%u link_id=%u "
+                 "dl_link_id=%u — caller holds a freed GObj; bailing\n",
+                 (void*)item_gobj, item_gobj->id,
+                 (unsigned)item_gobj->link_id,
+                 (unsigned)item_gobj->dl_link_id);
+        return;
+    }
+#endif
     ITStruct *ip = itGetStruct(item_gobj);
+
+#ifdef PORT
+    port_log("SSB64: itMainDestroyItem ENTER gobj=%p id=%u kind=%u ip=%p "
+             "ip->kind=%u is_hold=%u owner=%p arrow=%p\n",
+             (void*)item_gobj, item_gobj->id, (unsigned)item_gobj->obj_kind,
+             (void*)ip,
+             ip ? (unsigned)ip->kind : 0,
+             ip ? (unsigned)ip->is_hold : 0,
+             ip ? (void*)ip->owner_gobj : NULL,
+             ip ? (void*)ip->arrow_gobj : NULL);
+#endif
 
     if ((ip->is_hold) && (ip->owner_gobj != NULL))
     {
@@ -313,10 +348,38 @@ void itMainDestroyItem(GObj *item_gobj)
     }
     if (ip->arrow_gobj != NULL)
     {
+#ifdef PORT
+        /* PORT: observed in the wild on LP64 — ip->arrow_gobj reads back with
+         * the upper 32 bits zeroed, giving a small "0x0Xxxxxxx" value that
+         * is not-NULL but not a valid user-space address. Dereferencing it
+         * in gcEjectGObj faults on the first field load. Root cause is still
+         * under investigation (suspected bitfield RMW overlapping the high
+         * word of the pointer — see docs/bugs/item_arrow_gobj_trunc...). For
+         * now: skip the eject when we detect a truncated pointer, dump raw
+         * bytes around the field so we can reconstruct what clobbered it,
+         * and keep the game alive. The worst visible consequence of skipping
+         * is a leaked red-arrow interface gobj. */
+        if ((uintptr_t)ip->arrow_gobj < (uintptr_t)0x100000000ULL) {
+            const unsigned char *bytes = (const unsigned char *)&ip->arrow_gobj;
+            port_log("SSB64: itMainDestroyItem TRUNC arrow_gobj=%p ip=%p "
+                     "raw_bytes=[%02x %02x %02x %02x %02x %02x %02x %02x] "
+                     "— skipping eject (leak)\n",
+                     (void*)ip->arrow_gobj, (void*)ip,
+                     bytes[0], bytes[1], bytes[2], bytes[3],
+                     bytes[4], bytes[5], bytes[6], bytes[7]);
+        } else {
+            gcEjectGObj(ip->arrow_gobj);
+        }
+#else
         gcEjectGObj(ip->arrow_gobj);
+#endif
     }
     itManagerSetPrevStructAlloc(ip);
     gcEjectGObj(item_gobj);
+
+#ifdef PORT
+    port_log("SSB64: itMainDestroyItem EXIT gobj=%p\n", (void*)item_gobj);
+#endif
 }
 
 // 0x80172984 - Link's Bomb erroneously redeclares this without stat_flags and stat_count

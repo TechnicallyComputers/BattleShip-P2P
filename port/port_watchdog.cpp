@@ -22,6 +22,7 @@ extern "C" {
 unsigned char port_diag_get_scene_curr(void);
 unsigned char port_diag_get_scene_prev(void);
 const char *port_diag_get_scene_name(unsigned char id);
+int port_log_get_fd(void);
 }
 
 namespace {
@@ -39,18 +40,96 @@ pthread_t             sMainThread;
 std::atomic<bool>     sBacktraceRequested{false};
 std::atomic<bool>     sBacktraceDone{false};
 
-/* Signal handler: dumps main-thread backtrace to stderr.
- * Only async-signal-safe calls: backtrace, backtrace_symbols_fd, write. */
-void BacktraceSignalHandler(int /*sig*/) {
+/* Write a byte string to both stderr and the log file fd (if open).
+ * Async-signal-safe: write(2) is in the POSIX signal-safe list. */
+void WriteBoth(const char *buf, size_t n) {
+    write(STDERR_FILENO, buf, n);
+    int log_fd = port_log_get_fd();
+    if (log_fd >= 0) write(log_fd, buf, n);
+}
+
+/* Dump a backtrace to stderr and the log file. Async-signal-safe:
+ * backtrace() and backtrace_symbols_fd() are listed as signal-safe on
+ * glibc and Darwin; the former uses no heap, the latter writes directly. */
+void DumpBacktraceBoth() {
     constexpr int kMaxFrames = 64;
     void *frames[kMaxFrames];
     int n = backtrace(frames, kMaxFrames);
     const char msg[] = "SSB64: ---- main-thread backtrace ----\n";
-    write(STDERR_FILENO, msg, sizeof(msg) - 1);
+    WriteBoth(msg, sizeof(msg) - 1);
     backtrace_symbols_fd(frames, n, STDERR_FILENO);
+    int log_fd = port_log_get_fd();
+    if (log_fd >= 0) backtrace_symbols_fd(frames, n, log_fd);
     const char end[] = "SSB64: ---- end backtrace ----\n";
-    write(STDERR_FILENO, end, sizeof(end) - 1);
+    WriteBoth(end, sizeof(end) - 1);
+}
+
+/* Signal handler: dumps main-thread backtrace (used for SIGUSR1). */
+void BacktraceSignalHandler(int /*sig*/) {
+    DumpBacktraceBoth();
     sBacktraceDone.store(true, std::memory_order_release);
+}
+
+/* Format an unsigned value as hex into buf[]. Returns number of bytes
+ * written. buf must have room for 2 + 16 + 1 = at least 19 bytes for a
+ * 64-bit value. Async-signal-safe: no libc calls. */
+size_t FormatHex(char *buf, uintptr_t value) {
+    static const char kHex[] = "0123456789abcdef";
+    char tmp[32];
+    int len = 0;
+    if (value == 0) {
+        tmp[len++] = '0';
+    } else {
+        while (value != 0) {
+            tmp[len++] = kHex[value & 0xF];
+            value >>= 4;
+        }
+    }
+    size_t out = 0;
+    buf[out++] = '0';
+    buf[out++] = 'x';
+    for (int i = len - 1; i >= 0; i--) buf[out++] = tmp[i];
+    return out;
+}
+
+/* Fatal-signal handler: prints signal name + fault address, dumps a
+ * backtrace, then restores the default handler and re-raises so the
+ * process exits with the original cause (core dump / proper exit code).
+ *
+ * Only async-signal-safe operations are used: write(2), backtrace(3),
+ * backtrace_symbols_fd(3), signal(2), raise(3). */
+void CrashSignalHandler(int sig, siginfo_t *info, void * /*ucontext*/) {
+    const char *name = "SIGUNKNOWN";
+    switch (sig) {
+    case SIGSEGV: name = "SIGSEGV"; break;
+    case SIGBUS:  name = "SIGBUS";  break;
+    case SIGILL:  name = "SIGILL";  break;
+    case SIGFPE:  name = "SIGFPE";  break;
+    case SIGABRT: name = "SIGABRT"; break;
+    }
+
+    char line[128];
+    size_t pos = 0;
+    const char prefix[] = "SSB64: !!!! CRASH ";
+    for (size_t i = 0; i < sizeof(prefix) - 1; i++) line[pos++] = prefix[i];
+    for (const char *p = name; *p; p++) line[pos++] = *p;
+    const char addr_s[] = " fault_addr=";
+    for (size_t i = 0; i < sizeof(addr_s) - 1; i++) line[pos++] = addr_s[i];
+    uintptr_t fa = info ? (uintptr_t)info->si_addr : 0;
+    pos += FormatHex(line + pos, fa);
+    line[pos++] = '\n';
+    WriteBoth(line, pos);
+
+    DumpBacktraceBoth();
+
+    /* Restore default handler and re-raise so the OS still produces the
+     * normal termination behavior (core file, exit status). */
+    struct sigaction sa;
+    sa.sa_handler = SIG_DFL;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(sig, &sa, nullptr);
+    raise(sig);
 }
 #endif
 
@@ -172,11 +251,32 @@ extern "C" void port_watchdog_init(void) {
     if (!sStarted.compare_exchange_strong(expected, true)) return;
 #if !defined(_WIN32)
     sMainThread = pthread_self();
+
+    /* Alternate signal stack so a stack-overflow SIGSEGV still has room to
+     * run the crash handler. SIGSTKSZ is small on some platforms — bump it. */
+    static uint8_t s_altstack[64 * 1024];
+    stack_t ss;
+    ss.ss_sp = s_altstack;
+    ss.ss_size = sizeof(s_altstack);
+    ss.ss_flags = 0;
+    sigaltstack(&ss, nullptr);
+
     struct sigaction sa;
     sa.sa_handler = BacktraceSignalHandler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = 0;
     sigaction(SIGUSR1, &sa, nullptr);
+
+    /* Fatal-signal handlers: dump backtrace before the process dies. */
+    struct sigaction csa;
+    sigemptyset(&csa.sa_mask);
+    csa.sa_flags = SA_SIGINFO | SA_ONSTACK;
+    csa.sa_sigaction = CrashSignalHandler;
+    sigaction(SIGSEGV, &csa, nullptr);
+    sigaction(SIGBUS,  &csa, nullptr);
+    sigaction(SIGILL,  &csa, nullptr);
+    sigaction(SIGFPE,  &csa, nullptr);
+    sigaction(SIGABRT, &csa, nullptr);
 #endif
     sWatchdogThread = std::thread(WatchdogLoop);
     port_log("SSB64: watchdog started (hang threshold=%llums)\n",
