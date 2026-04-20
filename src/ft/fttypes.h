@@ -1321,8 +1321,8 @@ struct FTAttributes
     ub32 is_have_attackairf  : 1;
     ub32 is_have_attackairn  : 1;
     ub32 is_have_attacklw4   : 1;
-    ub32 is_have_attacks4    : 1;
     ub32 is_have_attackhi4   : 1;
+    ub32 is_have_attacks4    : 1;
     ub32 is_have_attacklw3   : 1;
     ub32 is_have_attackhi3   : 1;
     ub32 is_have_attacks3    : 1;
