@@ -40,29 +40,35 @@ all are latent risks if/when the surrounding subsystems get enabled.
    on LP64. Dead today because the FGM synth path is short-circuited at
    `n_env.c:5000` (`#ifdef PORT return NULL;`). Flag-6 casts at 4508 / 4579 /
    4597 / 4609 / 5463 land in the same dead paths — they satisfy the type
-   checker but the underlying struct-layout problems remain. If FGM playback
-   is ever enabled, widen the fields to `uintptr_t` or `void *`. Track
-   alongside Phase 5/6 audio work.
+   checker but the underlying struct-layout problems remain. **DEFERRED
+   to Phase 5/6 audio work.** Widening the structs now changes layouts
+   in code that's already dead on PORT, and the `ALWhatever8009EE0C` /
+   `ALWhatever8009EE0C_2` pair is punned through casts that only overlay
+   correctly while pointer-holding fields stay the same width in both
+   structs — any partial widening risks breaking the punning. Do this
+   in lockstep with re-enabling FGM playback.
 
-2. **`sys/audio.c` — `syAudioDma` body casts.** Prototype is now
+2. **`sys/audio.c` — `syAudioDma` body casts.** ~~Prototype is now
    PORT-widened to `uintptr_t`, but the body still uses `(u32) dBuff->addr`
-   and `(s32) osVirtualToPhysical(...)`. Values are ROM offsets today (fit
-   in 32 bits). Revisit with audio Phase 5/6 — same class as the n_env.c
-   `unk20`/`unk24` concern above.
+   and `(s32) osVirtualToPhysical(...)`.~~ **Done in commit `63cb50f`:**
+   locals retyped to `uintptr_t`, return cast widened. On N64 `uintptr_t
+   == u32` so behavior is unchanged; on PORT the body is dead today
+   (portAudioDma replaces it via `syn_config.dmaproc`), so this is pure
+   type-safety cleanup that matches the widened signature.
 
-3. **`sys/scheduler.c` — paused-queue type.**
-   `sSYSchedulerPausedQueueHead/Tail` are typed `SYTaskGfx *` but the queue
-   is polymorphic (per `->info.type` checks at line 874). Flag 6 added 8
-   casts at the link-manipulation sites. Cleaner fix is retyping to
-   `SYTaskInfo *`, which would remove those casts but touches ~20 sites that
-   access Gfx-specific fields (`->task`, `->task_id`, `->framebuffer_id`).
-   Build is stable as-is.
+3. **`sys/scheduler.c` — paused-queue type.** ~~`sSYSchedulerPausedQueueHead/Tail`
+   typed `SYTaskGfx *` but queue is polymorphic.~~ **Done in commit
+   `3846ee3`:** head/tail retyped to `SYTaskInfo *`; the 8 flag-6 casts at
+   link-manipulation sites dropped; Gfx-specific field accesses at
+   `case FALSE:` (line 1030) and the `type == nSYTaskTypeGfx` branch
+   (line 1177) downcast locally via `SYTaskGfx *head_gfx =
+   (SYTaskGfx *)sSYSchedulerPausedQueueHead;`.
 
-4. **`mp/mpcommon.c` — `func_ovl2_800EBC0C(s32 arg0, ...)`.** Declares
-   `s32 arg0` but callers pass `FTStruct *`. Body ignores `arg0`. Flag-5
-   cast `(s32)(intptr_t)fp` at 379/391 silences the warning but leaves a
-   truncation hazard if anyone ever reads `arg0`. Consider widening the
-   prototype to `FTStruct *` since no other caller uses it.
+4. **`mp/mpcommon.c` — `func_ovl2_800EBC0C(s32 arg0, ...)`.** ~~Declares
+   `s32 arg0` but callers pass `FTStruct *`.~~ **Done in commit `634f8b1`:**
+   prototype widened to `FTStruct *arg0`; the `(s32)(intptr_t)fp` casts at
+   mpcommon.c:379/391 dropped. Body still ignores arg0 (matches decomp),
+   but the type is now honest.
 
 5. **`sys/objscript.c` gc* callback family.** Flag 5 widened `u32 param` →
    `uintptr_t param` across `gcFuncGObjByLink`, `gcFuncGObjAll`,
