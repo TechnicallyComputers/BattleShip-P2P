@@ -52,6 +52,18 @@ struct WPAttributes                         // Moreso hitbox stuff
     s16 map_coll_bottom;
     s16 map_coll_width;
     u16 size;
+#ifdef PORT
+    /* Clang packs `u32 element:4 + u32 damage:8` (12 bits total) into the 2
+     * bytes of IMPLICIT padding between `u16 size` (0x24) and the natural u32
+     * alignment at 0x28 — treating the pad as an available 16-bit storage
+     * unit. Bytes 0x26-0x27 of the ROM contain real data (high half of the
+     * rotate16'd size+pad word = 0x5A40), so element and damage decode to
+     * garbage (damage reads 0xA4 = 164 instead of the intended bits at Word 1
+     * offset 0x28). Forcing an explicit u16 field at 0x26 consumes the pad
+     * space and pushes the u32 bitfield storage unit to 0x28 as intended,
+     * matching the SGI IDO BE compile's layout.  */
+    u16 _pad_before_combat_bits;
+#endif
 
     // --- Bitfield Word 1: attack parameters ---
     // On LE (PORT), all fields use u32 base type to prevent MSVC from
