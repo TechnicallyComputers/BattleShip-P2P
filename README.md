@@ -21,7 +21,7 @@ If your dump does not match those hashes, it will not work.
 
 This is a one-person hobby project — I'm doing it for fun, and to learn about N64 internals, graphics, and porting. There is no team, no roadmap, and no release schedule. Expect bugs, expect the port to sit idle for weeks at a time, and expect things to get rewritten when I learn they were wrong.
 
-[Claude](https://claude.com/claude-code) is credited as a co-contributor on most commits. That's not a novelty — Claude has genuinely done a large share of the work here: reading disassembly, diagnosing endian / bitfield / LP64 issues, writing fix patches, and keeping the documentation under `docs/` current. Treating that labor as "mine" would be dishonest. If you're curious what that collaboration looks like in practice, the `docs/bugs/` folder is a reasonable tour — most of those write-ups are joint work.
+[Claude](https://claude.com/claude-code) is credited as a co-contributor on most commits. That's not a novelty — Claude has genuinely done a large share of the work here: reading disassembly, diagnosing endian / bitfield / LP64 issues, writing fix patches, and keeping the documentation under `docs/` current. Treating that labor as "only mine" would be dishonest and defeats the purpose of this project, which is to prove that AI is good enough to do software engineering tasks of this magnitude. That is to say, the possibilities of what you can do with AI given enough motivation are endless. There are plenty of low hanging fruit projects that YOU can do with AI and have fun doing them. If you're curious what that collaboration looks like in practice, the `docs/bugs/` folder is a reasonable tour — most of those write-ups are joint work.
 
 ## Prerequisites
 
