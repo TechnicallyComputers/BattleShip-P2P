@@ -232,7 +232,7 @@ ALBank *sSYAudioSequenceBank2;
 ALSeqFile *sSYAudioSeqFile;
 
 // 0x8009D960
-ALCSPlayer *gSYAudioCSPlayers[SYAUDIO_BGMPLAYERS_NUM];
+N_ALCSPlayer *gSYAudioCSPlayers[SYAUDIO_BGMPLAYERS_NUM];
 
 // 0x8009D964
 ALCSeq *sSYAudioCSeqs[SYAUDIO_BGMPLAYERS_NUM];
@@ -464,7 +464,11 @@ void syAudioReadRom(uintptr_t rom, void *vram, size_t size)
 }
 
 // 0x8001E99C
+#ifdef PORT
+uintptr_t syAudioDma(uintptr_t addr, s32 len, void *state)
+#else
 s32 syAudioDma(s32 addr, s32 len, void *state)
+#endif
 {
     void *freeBuffer;
     AMDMAState *dState = state;

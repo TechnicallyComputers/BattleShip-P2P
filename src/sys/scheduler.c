@@ -338,7 +338,7 @@ void sySchedulerAddPausedQueue(SYTaskInfo *this_info)
     else
     {
         this_info->next = &sSYSchedulerPausedQueueHead->info;
-        sSYSchedulerPausedQueueHead = this_info;
+        sSYSchedulerPausedQueueHead = (SYTaskGfx *)this_info;
     }
     tail_info = this_info->next;
 
@@ -346,7 +346,7 @@ void sySchedulerAddPausedQueue(SYTaskInfo *this_info)
     {
         tail_info->prev = this_info;
     }
-    else sSYSchedulerPausedQueueTail = this_info;
+    else sSYSchedulerPausedQueueTail = (SYTaskGfx *)this_info;
 }
 
 // remove from sSYSchedulerPausedQueueHead/sSYSchedulerPausedQueueTail queue
@@ -356,13 +356,13 @@ void sySchedulerRemovePausedQueue(SYTaskInfo *this_info)
     {
         this_info->prev->next = this_info->next;
     }
-    else sSYSchedulerPausedQueueHead = this_info->next;
-    
+    else sSYSchedulerPausedQueueHead = (SYTaskGfx *)this_info->next;
+
     if (this_info->next != NULL)
     {
         this_info->next->prev = this_info->prev;
     }
-    else sSYSchedulerPausedQueueTail = this_info->prev;
+    else sSYSchedulerPausedQueueTail = (SYTaskGfx *)this_info->prev;
 }
 
 // scQueue3Add
@@ -763,7 +763,7 @@ void sySchedulerExecuteTaskGfx(SYTaskGfx *t)
     {
         osSpTaskYield();
         sSYSchedulerCurrentTaskGfx->info.state = nSYSchedulerStatusTaskSuspending;
-        sySchedulerAddPausedQueue(sSYSchedulerCurrentTaskGfx);
+        sySchedulerAddPausedQueue((SYTaskInfo *)sSYSchedulerCurrentTaskGfx);
         t->info.state = nSYSchedulerStatusTaskPending;
     }
     else
@@ -1031,7 +1031,7 @@ void sySchedulerExecuteTasksAll(void)
             is_task_started = TRUE;
             sSYSchedulerPausedQueueHead->info.state = nSYSchedulerStatusTaskRunning;
             sSYSchedulerCurrentTaskGfx = sSYSchedulerPausedQueueHead;
-            sySchedulerRemovePausedQueue(sSYSchedulerPausedQueueHead);
+            sySchedulerRemovePausedQueue((SYTaskInfo *)sSYSchedulerPausedQueueHead);
             break;
                 
         case TRUE:
@@ -1095,7 +1095,7 @@ void sySchedulerSpTaskDone(void)
             if (osSpTaskYielded(&sSYSchedulerCurrentTaskGfx->task) == OS_TASK_YIELDED)
             {
                 sSYSchedulerCurrentTaskGfx->info.state = nSYSchedulerStatusTaskSuspended;
-                sySchedulerAddPausedQueue(sSYSchedulerCurrentTaskGfx);
+                sySchedulerAddPausedQueue((SYTaskInfo *)sSYSchedulerCurrentTaskGfx);
                 sSYSchedulerCurrentTaskGfx = NULL;
             }
             else sSYSchedulerCurrentTaskGfx->info.state = nSYSchedulerStatusTaskStopped;
@@ -1184,7 +1184,7 @@ void sySchedulerDpFullSync(void)
             {
                 osSendMesg(sSYSchedulerPausedQueueHead->info.mq, (OSMesg)(intptr_t)sSYSchedulerPausedQueueHead->info.retVal, OS_MESG_NOBLOCK);
             }
-            sySchedulerRemovePausedQueue(sSYSchedulerPausedQueueHead);
+            sySchedulerRemovePausedQueue((SYTaskInfo *)sSYSchedulerPausedQueueHead);
         }
         sySchedulerExecuteTasksAll();
     }
@@ -1216,11 +1216,11 @@ void sySchedulerThreadMain(void *arg)
     // the wonders of matching
     sSYSchedulerClients = NULL;
 
-    sSYSchedulerMainQueueHead =
-    sSYSchedulerMainQueueTail =
-    sSYSchedulerCurrentTaskGfx =
-    sSYSchedulerCurrentTaskAudio =
-    sSYSchedulerPausedQueueHead =
+    sSYSchedulerMainQueueHead = NULL;
+    sSYSchedulerMainQueueTail = NULL;
+    sSYSchedulerCurrentTaskGfx = NULL;
+    sSYSchedulerCurrentTaskAudio = NULL;
+    sSYSchedulerPausedQueueHead = NULL;
     sSYSchedulerPausedQueueTail = NULL;
     scCurrentQueue3Task = scQueue3Head = D_80044EE0_406F0 = NULL;
 

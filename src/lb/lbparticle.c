@@ -1567,7 +1567,7 @@ void lbParticleDrawTextures(GObj *gobj)
             case nGCMatrixKindPerspFastF:
                 syMatrixPerspFastF
                 (
-                    &projection_f,
+                    projection_f,
                     NULL,
                     cobj->projection.persp.fovy,
                     cobj->projection.persp.aspect,
@@ -1580,7 +1580,7 @@ void lbParticleDrawTextures(GObj *gobj)
             case nGCMatrixKindPerspF:
                 syMatrixPerspF
                 (
-                    &projection_f,
+                    projection_f,
                     NULL,
                     cobj->projection.persp.fovy,
                     cobj->projection.persp.aspect,
@@ -1666,7 +1666,7 @@ void lbParticleDrawTextures(GObj *gobj)
             default:
                 syMatrixPerspFastF
                 (
-                    &projection_f,
+                    projection_f,
                     NULL,
                     cobj->projection.persp.fovy,
                     cobj->projection.persp.aspect,

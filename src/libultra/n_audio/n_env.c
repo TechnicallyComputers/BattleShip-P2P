@@ -4505,7 +4505,7 @@ static s32 func_800293A8_29FA8(s32 arg0)
     while (this_node != NULL) 
     {
         next_node = (ALWhatever8009EE0C*)this_node->next;
-        temp_s0 = &this_node->voice;
+        temp_s0 = (N_ALVoice *)&this_node->voice;
         
         if (this_node->unk2A == 0) 
         {
@@ -4576,7 +4576,7 @@ static s32 func_800293A8_29FA8(s32 arg0)
     
     while (this_node != NULL) 
     {
-        func_80027460_28060(this_node);
+        func_80027460_28060((ALWhatever8009EE0C_2 *)this_node);
         this_node = this_node->next;
     }
     
@@ -4592,11 +4592,11 @@ static s32 func_800293A8_29FA8(s32 arg0)
             var_s0->unkALWhatever8009EDD0_siz34_0x10 = 0U;
             var_s0->unkALWhatever8009EDD0_siz34_0x26 = 0;
             
-            if (var_v0 != NULL) 
+            if (var_v0 != NULL)
             {
-                var_v0->next = var_s0->next;
-            } 
-            else 
+                var_v0->next = (struct ALWhatever8009EDD0_siz24 *)var_s0->next;
+            }
+            else
             {
                 D_8009EDD0_406D0.unk_alsound_0x40 = (ALWhatever8009EDD0_siz34* ) var_s0->next;
             }
@@ -4604,9 +4604,9 @@ static s32 func_800293A8_29FA8(s32 arg0)
             var_s0->next = D_8009EDD0_406D0.unk_alsound_0x38;
             D_8009EDD0_406D0.unk_alsound_0x38 = var_s0;
         } 
-        else 
+        else
         {
-            var_v0 = var_s0;
+            var_v0 = (ALWhatever8009EDD0_siz24 *)var_s0;
         }
         var_s0 = temp_v1;
     }
@@ -5460,7 +5460,7 @@ void func_80026204_26E04(N_ALUnk80026204 *arg0)
     client = &D_8009EDD0_406D0.node;
     
     client->next = NULL;
-    client->handler = func_800293A8_29FA8;
+    client->handler = (ALVoiceHandler)func_800293A8_29FA8;
     client->clientData = NULL;
     
     n_alSynAddSndPlayer(client);

@@ -200,7 +200,7 @@ if (NOT MSVC)
         -Werror=implicit-function-declaration
         -Wno-implicit-int
         -Werror=int-conversion
-        -Wno-incompatible-pointer-types
+        -Werror=incompatible-pointer-types
         -Werror=incompatible-library-redeclaration
         -Wno-shift-negative-value
         -Wno-parentheses-equality

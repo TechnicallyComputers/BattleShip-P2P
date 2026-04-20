@@ -182,7 +182,7 @@ extern u8 gSYAudioHeapBuffer[0x56000];
 extern u8 gSYAudioHeapBuffer[0x53000];
 #endif
 extern u32 gSYAudioThreadTimeDelta;
-extern ALCSPlayer *gSYAudioCSPlayers[/* */];
+extern N_ALCSPlayer *gSYAudioCSPlayers[/* */];
 
 extern void alHeapInit(ALHeap *hp, u8 *base, s32 len);
 extern void* alHeapDBAlloc(u8 *file, s32 line, ALHeap *hp, s32 num, s32 size);
@@ -193,7 +193,11 @@ extern void syAudioBnkfPatchInst(ALInstrument *inst, uintptr_t offset, uintptr_t
 extern void syAudioBnkfPatchSound(ALSound *sound, uintptr_t offset, uintptr_t table);
 extern void syAudioBnkfPatchWaveTable(ALWaveTable *wav, uintptr_t offset, uintptr_t table);
 extern void syAudioReadRom(uintptr_t rom, void *vram, size_t size);
+#ifdef PORT
+extern uintptr_t syAudioDma(uintptr_t addr, s32 len, void *state);
+#else
 extern s32 syAudioDma(s32 addr, s32 len, void *state);
+#endif
 extern ALDMAproc syAudioDmaNew(AMDMAState **state);
 extern f32 syAudioDepth2Cents(u8 depth);
 extern ALMicroTime syAudioInitOsc(void **oscState, f32 *initVal, u8 oscType, u8 oscRate, u8 oscDepth, u8 oscDelay);

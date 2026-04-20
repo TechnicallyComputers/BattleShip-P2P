@@ -450,7 +450,7 @@ s32 gcPrepDObjMatrix(Gfx **dl, DObj *dobj)
     SYMatrixHub mtx_hub;
     GCTranslate *translate;
     GCRotate *rotate; // fp (s8)
-    GCTranslate *scale;
+    GCScale *scale;
     f32 f12;
     s32 i;
     s32 j;
@@ -790,42 +790,42 @@ s32 gcPrepDObjMatrix(Gfx **dl, DObj *dobj)
                 }
                 case 33:
                 {
-                    func_80010AE8(mtx_hub.f, dobj, FALSE);
+                    func_80010AE8(mtx_hub.gbi, dobj, FALSE);
                     break;
                 }
                 case 34:
                 {
-                    func_80010AE8(mtx_hub.f, dobj, TRUE);
+                    func_80010AE8(mtx_hub.gbi, dobj, TRUE);
                     break;
                 }
                 case 35:
                 {
-                    func_80010748(mtx_hub.f, dobj, FALSE);
+                    func_80010748(mtx_hub.gbi, dobj, FALSE);
                     break;
                 }
                 case 36:
                 {
-                    func_80010748(mtx_hub.f, dobj, TRUE);
+                    func_80010748(mtx_hub.gbi, dobj, TRUE);
                     break;
                 }
                 case 37:
                 {
-                    func_80010C2C(mtx_hub.f, dobj, FALSE);
+                    func_80010C2C(mtx_hub.gbi, dobj, FALSE);
                     break;
                 }
                 case 38:
                 {
-                    func_80010C2C(mtx_hub.f, dobj, TRUE);
+                    func_80010C2C(mtx_hub.gbi, dobj, TRUE);
                     break;
                 }
                 case 39:
                 {
-                    func_80010918(mtx_hub.f, dobj, FALSE);
+                    func_80010918(mtx_hub.gbi, dobj, FALSE);
                     break;
                 }
                 case 40:
                 {
-                    func_80010918(mtx_hub.f, dobj, TRUE);
+                    func_80010918(mtx_hub.gbi, dobj, TRUE);
                     break;
                 }
                 case nGCMatrixKindVecTra:
