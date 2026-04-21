@@ -1054,10 +1054,10 @@ void func_ovl2_80107D50(void)
 
         desc = (GRSectorDesc*) ((intptr_t)dGRSectorArwingSectorDescs[gGRCommonStruct.sector.arwing_flight_pattern] + (uintptr_t)gGRCommonStruct.sector.map_head);
 
-        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[0], desc->anim_joint_0x0, 0.0F);
-        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[7], desc->anim_joint_0x1C, 0.0F);
-        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[9], desc->anim_joint_0x24, 0.0F);
-        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[11], desc->anim_joint_0x2C, 0.0F);
+        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[0], (AObjEvent32*)PORT_RESOLVE(desc->anim_joint_0x0), 0.0F);
+        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[7], (AObjEvent32*)PORT_RESOLVE(desc->anim_joint_0x1C), 0.0F);
+        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[9], (AObjEvent32*)PORT_RESOLVE(desc->anim_joint_0x24), 0.0F);
+        grSectorArwingAddAnim(gGRCommonStruct.sector.map_dobjs[11], (AObjEvent32*)PORT_RESOLVE(desc->anim_joint_0x2C), 0.0F);
 
         gGRCommonStruct.sector.arwing_flight_pattern = -1;
         map_gobj->flags = GOBJ_FLAG_NONE;
