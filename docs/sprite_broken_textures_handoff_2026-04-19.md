@@ -1,23 +1,36 @@
 # Broken Sprite Textures — Investigation Handoff
 
 **Date:** 2026-04-19
-**Status:** **PARTIALLY RESOLVED (2026-04-20)**
+**Status:** **RESOLVED (2026-04-20)** — every texture in the table is
+fixed by one of two landed commits; there are no remaining items from
+this investigation.
 
-- Items 1 (SMASH) and 5 (character portraits — corrected: real file is
-  `llMNPlayersPortraitsFileID = 0x13 = 19`, not `168`; file 168 is
-  `llMNTitleFireAnimFileID`) are fixed by the 32bpp-specific TMEM swizzle
-  granularity. See [docs/bugs/sprite_32bpp_tmem_swizzle_2026-04-20.md](bugs/sprite_32bpp_tmem_swizzle_2026-04-20.md).
-- Items 2–4 (tutorial CI8 "How to Play" banner, tutorial RGBA16 "HereText"
-  indicator, tutorial CI8 textbox with green horizontal combed stripes) are
-  **still open** and are a separate class of bug — suspected to involve the
-  Fast3D CI8 decode-stride-vs-upload-width mismatch in
-  `libultraship/src/fast/interpreter.cpp:1270-1321` (`ImportTextureCi8`
-  decodes at `lineSizeBytes` stride but uploads at post-clamp `width`) and/or
-  the RGBA16 `fullImageLineSizeBytes = width * 2` reassignment using
-  post-clamp `width`. These fixes haven't been landed yet.
-- Item 6 ("player card 2P/3P/4P horizontal stripes") is unconfirmed — needs a
-  fresh capture once 1-5 are fixed to see whether it was an artifact of the
-  same 32bpp bug or a distinct issue.
+Two root causes, not one:
+
+- **32bpp TMEM-line-swizzle granularity** — items 1 (SMASH logo) and the
+  32bpp portion of 5 (character portraits). Swap granularity had to move
+  from 8-byte-qword 4-byte halves (4b/8b/16b) to 16-byte-group 8-byte halves
+  for 32bpp, because `G_IM_SIZ_32b_LOAD_BLOCK = G_IM_SIZ_32b` splits each
+  RGBA32 texel across two TMEM words via the low/high bank layout. Writeup:
+  [docs/bugs/sprite_32bpp_tmem_swizzle_2026-04-20.md](bugs/sprite_32bpp_tmem_swizzle_2026-04-20.md).
+
+- **Fast3D decode stride vs. clamped width** — items 2–4 (tutorial "How to
+  Play" banner + textbox + HereText arrow), 5 (character portraits — the
+  diagonal shear that remained after the 32bpp fix was this class of bug),
+  and 6 (the 2P/3P/4P "player card" horizontal stripes turned out to be the
+  same bug, not a distinct issue). `ImportTextureRgba16` /
+  `ImportTextureRgba32` / `ImportTextureCi8` were reassigning
+  `fullImageLineSizeBytes` from the *clamped* width when SetTileSize made
+  `tex_width < width_img`, and CI8 additionally ran its decode loop before
+  the clamp. Writeup:
+  [docs/bugs/sprite_decode_stride_mismatch_2026-04-20.md](bugs/sprite_decode_stride_mismatch_2026-04-20.md).
+
+Worth flagging for future investigations: the original handoff table listed
+the portrait file as 168, which is actually `llMNTitleFireAnimFileID`
+(literal fire animation). The real portraits are
+`llMNPlayersPortraitsFileID = 0x13 = 19` — 12 × (48×21 + 48×21 + 48×3)
+RGBA32 strips. The earlier "TGA dumps look like fire" session had found the
+right data, just at the wrong file ID.
 
 ---
 

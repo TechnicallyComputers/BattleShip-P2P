@@ -1445,6 +1445,7 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 	for (int i = 0; i < nbitmaps; i++)
 	{
 		uint8_t *bm = bitmaps + (i * 16);
+		int16_t  bm_width     = *reinterpret_cast<int16_t *>(bm + 0x00);
 		int16_t  width_img    = *reinterpret_cast<int16_t *>(bm + 0x02);
 		uint32_t buf_token    = *reinterpret_cast<uint32_t *>(bm + 0x08);
 		int16_t  actualHeight = *reinterpret_cast<int16_t *>(bm + 0x0C);
@@ -1486,7 +1487,8 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 				: 0u;
 			char note[64];
 			std::snprintf(note, sizeof(note),
-			              "sprite bm=%d w=%d h=%d", i, (int)width_img, (int)actualHeight);
+			              "sprite bm=%d w=%d wi=%d h=%d",
+			              i, (int)bm_width, (int)width_img, (int)actualHeight);
 			tex_log_emit("sprite.bitmap", sprite_file_id,
 			             off, (uint32_t)log_tex_bytes,
 			             -1, (int)bmsiz, bpp, static_cast<uint32_t *>(buf), note);
