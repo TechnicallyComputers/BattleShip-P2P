@@ -15,6 +15,7 @@
 #include <execinfo.h>
 #include <pthread.h>
 #include <signal.h>
+#include <sys/ucontext.h>
 #include <unistd.h>
 #endif
 
@@ -40,6 +41,10 @@ pthread_t             sMainThread;
 std::atomic<bool>     sBacktraceRequested{false};
 std::atomic<bool>     sBacktraceDone{false};
 
+/* Forward declaration — definition below, shared between the crash-
+ * context dumper and the legacy signal-info formatter. */
+size_t FormatHex(char *buf, uintptr_t value);
+
 /* Write a byte string to both stderr and the log file fd (if open).
  * Async-signal-safe: write(2) is in the POSIX signal-safe list. */
 void WriteBoth(const char *buf, size_t n) {
@@ -60,6 +65,165 @@ void DumpBacktraceBoth() {
     backtrace_symbols_fd(frames, n, STDERR_FILENO);
     int log_fd = port_log_get_fd();
     if (log_fd >= 0) backtrace_symbols_fd(frames, n, log_fd);
+    const char end[] = "SSB64: ---- end backtrace ----\n";
+    WriteBoth(end, sizeof(end) - 1);
+}
+
+/* Registers captured from the signal's ucontext at the fault site.
+ * libc's backtrace() unwinds via libunwind/DWARF CFI, which can't cross
+ * the kernel-inserted signal frame on Darwin — the first user frame it
+ * can recover is the signal handler's caller (i.e. _sigtramp's caller,
+ * not the faulting code). Walking the FP chain from the ucontext
+ * directly sidesteps that and gets the real fault frame + its callers. */
+struct CrashRegs {
+    bool valid;
+    uintptr_t pc;
+    uintptr_t lr;
+    uintptr_t sp;
+    uintptr_t fp;
+    uintptr_t x[6];  /* x0..x5 — first 6 args on AArch64 and x86_64-SysV */
+};
+
+CrashRegs ExtractCrashRegs(void *uc_v) {
+    CrashRegs r = {};
+    if (uc_v == nullptr) return r;
+#if defined(__APPLE__) && defined(__aarch64__)
+    auto *uc = static_cast<ucontext_t *>(uc_v);
+    if (uc->uc_mcontext == nullptr) return r;
+    r.pc = (uintptr_t)uc->uc_mcontext->__ss.__pc;
+    r.lr = (uintptr_t)uc->uc_mcontext->__ss.__lr;
+    r.sp = (uintptr_t)uc->uc_mcontext->__ss.__sp;
+    r.fp = (uintptr_t)uc->uc_mcontext->__ss.__fp;
+    for (int i = 0; i < 6; i++) r.x[i] = (uintptr_t)uc->uc_mcontext->__ss.__x[i];
+    r.valid = true;
+#elif defined(__linux__) && defined(__aarch64__)
+    auto *uc = static_cast<ucontext_t *>(uc_v);
+    r.pc = (uintptr_t)uc->uc_mcontext.pc;
+    r.lr = (uintptr_t)uc->uc_mcontext.regs[30];
+    r.sp = (uintptr_t)uc->uc_mcontext.sp;
+    r.fp = (uintptr_t)uc->uc_mcontext.regs[29];
+    for (int i = 0; i < 6; i++) r.x[i] = (uintptr_t)uc->uc_mcontext.regs[i];
+    r.valid = true;
+#elif defined(__APPLE__) && defined(__x86_64__)
+    auto *uc = static_cast<ucontext_t *>(uc_v);
+    if (uc->uc_mcontext == nullptr) return r;
+    r.pc = (uintptr_t)uc->uc_mcontext->__ss.__rip;
+    r.lr = 0;
+    r.sp = (uintptr_t)uc->uc_mcontext->__ss.__rsp;
+    r.fp = (uintptr_t)uc->uc_mcontext->__ss.__rbp;
+    r.x[0] = (uintptr_t)uc->uc_mcontext->__ss.__rdi;
+    r.x[1] = (uintptr_t)uc->uc_mcontext->__ss.__rsi;
+    r.x[2] = (uintptr_t)uc->uc_mcontext->__ss.__rdx;
+    r.x[3] = (uintptr_t)uc->uc_mcontext->__ss.__rcx;
+    r.x[4] = (uintptr_t)uc->uc_mcontext->__ss.__r8;
+    r.x[5] = (uintptr_t)uc->uc_mcontext->__ss.__r9;
+    r.valid = true;
+#elif defined(__linux__) && defined(__x86_64__)
+    auto *uc = static_cast<ucontext_t *>(uc_v);
+    r.pc = (uintptr_t)uc->uc_mcontext.gregs[REG_RIP];
+    r.lr = 0;
+    r.sp = (uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
+    r.fp = (uintptr_t)uc->uc_mcontext.gregs[REG_RBP];
+    r.x[0] = (uintptr_t)uc->uc_mcontext.gregs[REG_RDI];
+    r.x[1] = (uintptr_t)uc->uc_mcontext.gregs[REG_RSI];
+    r.x[2] = (uintptr_t)uc->uc_mcontext.gregs[REG_RDX];
+    r.x[3] = (uintptr_t)uc->uc_mcontext.gregs[REG_RCX];
+    r.x[4] = (uintptr_t)uc->uc_mcontext.gregs[REG_R8];
+    r.x[5] = (uintptr_t)uc->uc_mcontext.gregs[REG_R9];
+    r.valid = true;
+#else
+    (void)uc_v;
+#endif
+    return r;
+}
+
+size_t AppendLabel(char *buf, size_t pos, const char *s) {
+    while (*s) buf[pos++] = *s++;
+    return pos;
+}
+
+void WriteCrashRegs(const CrashRegs &r) {
+    if (!r.valid) return;
+    char line[256];
+
+    const char hdr[] = "SSB64: ---- registers ----\n";
+    WriteBoth(hdr, sizeof(hdr) - 1);
+
+    size_t pos = 0;
+    pos = AppendLabel(line, pos, "SSB64: pc=");
+    pos += FormatHex(line + pos, r.pc);
+    pos = AppendLabel(line, pos, " lr=");
+    pos += FormatHex(line + pos, r.lr);
+    pos = AppendLabel(line, pos, " sp=");
+    pos += FormatHex(line + pos, r.sp);
+    pos = AppendLabel(line, pos, " fp=");
+    pos += FormatHex(line + pos, r.fp);
+    line[pos++] = '\n';
+    WriteBoth(line, pos);
+
+    pos = 0;
+    pos = AppendLabel(line, pos, "SSB64:");
+    for (int i = 0; i < 6; i++) {
+        char label[6] = {' ', 'x', (char)('0' + i), '=', 0};
+        pos = AppendLabel(line, pos, label);
+        pos += FormatHex(line + pos, r.x[i]);
+    }
+    line[pos++] = '\n';
+    WriteBoth(line, pos);
+}
+
+/* Walk the AArch64/x86_64 frame-pointer chain starting from the fault
+ * context. Seed the trace with PC (the actual faulting instruction),
+ * then LR on AArch64 (caller's return addr), then walk saved FPs.
+ *
+ * Frame layout on both AArch64 and x86_64 with FP frames enabled:
+ *   [fp + 0]  = saved FP of caller
+ *   [fp + 8]  = saved return addr (LR/x30 on AArch64, pushed return on x86_64)
+ *
+ * Sanity checks bail out if the chain looks corrupt — no heap, no libc
+ * beyond what backtrace_symbols_fd uses. */
+int WalkFPChain(const CrashRegs &r, void **frames, int max_frames) {
+    if (!r.valid || max_frames <= 0) return 0;
+    int n = 0;
+    if (r.pc != 0) frames[n++] = (void *)r.pc;
+#if defined(__aarch64__)
+    if (r.lr != 0 && n < max_frames) frames[n++] = (void *)r.lr;
+#endif
+    uintptr_t fp = r.fp;
+    while (n < max_frames && fp != 0) {
+        /* Basic sanity: FP must be aligned and not absurdly small. */
+        if (fp < 0x1000 || (fp & 0x7) != 0) break;
+        auto *fp_ptr = reinterpret_cast<uintptr_t *>(fp);
+        uintptr_t saved_fp = fp_ptr[0];
+        uintptr_t saved_ret = fp_ptr[1];
+        if (saved_ret == 0) break;
+        frames[n++] = (void *)saved_ret;
+        /* Stack grows down; next FP must be higher than current and
+         * within a sane stride (coroutine stacks are a few MB). */
+        if (saved_fp <= fp) break;
+        if (saved_fp > fp + 0x01000000) break;
+        fp = saved_fp;
+    }
+    return n;
+}
+
+void DumpBacktraceFromContext(void *uc_v) {
+    CrashRegs r = ExtractCrashRegs(uc_v);
+    WriteCrashRegs(r);
+
+    const char hdr[] = "SSB64: ---- main-thread backtrace (fault context) ----\n";
+    WriteBoth(hdr, sizeof(hdr) - 1);
+
+    constexpr int kMaxFrames = 64;
+    void *frames[kMaxFrames];
+    int n = 0;
+    if (r.valid) n = WalkFPChain(r, frames, kMaxFrames);
+    if (n == 0) n = backtrace(frames, kMaxFrames);
+
+    backtrace_symbols_fd(frames, n, STDERR_FILENO);
+    int log_fd = port_log_get_fd();
+    if (log_fd >= 0) backtrace_symbols_fd(frames, n, log_fd);
+
     const char end[] = "SSB64: ---- end backtrace ----\n";
     WriteBoth(end, sizeof(end) - 1);
 }
@@ -98,7 +262,7 @@ size_t FormatHex(char *buf, uintptr_t value) {
  *
  * Only async-signal-safe operations are used: write(2), backtrace(3),
  * backtrace_symbols_fd(3), signal(2), raise(3). */
-void CrashSignalHandler(int sig, siginfo_t *info, void * /*ucontext*/) {
+void CrashSignalHandler(int sig, siginfo_t *info, void *ucontext) {
     const char *name = "SIGUNKNOWN";
     switch (sig) {
     case SIGSEGV: name = "SIGSEGV"; break;
@@ -120,7 +284,7 @@ void CrashSignalHandler(int sig, siginfo_t *info, void * /*ucontext*/) {
     line[pos++] = '\n';
     WriteBoth(line, pos);
 
-    DumpBacktraceBoth();
+    DumpBacktraceFromContext(ucontext);
 
     /* Restore default handler and re-raise so the OS still produces the
      * normal termination behavior (core file, exit status). */
