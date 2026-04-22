@@ -213,51 +213,72 @@ void walk(uint32_t *head) {
     if (sUnswappedHeads.count(key)) return;
     if (sRejectedHeads.count(key)) return;
 
-    /* Phase 1: does the un-halfswapped interpretation parse cleanly
-     * end-to-end?  If not, the stream can't be halfswap-corrupted
-     * EVENT32 — reject. */
-    ScanCtx unswap_ctx;
-    unswap_ctx.total_steps = 0;
-    unswap_ctx.unhalfswap = true;
-    unswap_ctx.follow_recurse = true;
-    bool unswap_valid = scan(head, unswap_ctx);
+    /* Phase 1: measure main-stream length under the un-halfswap
+     * interpretation (no recursion yet — we just need the count for
+     * the length comparison in phase 2).  If the un-halfswap scan
+     * can't even validate the main stream, the stream isn't
+     * halfswap-corrupted EVENT32 — reject. */
+    ScanCtx unswap_main;
+    unswap_main.total_steps = 0;
+    unswap_main.unhalfswap = true;
+    unswap_main.follow_recurse = false;
+    bool unswap_valid = scan(head, unswap_main);
 
     if (!unswap_valid) {
         sRejectedHeads.insert(key);
         return;
     }
 
-    /* Phase 2: does the RAW (halfswap-applied) form ALSO parse cleanly
-     * as EVENT32?  If so, the stream is ambiguous: either it is
-     * genuinely halfswap-corrupted, or it was left in / rewritten to
-     * native u32 form by a sibling fixup pass (see c6cc310 — some
-     * per-struct fixups touch slots inside the figatree after the
-     * file-level halfswap).  We can't tell which without out-of-band
-     * context, so leave the data alone rather than risk corrupting an
-     * already-native stream.
+    /* Phase 2: measure main-stream length under the raw (halfswap-
+     * applied) interpretation.  If raw validates AND walks >= 2
+     * commands, the stream is genuinely ambiguous and we leave it
+     * alone (sibling fixup passes may have rewritten it to native
+     * form — see c6cc310).
      *
-     * Raw scan is intra-stream only: Jump/SetAnim targets may have
-     * been un-halfswapped by an earlier walk, so their bytes aren't
-     * raw anymore and can't be validated against the raw
-     * interpretation.  A genuinely halfswap-corrupted stream
-     * produces random opcode bits under the raw reading, which hits
-     * an invalid opcode within a few commands — the false-reject
-     * rate from the intra-stream check is negligible in practice. */
-    ScanCtx raw_ctx;
-    raw_ctx.total_steps = 0;
-    raw_ctx.unhalfswap = false;
-    raw_ctx.follow_recurse = false;
-    bool raw_valid = scan(head, raw_ctx);
+     * The length threshold is the key heuristic.  A halfswap-
+     * corrupted stream's first u32 often has bits [31:25] = 0 when
+     * the original upper 16 bits held a non-End opcode: halfswap
+     * moves the original opcode bits to [15:9] and places the
+     * original low payload bits into [31:16], which are frequently
+     * zero.  Bits [31:25] then read as opcode 0 (End) and the raw
+     * scan validates in a single step.  A genuine native stream
+     * carries real animation commands (SetVal, Wait, etc.) before
+     * reaching End, so a raw scan of length >= 2 is a strong signal
+     * that the stream is actually native; length 1 is almost always
+     * a halfswap-coincidence false positive.
+     *
+     * Recursion is disabled for both comparison scans because
+     * Jump/SetAnim targets may have been un-halfswapped by an earlier
+     * walk and so aren't in raw form anymore. */
+    ScanCtx raw_main;
+    raw_main.total_steps = 0;
+    raw_main.unhalfswap = false;
+    raw_main.follow_recurse = false;
+    bool raw_valid = scan(head, raw_main);
 
-    if (raw_valid) {
+    if (raw_valid && raw_main.total_steps >= 2) {
         sRejectedHeads.insert(key);
         return;
     }
 
-    for (uint32_t *p : unswap_ctx.pending) {
+    /* Un-halfswap wins.  Do the full scan WITH recursion so we
+     * collect the complete pending slot list across Jump/SetAnim
+     * sub-streams. */
+    ScanCtx full;
+    full.total_steps = 0;
+    full.unhalfswap = true;
+    full.follow_recurse = true;
+    if (!scan(head, full)) {
+        /* Main stream validated but a sub-stream failed.  Don't
+         * partially un-halfswap; reject the whole tree. */
+        sRejectedHeads.insert(key);
+        return;
+    }
+
+    for (uint32_t *p : full.pending) {
         *p = unhalfswap(*p);
     }
-    for (uintptr_t k : unswap_ctx.visited) {
+    for (uintptr_t k : full.visited) {
         sUnswappedHeads.insert(k);
     }
 }
