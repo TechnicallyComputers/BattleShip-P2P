@@ -91,14 +91,17 @@ inline void skip_token(uint32_t *&ev) {
  * call site handles multiple animation types). */
 
 struct ScanCtx {
-    std::vector<uint32_t *> pending;   /* u32 addresses to un-halfswap */
+    std::vector<uint32_t *> pending;   /* u32 addresses to un-halfswap (only populated when unhalfswap=true) */
     std::unordered_set<uintptr_t> visited;
     int total_steps;
+    bool unhalfswap;       /* interpret each command as unhalfswap(raw); collect pending addresses */
+    bool follow_recurse;   /* follow Jump/SetAnim tokens into sub-streams */
 };
 
 bool scan(uint32_t *head, ScanCtx &ctx);
 
 bool scan_recurse(uint32_t token, ScanCtx &ctx) {
+    if (!ctx.follow_recurse) return true;
     if (token == 0) return true;
     void *target = portRelocTryResolvePointer(token);
     if (target == nullptr) return true; /* bad token — ignore, let parser deal */
@@ -121,9 +124,10 @@ bool scan(uint32_t *head, ScanCtx &ctx) {
         }
 
         uint32_t cmd_raw = *ev;
-        uint32_t cmd = unhalfswap(cmd_raw);
-        /* Queue the command word for later un-halfswap. */
-        ctx.pending.push_back(ev);
+        uint32_t cmd = ctx.unhalfswap ? unhalfswap(cmd_raw) : cmd_raw;
+        if (ctx.unhalfswap) {
+            ctx.pending.push_back(ev);
+        }
         ev++;
 
         uint32_t opcode = cmd_opcode(cmd);
@@ -165,7 +169,7 @@ bool scan(uint32_t *head, ScanCtx &ctx) {
             int n = popcount_bits(flags_in_cmd, 0, 10);
             if (n > 10) return false;
             for (int k = 0; k < n; k++) {
-                ctx.pending.push_back(ev);
+                if (ctx.unhalfswap) ctx.pending.push_back(ev);
                 ev++;
             }
             break;
@@ -176,7 +180,7 @@ bool scan(uint32_t *head, ScanCtx &ctx) {
             int n = popcount_bits(flags_in_cmd, 0, 10);
             if (n > 10) return false;
             for (int k = 0; k < 2 * n; k++) {
-                ctx.pending.push_back(ev);
+                if (ctx.unhalfswap) ctx.pending.push_back(ev);
                 ev++;
             }
             break;
@@ -190,7 +194,7 @@ bool scan(uint32_t *head, ScanCtx &ctx) {
             int n = popcount_bits(flags_in_cmd, 0, 5);
             if (n > 5) return false;
             for (int k = 0; k < n; k++) {
-                ctx.pending.push_back(ev);
+                if (ctx.unhalfswap) ctx.pending.push_back(ev);
                 ev++;
             }
             break;
@@ -209,27 +213,52 @@ void walk(uint32_t *head) {
     if (sUnswappedHeads.count(key)) return;
     if (sRejectedHeads.count(key)) return;
 
-    ScanCtx ctx;
-    ctx.total_steps = 0;
-    if (scan(head, ctx)) {
-        /* Stream scans cleanly as halfswap-corrupted EVENT32 — apply
-         * the fix in one pass over the collected slot addresses. */
-        for (uint32_t *p : ctx.pending) {
-            *p = unhalfswap(*p);
-        }
-        for (uintptr_t k : ctx.visited) {
-            sUnswappedHeads.insert(k);
-        }
-    } else {
-        /* Scan couldn't confirm halfswap-corrupted EVENT32 layout.
-         * The stream is either (a) already in native u32 form (some
-         * slots are written by other fixup passes that undo the
-         * halfswap for specific struct fields, so EVENT32 bitfield
-         * reads of the raw u32 give valid opcodes directly), or
-         * (b) not EVENT32 at all.  Either way, leave the data
-         * untouched and let the parser handle it — it'll succeed on
-         * case (a) and fall into the UNHANDLED guard on case (b). */
+    /* Phase 1: does the un-halfswapped interpretation parse cleanly
+     * end-to-end?  If not, the stream can't be halfswap-corrupted
+     * EVENT32 — reject. */
+    ScanCtx unswap_ctx;
+    unswap_ctx.total_steps = 0;
+    unswap_ctx.unhalfswap = true;
+    unswap_ctx.follow_recurse = true;
+    bool unswap_valid = scan(head, unswap_ctx);
+
+    if (!unswap_valid) {
         sRejectedHeads.insert(key);
+        return;
+    }
+
+    /* Phase 2: does the RAW (halfswap-applied) form ALSO parse cleanly
+     * as EVENT32?  If so, the stream is ambiguous: either it is
+     * genuinely halfswap-corrupted, or it was left in / rewritten to
+     * native u32 form by a sibling fixup pass (see c6cc310 — some
+     * per-struct fixups touch slots inside the figatree after the
+     * file-level halfswap).  We can't tell which without out-of-band
+     * context, so leave the data alone rather than risk corrupting an
+     * already-native stream.
+     *
+     * Raw scan is intra-stream only: Jump/SetAnim targets may have
+     * been un-halfswapped by an earlier walk, so their bytes aren't
+     * raw anymore and can't be validated against the raw
+     * interpretation.  A genuinely halfswap-corrupted stream
+     * produces random opcode bits under the raw reading, which hits
+     * an invalid opcode within a few commands — the false-reject
+     * rate from the intra-stream check is negligible in practice. */
+    ScanCtx raw_ctx;
+    raw_ctx.total_steps = 0;
+    raw_ctx.unhalfswap = false;
+    raw_ctx.follow_recurse = false;
+    bool raw_valid = scan(head, raw_ctx);
+
+    if (raw_valid) {
+        sRejectedHeads.insert(key);
+        return;
+    }
+
+    for (uint32_t *p : unswap_ctx.pending) {
+        *p = unhalfswap(*p);
+    }
+    for (uintptr_t k : unswap_ctx.visited) {
+        sUnswappedHeads.insert(k);
     }
 }
 
