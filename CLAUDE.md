@@ -22,6 +22,56 @@ When you fix a new significant bug, add an entry under `docs/bugs/` using the sl
 
 ---
 
+## Parallel Sessions — Worktree Workflow
+
+Multiple Claude windows working in the same checkout will clobber each other's source edits and build outputs. **Every parallel session works in its own git worktree.**
+
+### Spinning up a new worktree
+
+```bash
+./scripts/new-worktree.sh <slug>           # configure only (fast)
+./scripts/new-worktree.sh <slug> --build   # configure + full Debug compile
+./scripts/new-worktree.sh <slug> --base some-branch --release
+```
+
+Output lands at `.claude/worktrees/<slug>` on branch `agent/<slug>`. The script:
+1. Creates the worktree and branch.
+2. Symlinks `baserom.us.z64` (gitignored, too large to duplicate).
+3. **Independently clones `libultraship` and `torch`** from the main tree's local submodule checkout (picks up pinned SHAs that may not be pushed to the forks yet), then resets each submodule's `origin` to whatever URL the main tree's submodule uses — usually SSH so pushes work.
+4. Regenerates gitignored codegen (`reloc_data.h`, `yamls/us/reloc_*.yml`, credits encodings).
+5. Runs `cmake -B build` inside the worktree (and compiles if `--build` given).
+
+### What this gives you
+
+- **Full edit authority everywhere** — any file under `src/`, `port/`, `libultraship/`, `torch/` is fair game. Submodule checkouts are real independent clones, not symlinks.
+- **Zero collision** with other windows on source, build artifacts, or submodule state.
+- **Normal git flow for submodule changes**:
+  1. Edit and commit inside `<worktree>/libultraship/` (or `torch/`).
+  2. Push to the fork: `git -C <worktree>/libultraship push origin ssb64` — goes to `JRickey/libultraship` on GitHub.
+  3. In the outer worktree, bump the submodule pointer: `git add libultraship && git commit -m "Bump libultraship: <summary>"`.
+  4. When the outer branch lands on main, the pointer update goes with it.
+
+### Merging back to main
+
+The outer worktree is a normal branch (`agent/<slug>`). Merge or PR it into `main` like any other branch. Submodule pointer bumps ride along in the commits.
+
+### Cleanup
+
+```bash
+git worktree remove .claude/worktrees/<slug>
+git branch -D agent/<slug>
+```
+
+Stale worktrees under `.claude/worktrees/` from past sessions are fine to remove — check `git worktree list` and prune anything you don't recognize.
+
+### Gotchas
+
+- **Never use relative `build` paths in Bash tool calls** — Claude Code resets cwd between `Bash` calls. `cmake --build build` from the project root builds the main tree, not the worktree. Always use absolute paths: `cmake --build <worktree>/build ...`.
+- `build.sh --skip-extract` still tries `git submodule update --init` unconditionally, which fails on a new worktree (pinned SHAs not on remote). Use `new-worktree.sh` instead, or drive `cmake`/`cmake --build` directly with absolute paths.
+- If two windows both need fresh assets (`ssb64.o2r`), run asset extraction in one worktree and symlink `ssb64.o2r` / `f3d.o2r` into the others — rebuilding assets from the ROM in parallel is slow and wasteful.
+
+---
+
 ## Agent Directives
 
 ### Pre-Work
