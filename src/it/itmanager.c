@@ -256,11 +256,12 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     }
     attr = lbRelocGetFileData(ITAttributes*, *item_desc->p_file, item_desc->o_attributes);
 #ifdef PORT
-    // Byte-swap u16/s16 non-bitfield fields: Vec3h[2](6) + s16[4](8) + u16(2) + pad(2) = 24 bytes = 6 words
-    // These fields start at offset 0x20 (after 4 pointer tokens at 0x00 and bitfield region A at 0x10).
-    portFixupStructU16(attr, 0x20, 6);
-    // spin_speed (u16) at offset 0x4C, after bitfield region B
-    portFixupStructU16(attr, 0x4C, 1);
+    // Plain s16/u16 half-words live in the eight u32 words spanning 0x14..0x33
+    // (attack_offset0_y..size). pass1 BSWAP32 swapped each u32's u16 halves;
+    // rotate them back. Combat bitfields at 0x34..0x47 don't need this — bitfield
+    // extraction operates on the u32 numeric value directly, which pass1 already
+    // restored.
+    portFixupStructU16(attr, 0x14, 8);
 #endif
 
     if (attr->is_display_colanim)
@@ -277,26 +278,7 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     ip->owner_gobj = NULL;
 
     ip->kind = item_desc->kind;
-#ifdef PORT
-    /* The original decomp's ITAttributes Word B2 layout is wrong for this port's
-     * PC build. The real ROM layout of Word B2 (u32 at offset 0x3C after pass1
-     * BSWAP32) is: kb_weight:10 | shield_damage:8 | type:4 | bits:10 — verified
-     * empirically across all items in file 251 (Sword/Bat/StarRod=Swing=1,
-     * LGun/FFlower=Shoot=2, Pokeball/Egg/MSBomb/GShell=Throw=3, Star=Touch=4,
-     * Heart/Tomato/Hammer=Consume=5, Box/Taru=Damage=0). The struct's `attr->type`
-     * bitfield (at offset 0x44 bits 28-31) reads a completely different position
-     * and produced garbage values that caused pokeball/capsule/etc. to route to
-     * the LGun/FFlower-only ftCommonItemShootSetStatus (SIGBUS fault_addr
-     * =0x6400000064 at ftMainProcPhysicsMap+196). Bypass the bitfield and
-     * extract from the known-correct word position. */
-    {
-        const u32 *word_b2 = (const u32 *)((const char *)attr + 0x3C);
-        ip->type = (*word_b2 >> 10) & 0xF;
-    }
-    port_log("SSB64: itMake kind=%d type=%d attr=%p\n", ip->kind, ip->type, attr);
-#else
     ip->type = attr->type;
-#endif
 
     ip->physics.vel_air = *vel;
     ip->physics.vel_ground = 0.0F;
@@ -346,21 +328,19 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     ip->attack_coll.throw_mul        = 1.0F;
     ip->attack_coll.stale            = 1.0F;
     ip->attack_coll.element          = attr->element;
+    // attack_offset0_x is still a u32:16 bitfield on LE (signed in ROM) and needs
+    // explicit sign extension. The other five offsets are plain s16 in the new
+    // struct layout — implicit promotion already sign-extends them to s32.
 #ifdef PORT
     ip->attack_coll.offsets[0].x     = BITFIELD_SEXT16(attr->attack_offset0_x);
-    ip->attack_coll.offsets[0].y     = BITFIELD_SEXT16(attr->attack_offset0_y);
-    ip->attack_coll.offsets[0].z     = BITFIELD_SEXT16(attr->attack_offset0_z);
-    ip->attack_coll.offsets[1].x     = BITFIELD_SEXT16(attr->attack_offset1_x);
-    ip->attack_coll.offsets[1].y     = BITFIELD_SEXT16(attr->attack_offset1_y);
-    ip->attack_coll.offsets[1].z     = BITFIELD_SEXT16(attr->attack_offset1_z);
 #else
     ip->attack_coll.offsets[0].x     = attr->attack_offset0_x;
+#endif
     ip->attack_coll.offsets[0].y     = attr->attack_offset0_y;
     ip->attack_coll.offsets[0].z     = attr->attack_offset0_z;
     ip->attack_coll.offsets[1].x     = attr->attack_offset1_x;
     ip->attack_coll.offsets[1].y     = attr->attack_offset1_y;
     ip->attack_coll.offsets[1].z     = attr->attack_offset1_z;
-#endif
     ip->attack_coll.size             = attr->size * 0.5F;
 #ifdef PORT
     ip->attack_coll.angle            = BITFIELD_SEXT10(attr->angle);
@@ -451,22 +431,10 @@ GObj* itManagerMakeItem(GObj *parent_gobj, ITDesc *item_desc, Vec3f *pos, Vec3f 
     
     ip->coll_data.p_translate       = &DObjGetStruct(item_gobj)->translate.vec.f;
     ip->coll_data.p_lr              = &ip->lr;
-#ifdef PORT
-    // PORT DEVIATION (docs/bugs/item_map_coll_bottom_sign_2026-04-20.md):
-    // ROM stores attribute-driven map_coll_bottom as positive magnitude; the
-    // shared collision code (`translate.y + map_coll.bottom`) needs a signed
-    // negative offset — every manually-overriding item writes `-COLL_SIZE`.
-    // Negate on load to match the runtime convention.
-    ip->coll_data.map_coll.top      = attr->map_coll_top;
-    ip->coll_data.map_coll.center   = attr->map_coll_center;
-    ip->coll_data.map_coll.bottom   = -attr->map_coll_bottom;
-    ip->coll_data.map_coll.width    = attr->map_coll_width;
-#else
     ip->coll_data.map_coll.top      = attr->map_coll_top;
     ip->coll_data.map_coll.center   = attr->map_coll_center;
     ip->coll_data.map_coll.bottom   = attr->map_coll_bottom;
     ip->coll_data.map_coll.width    = attr->map_coll_width;
-#endif
     ip->coll_data.p_map_coll        = &ip->coll_data.map_coll;
     ip->coll_data.ignore_line_id    = -1;
     ip->coll_data.update_tic   = gMPCollisionUpdateTic;
