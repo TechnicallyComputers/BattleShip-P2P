@@ -10,6 +10,7 @@
 #include <libultraship/bridge/audiobridge.h>
 
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 
 // SSB64 original output rate is 32 kHz.
@@ -63,6 +64,78 @@ extern "C" void portAudioPushSilence(void)
     AudioPlayerPlayFrame(reinterpret_cast<const uint8_t*>(sSilenceBuf), byteLen);
 }
 
+/* ---------------------------------------------------------------------- */
+/*  WAV dump for offline inspection                                       */
+/*                                                                        */
+/*  Writes the first ~10 seconds of submitted PCM to /tmp/ssb64_dump.wav  */
+/*  (interleaved stereo s16 @ 32 kHz).  Open in Audacity to look at the   */
+/*  waveform / spectrogram and decide whether the noise is wrong-codec,   */
+/*  wrong-buffer-routing, or wrong-rate.                                  */
+/* ---------------------------------------------------------------------- */
+
+static FILE *sWavFile = nullptr;
+static uint32_t sWavBytesWritten = 0;
+static const uint32_t kWavMaxBytes = 32000u * 2u * 2u * 10u; /* 10 s stereo s16 @ 32 kHz */
+
+static void wavWriteHeader(FILE *fp, uint32_t dataBytes)
+{
+    /* Standard 44-byte RIFF/WAVE/fmt/data header for s16 stereo 32 kHz. */
+    const uint16_t channels   = 2;
+    const uint32_t sampleRate = 32000;
+    const uint16_t bitsPer    = 16;
+    const uint16_t blockAlign = channels * (bitsPer / 8);
+    const uint32_t byteRate   = sampleRate * blockAlign;
+    const uint32_t riffSize   = 36 + dataBytes;
+
+    auto w16 = [&](uint16_t v) { std::fwrite(&v, 1, 2, fp); };
+    auto w32 = [&](uint32_t v) { std::fwrite(&v, 1, 4, fp); };
+
+    std::fwrite("RIFF", 1, 4, fp);  w32(riffSize);
+    std::fwrite("WAVE", 1, 4, fp);
+    std::fwrite("fmt ", 1, 4, fp);  w32(16); /* PCM fmt chunk size */
+    w16(1); /* PCM format */
+    w16(channels);
+    w32(sampleRate);
+    w32(byteRate);
+    w16(blockAlign);
+    w16(bitsPer);
+    std::fwrite("data", 1, 4, fp);  w32(dataBytes);
+}
+
+static void wavMaybeOpen(void)
+{
+    if (sWavFile != nullptr || sWavBytesWritten >= kWavMaxBytes) return;
+    sWavFile = std::fopen("/tmp/ssb64_dump.wav", "wb");
+    if (sWavFile == nullptr) {
+        port_log("SSB64 Audio: WAV dump open failed (errno preserved by fopen)\n");
+        return;
+    }
+    /* Placeholder header — finalized when we close. */
+    wavWriteHeader(sWavFile, 0);
+    port_log("SSB64 Audio: WAV dump opened /tmp/ssb64_dump.wav (will capture %u bytes ~ 10 s)\n",
+             (unsigned)kWavMaxBytes);
+}
+
+static void wavAppend(const void *buf, size_t bytes)
+{
+    if (sWavFile == nullptr) return;
+    if (sWavBytesWritten >= kWavMaxBytes) return;
+    if (bytes > kWavMaxBytes - sWavBytesWritten) {
+        bytes = kWavMaxBytes - sWavBytesWritten;
+    }
+    std::fwrite(buf, 1, bytes, sWavFile);
+    sWavBytesWritten += (uint32_t)bytes;
+    if (sWavBytesWritten >= kWavMaxBytes) {
+        /* Finalize: rewrite header with actual data size, then close. */
+        std::fseek(sWavFile, 0, SEEK_SET);
+        wavWriteHeader(sWavFile, sWavBytesWritten);
+        std::fclose(sWavFile);
+        sWavFile = nullptr;
+        port_log("SSB64 Audio: WAV dump finalized (%u bytes captured)\n",
+                 (unsigned)sWavBytesWritten);
+    }
+}
+
 extern "C" void portAudioSubmitFrame(const void *buf, int sampleCount)
 {
     if (buf == nullptr || sampleCount <= 0) {
@@ -90,10 +163,12 @@ extern "C" void portAudioSubmitFrame(const void *buf, int sampleCount)
                 sLoggedNonzero = true;
                 port_log("SSB64 Audio: first non-zero sample detected (idx=%zu v=%d)\n",
                          i, (int)s[i]);
+                wavMaybeOpen();
                 break;
             }
         }
     }
+    wavAppend(buf, byteLen);
 
     AudioPlayerPlayFrame(reinterpret_cast<const uint8_t*>(buf), byteLen);
 }
