@@ -2,6 +2,7 @@
 #ifdef PORT
 extern void port_log(const char *fmt, ...);
 extern int port_aobj_is_in_halfswapped_range(const void *p);
+extern u32 sySchedulerGetTicCount(void);
 #endif
 
 // // // // // // // // // // // //
@@ -42,8 +43,8 @@ void ftKeyProcessKeyEvents(GObj *fighter_gobj)
 
                 cp->button_inputs = ftKeyGetButtons(key->script);
 #ifdef PORT
-                port_log("SSB64: ftKey fkind=%d BUTTON=0x%04X wait=%d\n",
-                    fp->fkind, cp->button_inputs, key->input_wait);
+                port_log("SSB64: ftKey fkind=%d BUTTON=0x%04X wait=%d tic=%u\n",
+                    fp->fkind, cp->button_inputs, key->input_wait, sySchedulerGetTicCount());
 #endif
 
                 key->script++;
@@ -70,9 +71,9 @@ void ftKeyProcessKeyEvents(GObj *fighter_gobj)
                     cp->stick_range.x = ftKeyGetStickRange(key->script)->x;
                     cp->stick_range.y = ftKeyGetStickRange(key->script)->y;
                 }
-                port_log("SSB64: ftKey fkind=%d STICK x=%d y=%d wait=%d raw=0x%04X\n",
+                port_log("SSB64: ftKey fkind=%d STICK x=%d y=%d wait=%d raw=0x%04X tic=%u\n",
                     fp->fkind, cp->stick_range.x, cp->stick_range.y,
-                    key->input_wait, key->script->halfword);
+                    key->input_wait, key->script->halfword, sySchedulerGetTicCount());
 #else
                 cp->stick_range.x = ftKeyGetStickRange(key->script)->x;
                 cp->stick_range.y = ftKeyGetStickRange(key->script)->y;

@@ -8,6 +8,7 @@
 #ifdef PORT
 extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
 extern void portFixupStructU32(void *base, unsigned int byte_offset, unsigned int num_words);
+extern void port_log(const char *fmt, ...);
 #endif
 
 // // // // // // // // // // // //
@@ -3974,7 +3975,7 @@ void mpCollisionInitGroundData(void)
         MPGroundData*,
         lbRelocGetExternHeapFile
         (
-            dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id, 
+            dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id,
             syTaskmanMalloc
             (
                 lbRelocGetFileSize(dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id),
@@ -3983,6 +3984,14 @@ void mpCollisionInitGroundData(void)
         ),
         dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].offset
     );
+#ifdef PORT
+    port_log("[ground] InitGroundData scene=%d gkind=%d file_id=%d offset=0x%x gd=%p",
+        gSCManagerSceneData.scene_curr,
+        gSCManagerBattleState->gkind,
+        dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].file_id,
+        (unsigned)dMPCollisionGroundFileInfos[gSCManagerBattleState->gkind].offset,
+        (void*)gMPCollisionGroundData);
+#endif
 
     gMPCollisionGeometry = (MPGeometryData*)PORT_RESOLVE(gMPCollisionGroundData->map_geometry);
     gdata = gMPCollisionGeometry;

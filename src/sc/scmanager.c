@@ -1,5 +1,9 @@
 #ifdef PORT
 #include <port_log.h>
+#ifdef PORT
+extern char *getenv(const char *name);
+extern int atoi(const char *s);
+#endif
 #endif
 #include <ft/fighter.h>
 #include <wp/weapon.h>
@@ -883,6 +887,16 @@ void scManagerRunLoop(sb32 arg)
 	gSCManagerSceneData.demo_fkind[1] = nFTKindFox;
 #endif
 #ifdef PORT
+	{
+		const char *env = getenv("SSB64_START_SCENE");
+		if (env != NULL)
+		{
+			int n = atoi(env);
+			gSCManagerSceneData.scene_curr = n;
+			gSCManagerSceneData.scene_prev = n;
+			port_log("SSB64: SSB64_START_SCENE override → scene=%d\n", n);
+		}
+	}
 	port_log("SSB64: scManagerRunLoop — controllers=%d scene=%d\n",
 	         (int)gSYControllerConnectedNum, (int)gSCManagerSceneData.scene_curr);
 #endif

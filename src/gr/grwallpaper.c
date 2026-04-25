@@ -2,6 +2,10 @@
 #include <sc/scene.h>
 #include <sc/sc1pmode/sc1pgameboss.h>
 
+#ifdef PORT
+extern void port_log(const char *fmt, ...);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //   GLOBAL / STATIC VARIABLES   //
@@ -134,6 +138,17 @@ void grWallpaperMakeCommon(void)
 {
     GObj *wallpaper_gobj;
     SObj *wallpaper_sobj;
+#ifdef PORT
+    {
+        void *resolved = PORT_RESOLVE(gMPCollisionGroundData->wallpaper);
+        port_log("[wallpaper] MakeCommon scene=%d gkind=%d gd=%p wp_tok=0x%x wp_resolved=%p",
+            gSCManagerSceneData.scene_curr,
+            gSCManagerBattleState ? gSCManagerBattleState->gkind : -1,
+            (void*)gMPCollisionGroundData,
+            (unsigned)(uintptr_t)gMPCollisionGroundData->wallpaper,
+            resolved);
+    }
+#endif
 
     sGRWallpaperGObj = wallpaper_gobj = lbCommonMakeSpriteGObj
     (
