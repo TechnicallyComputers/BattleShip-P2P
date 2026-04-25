@@ -46,6 +46,24 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext->InitConsoleVariables()) { port_log("SSB64: InitConsoleVariables failed\n"); return 1; }
 	port_log("SSB64: Config + CVars OK\n");
 
+#ifdef __APPLE__
+	/* Force the Metal backend on macOS.  The OpenGL backend works but
+	 * Apple's GLD driver emits a one-shot
+	 *   "GLD_TEXTURE_INDEX_2D is unloadable and bound to sampler type
+	 *    (Float) - using zero texture because texture unloadable"
+	 * the first time Fast3D draws with the TEXEL1 sampler declared but
+	 * unbound (combine doesn't reference TEXEL1).  Metal-cpp accepts
+	 * the same shader without complaint and avoids the GL deprecation
+	 * path on Apple Silicon.  If Metal is somehow unavailable on the
+	 * host, libultraship's Config::GetWindowBackend() fallback
+	 * downgrades to OpenGL automatically — this write only changes the
+	 * preferred default. */
+	sContext->GetConfig()->SetInt(
+		"Window.Backend.Id",
+		static_cast<int>(Ship::WindowBackend::FAST3D_SDL_METAL));
+	sContext->GetConfig()->SetString("Window.Backend.Name", "Metal");
+#endif
+
 	std::vector<std::string> archivePaths = {
 		"ssb64.o2r",
 		"f3d.o2r"
