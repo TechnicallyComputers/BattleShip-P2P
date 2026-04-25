@@ -34,7 +34,7 @@
 
 #define ROUND_UP_16(v)   (((v) + 15) & ~15)
 #define ROUND_UP_32(v)   (((v) + 31) & ~31)
-#define ROUND_DOWN_16(v) ((v) & ~0xf)
+#define ROUND_UP_8(v)    (((v) + 7) & ~7)
 
 /* ------------------------------------------------------------------ */
 /*  Simulated DMEM — 4KB, matching N64 RSP data memory                */
@@ -129,6 +129,12 @@ static inline int16_t clamp16(int32_t v) {
 	return (int16_t)v;
 }
 
+static inline int16_t adpcm_predict_sample(uint8_t byte, uint8_t mask,
+                                           unsigned lshift, unsigned rshift) {
+	int16_t sample = (uint16_t)(byte & mask) << lshift;
+	return sample >> rshift;
+}
+
 /* ================================================================== */
 /*  A_CLEARBUFF (opcode 2) — Zero a region of DMEM                    */
 /* ================================================================== */
@@ -155,7 +161,7 @@ void aSetBufferImpl(uint8_t flags, uint16_t in, uint16_t out, uint16_t nbytes) {
 
 void aLoadBufferImpl(uintptr_t source_addr) {
 	if (source_addr == 0) return;
-	memcpy(BUF_U8(rspa.out), (const void*)source_addr, ROUND_DOWN_16(rspa.nbytes));
+	memcpy(BUF_U8(rspa.out), (const void*)source_addr, ROUND_UP_8(rspa.nbytes));
 }
 
 /* ================================================================== */
@@ -165,7 +171,7 @@ void aLoadBufferImpl(uintptr_t source_addr) {
 
 void aSaveBufferImpl(uintptr_t dest_addr) {
 	if (dest_addr == 0) return;
-	memcpy((void*)dest_addr, BUF_U8(rspa.in), ROUND_DOWN_16(rspa.nbytes));
+	memcpy((void*)dest_addr, BUF_U8(rspa.in), ROUND_UP_8(rspa.nbytes));
 }
 
 /* ================================================================== */
@@ -269,17 +275,21 @@ void aADPCMdecImpl(uint8_t flags, int16_t *state) {
 
 			if (flags & 4) {
 				/* 2-bit ADPCM */
+				unsigned rshift = (shift < 14) ? (14 - shift) : 0;
 				for (j = 0; j < 2; j++) {
-					ins[j * 4]     = (((*in >> 6) << 30) >> 30) << shift;
-					ins[j * 4 + 1] = ((((*in >> 4) & 0x3) << 30) >> 30) << shift;
-					ins[j * 4 + 2] = ((((*in >> 2) & 0x3) << 30) >> 30) << shift;
-					ins[j * 4 + 3] = (((*in++ & 0x3) << 30) >> 30) << shift;
+					uint8_t byte = *in++;
+					ins[j * 4]     = adpcm_predict_sample(byte, 0xc0, 8, rshift);
+					ins[j * 4 + 1] = adpcm_predict_sample(byte, 0x30, 10, rshift);
+					ins[j * 4 + 2] = adpcm_predict_sample(byte, 0x0c, 12, rshift);
+					ins[j * 4 + 3] = adpcm_predict_sample(byte, 0x03, 14, rshift);
 				}
 			} else {
 				/* 4-bit ADPCM */
+				unsigned rshift = (shift < 12) ? (12 - shift) : 0;
 				for (j = 0; j < 4; j++) {
-					ins[j * 2]     = (((*in >> 4) << 28) >> 28) << shift;
-					ins[j * 2 + 1] = (((*in++ & 0xf) << 28) >> 28) << shift;
+					uint8_t byte = *in++;
+					ins[j * 2]     = adpcm_predict_sample(byte, 0xf0, 8, rshift);
+					ins[j * 2 + 1] = adpcm_predict_sample(byte, 0x0f, 12, rshift);
 				}
 			}
 
@@ -386,10 +396,10 @@ void aResampleImpl(uint8_t flags, uint16_t pitch, int16_t *state) {
 	do {
 		for (i = 0; i < 8; i++) {
 			tbl = resample_table[pitch_accumulator * 64 >> 16];
-			sample = ((in[0] * tbl[0] + 0x4000) >> 15) +
-			         ((in[1] * tbl[1] + 0x4000) >> 15) +
-			         ((in[2] * tbl[2] + 0x4000) >> 15) +
-			         ((in[3] * tbl[3] + 0x4000) >> 15);
+			sample = ((int32_t)in[0] * tbl[0] +
+			          (int32_t)in[1] * tbl[1] +
+			          (int32_t)in[2] * tbl[2] +
+			          (int32_t)in[3] * tbl[3]) >> 15;
 			*out++ = clamp16(sample);
 
 			pitch_accumulator += (pitch << 1);
