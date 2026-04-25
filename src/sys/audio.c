@@ -949,7 +949,6 @@ void syAudioMakeBGMPlayers(void)
     sSYAudioFrequency = (syn_config.outputRate / 60.0F);
     sSYAudioFrequency = ((sSYAudioFrequency / 184) * 184) + 184;
     D_8009D920_96D20 = sSYAudioFrequency - 184;
-    
     audio_config.unk_80026204_0x0 = sSYAudioCurrentSettings.unk31;
     audio_config.unk_80026204_0x2 = sSYAudioCurrentSettings.unk32;
     audio_config.unk_80026204_0x4 = sSYAudioCurrentSettings.sndplayers_num;
@@ -1554,6 +1553,15 @@ void syAudioSetFXType(s32 fx_type)
     {
         dSYAudioIsRestarting++;
         sSYAudioCurrentSettings.fx_type = fx_type;
+#ifdef PORT
+        /* PORT: scManagerRunLoop does not spin waiting for the pending
+         * settings-update handshake to finish. If a settings update and an FX
+         * type change are requested in the same frame, the audio thread handles
+         * the settings update first and copies dSYAudioPublicSettings over
+         * sSYAudioCurrentSettings. Keep the public pending settings in sync so
+         * that copy does not erase the requested FX type. */
+        dSYAudioPublicSettings.fx_type = fx_type;
+#endif
     }
 }
 

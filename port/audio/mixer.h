@@ -51,6 +51,27 @@ void aEnvMixerImpl(uint8_t flags, int16_t *state);
 void aMixImpl(uint8_t flags, int16_t gain, uint16_t in_addr, uint16_t out_addr);
 void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 
+/* SSB64 uses the compact N_AUDIO ucode.  In that ABI, the buffer fields
+ * emitted by n_abi.h are offsets relative to the ucode's internal main
+ * workspace, not absolute DMEM addresses.  These constants match the N_AUDIO
+ * interpreter used by mupen64plus-rsp-hle.
+ */
+#define PORT_NAUDIO_COUNT     0x170
+#define PORT_NAUDIO_MAIN      0x4f0
+#define PORT_NAUDIO_MAIN2     0x660
+#define PORT_NAUDIO_DRY_LEFT  0x9d0
+#define PORT_NAUDIO_DRY_RIGHT 0xb40
+#define PORT_NAUDIO_WET_LEFT  0xcb0
+#define PORT_NAUDIO_WET_RIGHT 0xe20
+
+#ifdef N_MICRO
+#define PORT_AUDIO_DMEM(a) ((uint16_t)(PORT_NAUDIO_MAIN + (uint16_t)(a)))
+#define PORT_AUDIO_PREP_MIX() aSetBufferImpl(0, 0, 0, PORT_NAUDIO_COUNT)
+#else
+#define PORT_AUDIO_DMEM(a) ((uint16_t)(a))
+#define PORT_AUDIO_PREP_MIX() ((void)0)
+#endif
+
 /* ------------------------------------------------------------------ */
 /*  Undef standard N64 ABI macros (from include/PR/abi.h)             */
 /* ------------------------------------------------------------------ */
@@ -94,7 +115,7 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 #define aClearBuffer(pkt, d, c) \
 	do { acmd_trace_log_cmd(_SHIFTL(A_CLEARBUFF, 24, 8) | _SHIFTL(d, 0, 24), \
 	                        (uint32_t)(c)); \
-	     aClearBufferImpl(d, c); \
+	     aClearBufferImpl(PORT_AUDIO_DMEM(d), c); \
 	} while (0)
 
 #define aSetBuffer(pkt, f, i, o, c) \
@@ -124,7 +145,7 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 #define aDMEMMove(pkt, i, o, c) \
 	do { acmd_trace_log_cmd(_SHIFTL(A_DMEMMOVE, 24, 8) | _SHIFTL(i, 0, 24), \
 	                        _SHIFTL(o, 16, 16) | _SHIFTL(c, 0, 16)); \
-	     aDMEMMoveImpl(i, o, c); \
+	     aDMEMMoveImpl(PORT_AUDIO_DMEM(i), PORT_AUDIO_DMEM(o), c); \
 	} while (0)
 
 #define aLoadADPCM(pkt, c, d) \
@@ -166,7 +187,8 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 #define aMix(pkt, f, g, i, o) \
 	do { acmd_trace_log_cmd(_SHIFTL(A_MIXER, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(g, 0, 16), \
 	                        _SHIFTL(i, 16, 16) | _SHIFTL(o, 0, 16)); \
-	     aMixImpl(f, g, i, o); \
+	     PORT_AUDIO_PREP_MIX(); \
+	     aMixImpl(f, g, PORT_AUDIO_DMEM(i), PORT_AUDIO_DMEM(o)); \
 	} while (0)
 
 #define aPoleFilter(pkt, f, g, s) \
@@ -213,7 +235,7 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	do { (void)(pkt); \
 	     acmd_trace_log_cmd(_SHIFTL(A_LOADBUFF, 24, 8) | _SHIFTL(c, 12, 12) | _SHIFTL(d, 0, 12), \
 	                        (uint32_t)(uintptr_t)(s)); \
-	     aSetBufferImpl(0, (d), 0, (c)); \
+	     aSetBufferImpl(0, 0, PORT_AUDIO_DMEM(d), (c)); \
 	     aLoadBufferImpl((uintptr_t)(s)); \
 	} while (0)
 
@@ -222,7 +244,7 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	do { (void)(pkt); \
 	     acmd_trace_log_cmd(_SHIFTL(A_SAVEBUFF, 24, 8) | _SHIFTL(c, 12, 12) | _SHIFTL(d, 0, 12), \
 	                        (uint32_t)(uintptr_t)(s)); \
-	     aSetBufferImpl(0, 0, (d), (c)); \
+	     aSetBufferImpl(0, PORT_AUDIO_DMEM(d), 0, (c)); \
 	     aSaveBufferImpl((uintptr_t)(s)); \
 	} while (0)
 
@@ -233,7 +255,7 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	     acmd_trace_log_cmd(_SHIFTL(A_ADPCM, 24, 8) | _SHIFTL(s, 0, 24), \
 	                        _SHIFTL(f, 28, 4) | _SHIFTL(c, 16, 12) | \
 	                        _SHIFTL(a, 12, 4) | _SHIFTL(d, 0, 12)); \
-	     aSetBufferImpl(0, (a), (d), (c)); \
+	     aSetBufferImpl(0, PORT_AUDIO_DMEM(a), PORT_AUDIO_DMEM(d), (c)); \
 	     aADPCMdecImpl((uint8_t)(f), (int16_t*)(uintptr_t)(s)); \
 	} while (0)
 
@@ -244,7 +266,9 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	     acmd_trace_log_cmd(_SHIFTL(A_RESAMPLE, 24, 8) | _SHIFTL(s, 0, 24), \
 	                        _SHIFTL(f, 30, 2) | _SHIFTL(p, 14, 16) | \
 	                        _SHIFTL(i, 2, 12) | _SHIFTL(o, 0, 2)); \
-	     aSetBufferImpl(0, (i), (uint16_t)((o) << 8), FIXED_SAMPLE << 1); \
+	     aSetBufferImpl(0, PORT_AUDIO_DMEM(i), \
+	                    ((o) & 0x3) ? PORT_NAUDIO_MAIN2 : PORT_NAUDIO_MAIN, \
+	                    PORT_NAUDIO_COUNT); \
 	     aResampleImpl((uint8_t)(f), (uint16_t)(p), (int16_t*)(uintptr_t)(s)); \
 	} while (0)
 
@@ -277,14 +301,6 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
  *   N_MICRO packs cvolR into the command; standard path sets it via
  *   a separate aSetVolume(A_RIGHT|A_VOL) call before aEnvMixer.
  *
- * IMPORTANT: N_MICRO envmix has a FIXED input DMEM address
- * (N_AL_RESAMPLER_OUT = 0); the original RSP firmware hard-codes it.
- * Without resetting rspa.in here, our impl would inherit whatever the
- * previous aSetBuffer call set — typically the resampler's INPUT (the
- * un-resampled ADPCM data at DMEM[~400]) rather than its OUTPUT (DMEM[0]).
- * That bug routes the wrong DMEM region into the bus accumulator and
- * shows up audibly as broadband noise overlaying recognizable music.
- *
  * FIXED_SAMPLE = SAMPLES = 184 (per n_synthInternals.h N_MICRO config). */
 #define n_aEnvMixer(pkt, f, t, s) \
 	do { (void)(pkt); \
@@ -293,17 +309,16 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	     if ((f) & 0x01) { /* A_INIT */ \
 	         aSetVolumeImpl(0x04 /* A_RIGHT|A_VOL */, (uint16_t)(t), 0, 0); \
 	     } \
-	     /* Reset rspa.in to N_AL_RESAMPLER_OUT (= 0) and nbytes to a full \
-	      * sub-frame (FIXED_SAMPLE * 2) before invoking the impl. */ \
-	     aSetBufferImpl(0, 0 /* N_AL_RESAMPLER_OUT */, 0, 184 * 2 /* FIXED_SAMPLE * 2 */); \
-	     aEnvMixerImpl((uint8_t)(f), (int16_t*)(uintptr_t)(s)); \
+	     aSetBufferImpl(0, PORT_NAUDIO_MAIN, 0, PORT_NAUDIO_COUNT); \
+	     aEnvMixerImpl((uint8_t)((f) | 0x08 /* A_AUX */), (int16_t*)(uintptr_t)(s)); \
 	} while (0)
 
 /* n_aInterleave(pkt) — interleave using fixed N_MICRO DMEM addresses */
 #define n_aInterleave(pkt) \
 	do { (void)(pkt); \
 	     acmd_trace_log_cmd(_SHIFTL(A_INTERLEAVE, 24, 8), 0); \
-	     aInterleaveImpl(N_AL_MAIN_L_OUT, N_AL_MAIN_R_OUT); \
+	     aSetBufferImpl(0, 0, PORT_NAUDIO_MAIN, PORT_NAUDIO_COUNT << 1); \
+	     aInterleaveImpl(PORT_NAUDIO_DRY_LEFT, PORT_NAUDIO_DRY_RIGHT); \
 	} while (0)
 
 /* n_aLoadADPCM(pkt, c, d) — same semantics as standard aLoadADPCM */

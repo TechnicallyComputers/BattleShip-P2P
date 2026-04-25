@@ -1702,8 +1702,8 @@ Acmd *n_alFxPull(s32 sampleOffset,
   
   for (i = 0; i < r->section_count; i++) {
     d  = &r->delay[i];  /* get the ALDelay structure */
-    in_ptr  = &r->input[-d->input];
-    out_ptr = &r->input[-d->output];
+    in_ptr  = &r->input[-(s32)d->input];
+    out_ptr = &r->input[-(s32)d->output];
     
     if (in_ptr == prev_out_ptr) {
       SWAP(buff1, buff2);
@@ -1733,7 +1733,7 @@ Acmd *n_alFxPull(s32 sampleOffset,
     if (d->gain)
       aMix(ptr++, 0, (u16)d->gain, buff2, output);
     
-    prev_out_ptr = &r->input[d->output];
+    prev_out_ptr = &r->input[(s32)d->output];
   }
   
   /*
@@ -1858,7 +1858,7 @@ Acmd *_n_loadOutputBuffer(ALFx *r, ALDelay *d, s32 buff, Acmd *p)
     fincount = d->rs->delta + (fratio * (f32)incount);
     count = (s32) fincount;
     d->rs->delta = fincount - (f32)count;
-    out_ptr = &r->input[-(d->output - d->rsdelta)];
+    out_ptr = &r->input[-((s32)d->output - d->rsdelta)];
     ramalign = ((s32)out_ptr & 0x7) >> 1;
     ptr = _n_loadBuffer(r, out_ptr - ramalign, rbuff, count + ramalign, ptr);
     
@@ -1877,7 +1877,7 @@ Acmd *_n_loadOutputBuffer(ALFx *r, ALDelay *d, s32 buff, Acmd *p)
     d->rs->first = 0;
     d->rsdelta += count - incount;
   } else {
-    out_ptr = &r->input[-d->output];
+    out_ptr = &r->input[-(s32)d->output];
     ptr = _n_loadBuffer(r, out_ptr, buff, FIXED_SAMPLE, ptr);
   }
   
@@ -2301,11 +2301,12 @@ Acmd *n_alSavePull( s32 sampleOffset, Acmd *p)
 	 * cycle on MSVC, so we call the CPU impl functions directly. */
 	(void)(ptr++);
 	acmd_trace_log_cmd(_SHIFTL(A_INTERLEAVE, 24, 8), 0);
-	aInterleaveImpl(N_AL_MAIN_L_OUT, N_AL_MAIN_R_OUT);
+	aSetBufferImpl(0, 0, PORT_NAUDIO_MAIN, PORT_NAUDIO_COUNT << 1);
+	aInterleaveImpl(PORT_NAUDIO_DRY_LEFT, PORT_NAUDIO_DRY_RIGHT);
 	(void)(ptr++);
 	acmd_trace_log_cmd(_SHIFTL(A_SAVEBUFF, 24, 8) | _SHIFTL(FIXED_SAMPLE<<2, 12, 12),
 	                   (uint32_t)(uintptr_t)n_syn->sv_dramout);
-	aSetBufferImpl(0, 0, 0, FIXED_SAMPLE<<2);
+	aSetBufferImpl(0, PORT_NAUDIO_MAIN, 0, FIXED_SAMPLE<<2);
 	aSaveBufferImpl((uintptr_t)n_syn->sv_dramout);
 #else
 	n_aInterleave(ptr++);

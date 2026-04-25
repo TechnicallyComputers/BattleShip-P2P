@@ -488,152 +488,111 @@ void aSetVolumeImpl(uint16_t flags, uint16_t vol, uint16_t voltgt, uint16_t volr
 }
 
 /* ================================================================== */
-/*  A_ENVMIXER (opcode 3) — Standard N64 envelope mixer               */
+/*  A_ENVMIXER (opcode 3) — N_AUDIO envelope mixer                    */
 /*                                                                    */
-/*  Mixes mono input to 4 output buses (dry L/R, wet L/R) with       */
-/*  per-channel volume ramping. Volumes ramp toward targets at the    */
-/*  configured rates.                                                 */
-/*                                                                    */
-/*  ENVMIX_STATE[40] layout (self-consistent — we write and read):    */
-/*    [0]  current left volume (high 16 bits)                         */
-/*    [1]  current left volume (low 16 bits)                          */
-/*    [2]  current right volume (high 16 bits)                        */
-/*    [3]  current right volume (low 16 bits)                         */
-/*    [4]  left target                                                */
-/*    [5]  right target                                               */
-/*    [6]  left ramp rate (mantissa)                                  */
-/*    [7]  left ramp rate (low)                                       */
-/*    [8]  right ramp rate (mantissa)                                 */
-/*    [9]  right ramp rate (low)                                      */
-/*    [10] dry amount                                                 */
-/*    [11] wet amount                                                 */
-/*                                                                    */
-/*  DMEM output addresses (from synthInternals.h):                    */
-/*    AL_MAIN_L_OUT (1088), AL_MAIN_R_OUT (1408)                      */
-/*    AL_AUX_L_OUT  (1728), AL_AUX_R_OUT  (2048)                     */
+/*  SSB64 builds with N_MICRO, whose compact command fields are       */
+/*  relative offsets into the N_AUDIO ucode workspace.  The envmixer  */
+/*  consumes the fixed main input buffer and accumulates into fixed   */
+/*  dry/wet output buses.  Its persisted state is an 80-byte block:   */
+/*  wet/dry amounts, left/right targets, left/right ramp steps, and   */
+/*  left/right ramp values.                                           */
 /* ================================================================== */
+#define MIX_MAIN_L PORT_NAUDIO_DRY_LEFT
+#define MIX_MAIN_R PORT_NAUDIO_DRY_RIGHT
+#define MIX_AUX_L  PORT_NAUDIO_WET_LEFT
+#define MIX_AUX_R  PORT_NAUDIO_WET_RIGHT
 
-/* DMEM bus addresses.  SSB64 builds with N_MICRO, which uses the
- * N_AL_* DMEM layout (n_synthInternals.h), NOT the standard AL_*
- * layout (synthInternals.h).  Using the wrong bank silently routes
- * envmix output to one address while mainbuspull / interleave read
- * from another → stereo channels see only the AUX-bus residue and
- * sound like wildly different signals.  Verified empirically: this is
- * THE bug behind the BGM-noise issue captured 2026-04-24.
- *
- *   N_AL_MAIN_L_OUT = 1248   (vs AL_MAIN_L_OUT = 1088)
- *   N_AL_MAIN_R_OUT = 1616   (vs AL_MAIN_R_OUT = 1408)
- *   N_AL_AUX_L_OUT  = 1984   (vs AL_AUX_L_OUT  = 1728)
- *   N_AL_AUX_R_OUT  = 2352   (vs AL_AUX_R_OUT  = 2048)
- */
-#define MIX_MAIN_L 1248
-#define MIX_MAIN_R 1616
-#define MIX_AUX_L  1984
-#define MIX_AUX_R  2352
+typedef struct {
+	int32_t value;
+	int32_t target;
+	int32_t step;
+} AudioRamp;
+
+static inline int16_t ramp_step(AudioRamp *ramp) {
+	int reached;
+
+	ramp->value += ramp->step;
+	reached = (ramp->step <= 0) ? (ramp->value <= ramp->target)
+	                            : (ramp->value >= ramp->target);
+	if (reached) {
+		ramp->value = ramp->target;
+		ramp->step = 0;
+	}
+	return (int16_t)(ramp->value >> 16);
+}
+
+static inline int32_t load_s32_from_s16(const int16_t *p) {
+	int32_t v;
+	memcpy(&v, p, sizeof(v));
+	return v;
+}
+
+static inline void store_s32_to_s16(int16_t *p, int32_t v) {
+	memcpy(p, &v, sizeof(v));
+}
 
 void aEnvMixerImpl(uint8_t flags, int16_t *state) {
 	int16_t *in = BUF_S16(rspa.in);
 	int nbytes = ROUND_UP_16(rspa.nbytes);
-	int i, j;
-
-	int32_t vol_left, vol_right;
-	int32_t rate_left, rate_right;
-	int16_t tgt_left, tgt_right;
+	int count = nbytes / (int)sizeof(int16_t);
+	int i;
 	int16_t dry_amt, wet_amt;
-	int has_aux = (flags & 0x08); /* A_AUX */
+	AudioRamp ramps[2];
+	int16_t save[40];
 
 	if (flags & 0x01) { /* A_INIT — load from SETVOL params */
-		vol_left   = (int32_t)rspa.vol_left << 16;
-		vol_right  = (int32_t)rspa.vol_right << 16;
-		tgt_left   = rspa.tgt_left;
-		tgt_right  = rspa.tgt_right;
-		rate_left  = ((int32_t)rspa.rate_left_m << 16) | rspa.rate_left_l;
-		rate_right = ((int32_t)rspa.rate_right_m << 16) | rspa.rate_right_l;
-		dry_amt    = rspa.dry_amt;
-		wet_amt    = rspa.wet_amt;
+		int32_t rate_left = ((int32_t)rspa.rate_left_m << 16) | rspa.rate_left_l;
+		int32_t rate_right = ((int32_t)rspa.rate_right_m << 16) | rspa.rate_right_l;
+
+		dry_amt = rspa.dry_amt;
+		wet_amt = rspa.wet_amt;
+		ramps[0].value = (int32_t)rspa.vol_left << 16;
+		ramps[0].target = (int32_t)rspa.tgt_left << 16;
+		ramps[0].step = rate_left / 8;
+		ramps[1].value = (int32_t)rspa.vol_right << 16;
+		ramps[1].target = (int32_t)rspa.tgt_right << 16;
+		ramps[1].step = rate_right / 8;
 	} else { /* A_CONTINUE — restore from ENVMIX_STATE */
-		vol_left   = ((int32_t)state[0] << 16) | (uint16_t)state[1];
-		vol_right  = ((int32_t)state[2] << 16) | (uint16_t)state[3];
-		tgt_left   = state[4];
-		tgt_right  = state[5];
-		rate_left  = ((int32_t)state[6] << 16) | (uint16_t)state[7];
-		rate_right = ((int32_t)state[8] << 16) | (uint16_t)state[9];
-		dry_amt    = state[10];
-		wet_amt    = state[11];
+		memcpy(save, state, sizeof(save));
+		wet_amt = save[0];
+		dry_amt = save[2];
+		ramps[0].target = (int32_t)save[4] << 16;
+		ramps[1].target = (int32_t)save[6] << 16;
+		ramps[0].step = load_s32_from_s16(save + 8);
+		ramps[1].step = load_s32_from_s16(save + 10);
+		ramps[0].value = load_s32_from_s16(save + 16);
+		ramps[1].value = load_s32_from_s16(save + 18);
 	}
 
-	/* Process in 8-sample blocks (matching RSP microcode granularity) */
-	while (nbytes > 0) {
-		int16_t cur_vol_l = (int16_t)(vol_left >> 16);
-		int16_t cur_vol_r = (int16_t)(vol_right >> 16);
+	for (i = 0; i < count; i++) {
+		int16_t s = in[i];
+		int16_t l_vol = ramp_step(&ramps[0]);
+		int16_t r_vol = ramp_step(&ramps[1]);
+		int16_t l_dry = clamp16(((int32_t)l_vol * dry_amt + 0x4000) >> 15);
+		int16_t r_dry = clamp16(((int32_t)r_vol * dry_amt + 0x4000) >> 15);
+		int16_t l_wet = clamp16(((int32_t)l_vol * wet_amt + 0x4000) >> 15);
+		int16_t r_wet = clamp16(((int32_t)r_vol * wet_amt + 0x4000) >> 15);
+		int16_t *dryL = BUF_S16(MIX_MAIN_L);
+		int16_t *dryR = BUF_S16(MIX_MAIN_R);
+		int16_t *wetL = BUF_S16(MIX_AUX_L);
+		int16_t *wetR = BUF_S16(MIX_AUX_R);
 
-		for (j = 0; j < 8 && nbytes > 0; j++) {
-			int16_t s = *in++;
-			int32_t sL, sR;
-			int idx = (int)(in - 1 - BUF_S16(rspa.in));
-
-			/* Per-voice volume + dry/wet mix.
-			 *
-			 * IMPORTANT: shift `>> 16` (treating vol as u16 with full-scale
-			 * 0xFFFF) NOT `>> 15`.  This matches the OOT-port (Wiseguy /
-			 * Shipwright) and SM64-port HLE conventions: voice contribution
-			 * = (sample × vol × dry_amt) >> 30, not >> 30 doubled-via-15.
-			 * Using `>> 15` here makes each voice 4× hotter than it should
-			 * be, producing the ~10× overall loudness vs. mupen64plus and
-			 * the broadband clipping the user perceived as "scratchy noise."
-			 *
-			 * Bus is int16 with `clamp16` per voice — matches the real RSP
-			 * envmix (the bus literally cannot exceed s16 full scale, which
-			 * is where the natural headroom comes from). */
-			sL = (s * cur_vol_l) >> 16;
-			sR = (s * cur_vol_r) >> 16;
-
-			{
-				int16_t *dryL = BUF_S16(MIX_MAIN_L);
-				int16_t *dryR = BUF_S16(MIX_MAIN_R);
-				dryL[idx] = clamp16(dryL[idx] + ((sL * dry_amt) >> 16));
-				dryR[idx] = clamp16(dryR[idx] + ((sR * dry_amt) >> 16));
-			}
-
-			if (has_aux) {
-				int16_t *wetL = BUF_S16(MIX_AUX_L);
-				int16_t *wetR = BUF_S16(MIX_AUX_R);
-				wetL[idx] = clamp16(wetL[idx] + ((sL * wet_amt) >> 16));
-				wetR[idx] = clamp16(wetR[idx] + ((sR * wet_amt) >> 16));
-			}
-
-			nbytes -= sizeof(int16_t);
-		}
-
-		/* Ramp volumes toward targets per block */
-		vol_left += rate_left;
-		vol_right += rate_right;
-
-		/* Clamp at target */
-		if (rate_left > 0 && (vol_left >> 16) > tgt_left)
-			vol_left = (int32_t)tgt_left << 16;
-		else if (rate_left < 0 && (vol_left >> 16) < tgt_left)
-			vol_left = (int32_t)tgt_left << 16;
-
-		if (rate_right > 0 && (vol_right >> 16) > tgt_right)
-			vol_right = (int32_t)tgt_right << 16;
-		else if (rate_right < 0 && (vol_right >> 16) < tgt_right)
-			vol_right = (int32_t)tgt_right << 16;
+		dryL[i] = clamp16(dryL[i] + (((int32_t)s * l_dry) >> 15));
+		dryR[i] = clamp16(dryR[i] + (((int32_t)s * r_dry) >> 15));
+		wetL[i] = clamp16(wetL[i] + (((int32_t)s * l_wet) >> 15));
+		wetR[i] = clamp16(wetR[i] + (((int32_t)s * r_wet) >> 15));
 	}
 
-	/* Save state for A_CONTINUE on next subframe */
-	state[0]  = (int16_t)(vol_left >> 16);
-	state[1]  = (int16_t)(vol_left & 0xFFFF);
-	state[2]  = (int16_t)(vol_right >> 16);
-	state[3]  = (int16_t)(vol_right & 0xFFFF);
-	state[4]  = tgt_left;
-	state[5]  = tgt_right;
-	state[6]  = (int16_t)(rate_left >> 16);
-	state[7]  = (int16_t)(rate_left & 0xFFFF);
-	state[8]  = (int16_t)(rate_right >> 16);
-	state[9]  = (int16_t)(rate_right & 0xFFFF);
-	state[10] = dry_amt;
-	state[11] = wet_amt;
+	memset(save, 0, sizeof(save));
+	save[0] = wet_amt;
+	save[2] = dry_amt;
+	save[4] = (int16_t)(ramps[0].target >> 16);
+	save[6] = (int16_t)(ramps[1].target >> 16);
+	store_s32_to_s16(save + 8, ramps[0].step);
+	store_s32_to_s16(save + 10, ramps[1].step);
+	store_s32_to_s16(save + 16, ramps[0].value);
+	store_s32_to_s16(save + 18, ramps[1].value);
+	memcpy(state, save, sizeof(save));
 }
 
 /* ================================================================== */
