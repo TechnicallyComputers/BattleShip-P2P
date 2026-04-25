@@ -690,6 +690,29 @@ s32
     a->dc_table = (ALWaveTable *) param;
 #ifdef PORT
     a->dc_memin = (uintptr_t) a->dc_table->base;
+    /* PORT: reset ADPCM decode state on new wavetable assignment.
+     *
+     * Without this, when a pvoice gets reused for a new note (without an
+     * explicit AL_FILTER_STOP_VOICE → AL_FILTER_RESET sequence in between),
+     * dc_first stays at 0 from the prior note's decode and dc_state[] still
+     * holds the prior note's last-16-sample predictor history.  The new
+     * note's first aADPCMdec call then runs with A_CONTINUE flag and seeds
+     * its predictor (prev1, prev2) from those stale samples — producing a
+     * 16-sample predictor click at the start of every reused voice.
+     *
+     * Audible as the "scratching popping glitchy" pattern with discontinuity
+     * spikes clustering at multiples of 16 samples (verified empirically:
+     * 10.6% of large sample-to-sample jumps in the WAV dump align to N×16).
+     *
+     * The em_first flag for the envelope mixer IS already explicitly reset
+     * in START_VOICE_ALT (n_env.c:925); only the ADPCM decode side was
+     * missing the matching reset on this path. */
+    a->dc_first = 1;
+    a->dc_lastsam = 0;
+    if (a->dc_state) {
+        s32 _i;
+        for (_i = 0; _i < ADPCMFSIZE; _i++) (*a->dc_state)[_i] = 0;
+    }
 #else
     a->dc_memin = (s32) a->dc_table->base;
 #endif
