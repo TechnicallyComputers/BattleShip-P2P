@@ -11,6 +11,7 @@
 #include "audio/audio_dma.h"
 #include "bridge/audio_bridge.h"
 #include "acmd_trace/acmd_trace.h"
+#include "port_log.h"
 extern void func_80026738_27338(void *arg0);
 extern void func_800266A0_272A0(void);
 extern void func_80026204_26E04(void *arg0);
@@ -1085,6 +1086,9 @@ void syAudioThreadMain(void *arg)
 
         acmd_trace_init();
 
+        port_log("SSB64 Audio: thread entering synthesis loop (freq=%d)\n",
+                 (int)sSYAudioFrequency);
+
         while (TRUE)
         {
             osRecvMesg(&sSYAudioTicMesgQueue, NULL, OS_MESG_BLOCK);
@@ -1096,6 +1100,17 @@ void syAudioThreadMain(void *arg)
             dSYAudioSampleCounts[port_id_mod3] = sSYAudioFrequency;
 
             acmd_trace_begin_task();
+
+            {
+                static sb32 sFrameLogged = FALSE;
+                if (!sFrameLogged)
+                {
+                    sFrameLogged = TRUE;
+                    port_log("SSB64 Audio: first n_alAudioFrame (tic=%d samples=%d)\n",
+                             (int)dSYAudioCurrentTic,
+                             (int)dSYAudioSampleCounts[port_id_mod3]);
+                }
+            }
 
             n_alAudioFrame(sSYAudioCurrentAcmdListBuffer, &port_cmdLen,
                            sSYAudioDataBuffers[port_id_mod3],
@@ -1578,6 +1593,15 @@ s32 syAudioPlayBGM(s32 sngplayer, u32 bgm)
     {
         return -1;
     }
+    {
+        static sb32 sBgmLogged = FALSE;
+        if (!sBgmLogged)
+        {
+            sBgmLogged = TRUE;
+            port_log("SSB64 Audio: first syAudioPlayBGM sngplayer=%d bgm=%u seqCount=%d\n",
+                     (int)sngplayer, (unsigned)bgm, (int)sSYAudioSeqFile->seqCount);
+        }
+    }
 #endif
     if (bgm < sSYAudioSeqFile->seqCount)
     {
@@ -1679,6 +1703,14 @@ s32 syAudioPlayFGM(u32 fgm)
     if (syAudioHasSoundPlayers() == FALSE)
     {
         return -1;
+    }
+    {
+        static sb32 sFgmLogged = FALSE;
+        if (!sFgmLogged)
+        {
+            sFgmLogged = TRUE;
+            port_log("SSB64 Audio: first syAudioPlayFGM fgm=%u\n", (unsigned)fgm);
+        }
     }
 #endif
     

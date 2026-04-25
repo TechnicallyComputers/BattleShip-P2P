@@ -9,6 +9,7 @@
 
 #include <libultraship/bridge/audiobridge.h>
 
+#include <cstdint>
 #include <cstring>
 
 // SSB64 original output rate is 32 kHz.
@@ -72,6 +73,27 @@ extern "C" void portAudioSubmitFrame(const void *buf, int sampleCount)
     // n_alAudioFrame produces interleaved stereo s16 PCM.
     // Total bytes = sampleCount * 2 channels * 2 bytes per sample.
     size_t byteLen = (size_t)sampleCount * 4;
+
+    // One-time log: confirm the synthesis pipeline is flowing.
+    static bool sFirstSubmit = true;
+    static bool sLoggedNonzero = false;
+    if (sFirstSubmit) {
+        sFirstSubmit = false;
+        port_log("SSB64 Audio: first synth frame submitted (sampleCount=%d bytes=%zu)\n",
+                 sampleCount, byteLen);
+    }
+    if (!sLoggedNonzero) {
+        const int16_t *s = reinterpret_cast<const int16_t *>(buf);
+        size_t count = byteLen / sizeof(int16_t);
+        for (size_t i = 0; i < count; i++) {
+            if (s[i] != 0) {
+                sLoggedNonzero = true;
+                port_log("SSB64 Audio: first non-zero sample detected (idx=%zu v=%d)\n",
+                         i, (int)s[i]);
+                break;
+            }
+        }
+    }
 
     AudioPlayerPlayFrame(reinterpret_cast<const uint8_t*>(buf), byteLen);
 }
