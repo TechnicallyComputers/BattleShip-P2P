@@ -22,6 +22,7 @@
  */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -204,6 +205,49 @@ void aADPCMdecImpl(uint8_t flags, int16_t *state) {
 	int nbytes = ROUND_UP_32(rspa.nbytes);
 	int i, j, k;
 
+	/* PORT: dump first ADPCM call to disk for offline reference comparison.
+	 * Captures: book (rspa.adpcm_table), input bytes (DMEM at rspa.in), prior
+	 * state (16 s16), flags, nbytes — all the inputs needed to reproduce the
+	 * decode in a Python reference.  Output samples are written after the
+	 * decode finishes.  Set SSB64_ADPCM_DUMP=1 to enable. */
+	{
+		extern void port_log(const char *fmt, ...);
+		static int dumped = -1;
+		if (dumped == -1) {
+			dumped = (getenv("SSB64_ADPCM_DUMP") && getenv("SSB64_ADPCM_DUMP")[0] == '1') ? 0 : -2;
+		}
+		if (dumped == 0) {
+			dumped = 1;
+			FILE *f = fopen("/tmp/adpcm_dump.bin", "wb");
+			if (f) {
+				/* Header (32 bytes): magic 'ADPCMDP1', flags(u32), nbytes(s32),
+				 * in_offset(u16) [DMEM addr], out_offset(u16), reserved×16 */
+				fwrite("ADPCMDP1", 1, 8, f);
+				uint32_t fl = flags;            fwrite(&fl, 4, 1, f);
+				int32_t  nb = nbytes;           fwrite(&nb, 4, 1, f);
+				uint16_t in_o = rspa.in;        fwrite(&in_o, 2, 1, f);
+				uint16_t out_o = rspa.out;      fwrite(&out_o, 2, 1, f);
+				uint8_t pad[12] = {0};          fwrite(pad, 1, 12, f);
+				/* Codebook: 8 × 2 × 8 = 128 s16 = 256 bytes */
+				fwrite(rspa.adpcm_table, sizeof(int16_t), 8 * 2 * 8, f);
+				/* Loop state pointer (8 bytes) — write its content if non-NULL */
+				if (rspa.adpcm_loop_state) {
+					fwrite(rspa.adpcm_loop_state, sizeof(int16_t), 16, f);
+				} else {
+					int16_t zero[16] = {0};
+					fwrite(zero, sizeof(int16_t), 16, f);
+				}
+				/* Prior decoder state (16 s16) — what the impl will load */
+				fwrite(state, sizeof(int16_t), 16, f);
+				/* Input bytes from DMEM */
+				fwrite(in, 1, nbytes, f);
+				fclose(f);
+				port_log("SSB64 Audio: ADPCM dump → /tmp/adpcm_dump.bin (flags=0x%02x nbytes=%d in=0x%04x out=0x%04x)\n",
+				         (unsigned)flags, nbytes, (unsigned)rspa.in, (unsigned)rspa.out);
+			}
+		}
+	}
+
 	if (flags & 0x01) { /* A_INIT */
 		memset(out, 0, 16 * sizeof(int16_t));
 	} else if (flags & 0x02) { /* A_LOOP */
@@ -251,6 +295,25 @@ void aADPCMdecImpl(uint8_t flags, int16_t *state) {
 		nbytes -= 16 * sizeof(int16_t);
 	}
 	memcpy(state, out - 16, 16 * sizeof(int16_t));
+
+	/* Append output samples to the dump file (only on first call). */
+	{
+		static int output_dumped = 0;
+		if (!output_dumped && getenv("SSB64_ADPCM_DUMP") && getenv("SSB64_ADPCM_DUMP")[0] == '1') {
+			output_dumped = 1;
+			FILE *f = fopen("/tmp/adpcm_dump_output.bin", "wb");
+			if (f) {
+				/* Restart from rspa.out — total samples decoded =
+				 * 16 (initial state copy) + (nbytes_orig / 9) * 16 (per ADPCM frame).
+				 * Just write everything from rspa.out for the original nbytes_orig
+				 * worth of decoded samples. */
+				int16_t *out_base = BUF_S16(rspa.out);
+				int decoded_samples = (int)(out - out_base);
+				fwrite(out_base, sizeof(int16_t), decoded_samples, f);
+				fclose(f);
+			}
+		}
+	}
 }
 
 /* ================================================================== */
@@ -450,7 +513,18 @@ void aEnvMixerImpl(uint8_t flags, int16_t *state) {
 			int16_t s = *in++;
 			int32_t sL, sR;
 
-			/* Apply per-channel volume */
+			/* PORT note: 2026-04-24 PCM-vs-emu comparison showed our
+			 * output is ~10x louder than mupen64plus-rsp-hle for the
+			 * same scene (BGM 33), with 1.64% saturation here vs 0% in
+			 * the emu.  A diagnostic /8 attenuation here cleared the
+			 * clipping (sat → 0.005%) but did NOT remove the broadband
+			 * noise overlay — spectrograms still showed fuzzy bands vs
+			 * the emu's clean tones.  So clipping is real but not the
+			 * root cause of the "scratchy" sound; the underlying noise
+			 * source is upstream (suspect: ADPCM state continuity or
+			 * codebook layout — see task #9 / docs/audio handoff).
+			 * Hack reverted; proper headroom fix is a wider int32 bus
+			 * accumulator clamped only at aSaveBuffer. */
 			sL = (s * cur_vol_l) >> 15;
 			sR = (s * cur_vol_r) >> 15;
 
