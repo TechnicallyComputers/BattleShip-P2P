@@ -355,9 +355,48 @@ void osViSetEvent(OSMesgQueue *mq, OSMesg msg, u32 retrace_count)
 	/* No-op: VI events not needed — we drive timing from PortPushFrame. */
 }
 
+/*
+ * Simulated N64 VI framebuffer rotation.
+ *
+ * The decomp scheduler installs `sySchedulerCheckReadyFramebuffer` (and
+ * scene-specific siblings like `mvOpeningRoomCheckSetFramebuffer`) as the
+ * `fnCheck` on each gfx task. Those callbacks decide whether the gfx task
+ * is allowed to run *now* by asking VI which framebuffer is currently on
+ * screen and which is queued to swap, and refusing to start the task if
+ * the slot the game wants to draw into is one of those two. When the
+ * check fails, the gfx task stays in the scheduler's paused queue and
+ * the game thread blocks on its retVal `osRecvMesg`. The visual freeze
+ * during fighter intros (and the `mvOpeningRoom` desk→stage transition)
+ * is exactly that: VI hangs on the previous framebuffer for one or more
+ * extra retraces while the gfx pipeline catches up.
+ *
+ * Stubbing both getters to NULL made every check trivially succeed, so
+ * the game thread never blocked and the freezes never appeared. We now
+ * model the two-slot rotation explicitly:
+ *
+ *   - osViSwapBuffer(fb)      -> queues `fb` as VI's next-up slot.
+ *   - port_vi_simulate_vblank -> propagates next -> current (called once
+ *                                per PortPushFrame, before game logic).
+ *   - osViGetNextFramebuffer  -> returns the queued slot.
+ *   - osViGetCurrentFramebuffer -> returns the slot VI is showing.
+ *
+ * After osViSwapBuffer, current != next until the next VBlank propagates
+ * the swap; the scheduler's `next == curr` test then correctly drives
+ * the rest of the rotation.
+ */
+static void *sPortViCurrentFB;
+static void *sPortViNextFB;
+
 void osViSwapBuffer(void *frameBufPtr)
 {
-	/* No-op: buffer swapping handled by Fast3D/SDL. */
+	sPortViNextFB = frameBufPtr;
+}
+
+void port_vi_simulate_vblank(void)
+{
+	if (sPortViNextFB != NULL) {
+		sPortViCurrentFB = sPortViNextFB;
+	}
 }
 
 void osViSetMode(OSViMode *mode)
@@ -376,12 +415,12 @@ void osViSetSpecialFeatures(u32 func)
 
 void *osViGetNextFramebuffer(void)
 {
-	return NULL;
+	return sPortViNextFB;
 }
 
 void *osViGetCurrentFramebuffer(void)
 {
-	return NULL;
+	return sPortViCurrentFB;
 }
 
 void osViSetXScale(f32 value)

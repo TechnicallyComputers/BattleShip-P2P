@@ -47,6 +47,12 @@
  * Returns 1 on success, 0 on failure (silent). Never throws. */
 extern "C" int portFastCaptureBackbufferPNG(const char *path);
 
+/* Simulated N64 VI VBlank: propagates the queued framebuffer to "current"
+ * so the scheduler's CheckReadyFramebuffer fnCheck can correctly stall a
+ * gfx task when VI is still using the slot the game wants to draw into.
+ * Implemented in port/stubs/n64_stubs.c. */
+extern "C" void port_vi_simulate_vblank(void);
+
 /* ========================================================================= */
 /*  External game symbols (C linkage)                                        */
 /* ========================================================================= */
@@ -355,6 +361,17 @@ void PortPushFrame(void)
 			window->HandleEvents();
 		}
 	}
+
+	/* Propagate the previous frame's queued framebuffer (if any) to VI's
+	 * "current" slot. The scheduler's CheckReadyFramebuffer fnCheck reads
+	 * osViGetCurrent/NextFramebuffer to decide whether the slot the game
+	 * wants to draw into is still locked by VI; without this rotation
+	 * those getters would always report NULL and the scheduler would
+	 * never stall, so the intentional freeze frames during fighter
+	 * intros and the desk-to-stage transition would never appear. Run
+	 * this BEFORE posting INTR_VRETRACE so sySchedulerSwapBuffer and
+	 * the gfx-task fnCheck see the rotated state. */
+	port_vi_simulate_vblank();
 
 	/* Post a VI retrace event to the scheduler's message queue. See
 	 * port_make_os_mesg_int() above for why we don't just write
