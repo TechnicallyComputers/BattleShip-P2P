@@ -451,8 +451,7 @@ void ftAnimParseDObjFigatree(DObj *root_dobj)
                 }
 #ifdef PORT
                 {
-                    u32 interp_token = *(u32*)root_dobj->anim_joint.event16;
-                    void *interp = PORT_RESOLVE(interp_token);
+                    void *interp = root_dobj->anim_joint.event16 + (root_dobj->anim_joint.event16->s / 2);
 
                     track_aobjs[nGCAnimTrackTraI - nGCAnimTrackJointStart]->interpolate = interp;
 
@@ -464,16 +463,16 @@ void ftAnimParseDObjFigatree(DObj *root_dobj)
                         {
                             u32 *interp_words = (u32*)interp;
 
-                            port_log("SSB64: ftAnim SetTranslateInterp - dobj=%p token=0x%08x interp=%p words=[0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x]\n",
-                                root_dobj, interp_token, interp,
+                            port_log("SSB64: ftAnim SetTranslateInterp - dobj=%p rel=%d interp=%p words=[0x%08x 0x%08x 0x%08x 0x%08x 0x%08x 0x%08x]\n",
+                                root_dobj, root_dobj->anim_joint.event16->s, interp,
                                 interp_words[0], interp_words[1], interp_words[2], interp_words[3], interp_words[4], interp_words[5]);
                         }
-                        else port_log("SSB64: ftAnim SetTranslateInterp - dobj=%p token=0x%08x interp=NULL\n",
-                            root_dobj, interp_token);
+                        else port_log("SSB64: ftAnim SetTranslateInterp - dobj=%p rel=%d interp=NULL\n",
+                            root_dobj, root_dobj->anim_joint.event16->s);
                     }
                 }
 
-                root_dobj->anim_joint.event16 = (AObjEvent16*)(((u32*)root_dobj->anim_joint.event16) + 1);
+                AObjAnimAdvance(root_dobj->anim_joint.event16);
 #else
                 track_aobjs[nGCAnimTrackTraI - nGCAnimTrackJointStart]->interpolate = root_dobj->anim_joint.event16 + (root_dobj->anim_joint.event16->s / 2);
 
