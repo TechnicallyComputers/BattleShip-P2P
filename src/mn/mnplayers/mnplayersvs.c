@@ -1264,6 +1264,7 @@ void mnPlayersVSMakeTimeSelect(s32 number)
 	if (sMNPlayersVSGameRuleGObj != NULL)
 	{
 		gcEjectGObj(sMNPlayersVSGameRuleGObj);
+		sMNPlayersVSGameRuleGObj = NULL;
 	}
 	sMNPlayersVSGameRuleGObj = gobj = lbCommonMakeSpriteGObj
 	(
@@ -1317,6 +1318,7 @@ void mnPlayersVSMakeStockSelect(s32 number)
 	if (sMNPlayersVSGameRuleGObj != NULL)
 	{
 		gcEjectGObj(sMNPlayersVSGameRuleGObj);
+		sMNPlayersVSGameRuleGObj = NULL;
 	}
 	sMNPlayersVSGameRuleGObj = gobj = lbCommonMakeSpriteGObj
 	(
@@ -4690,6 +4692,8 @@ void mnPlayersVSInitVars(void)
 	sMNPlayersVSIsTeamBattle = gSCManagerTransferBattleState.is_team_battle;
 	sMNPlayersVSGameRule = gSCManagerTransferBattleState.game_rules;
 	sMNPlayersVSIsResetPlayers = gSCManagerTransferBattleState.is_reset_players;
+	sMNPlayersVSGameRuleGObj = NULL;
+	sMNPlayersVSGameModeGObj = NULL;
 
 	for (i = 0; i < GMCOMMON_PLAYERS_MAX; i++)
 	{
