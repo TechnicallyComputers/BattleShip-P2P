@@ -576,22 +576,26 @@ extern "C" void portAudioLoadAssets(void)
     u8* tbl1 = const_cast<u8*>(sounds1_tbl.data);
     u8* tbl2 = const_cast<u8*>(sounds2_tbl.data);
 
-    // Parse SFX bank (sounds2 = music instruments, sounds1 = SFX instruments)
-    // Note: the naming in the decomp is confusing:
-    //   bank2 (sounds2_ctl/tbl) → sSYAudioSequenceBank2 (music)
-    //   bank1 (sounds1_ctl/tbl) → sSYAudioSequenceBank1 (SFX)
-    {
-        BankParser parser(sounds2_ctl.data, sounds2_ctl.size, tbl2, &sSYAudioHeap);
-        ALBankFile* bf = parser.parseBankFile();
-        sSYAudioSequenceBank2 = bf->bankArray[0];
-        spdlog::info("audio_bridge: parsed bank2 (music): {} instruments, rate={}",
-                     sSYAudioSequenceBank2->instCount, sSYAudioSequenceBank2->sampleRate);
-    }
+    // Bank → slot mapping must match the original game's SYAudioSettings:
+    //   bank1_start = B1_sounds2_ctl → sSYAudioSequenceBank1 (SFX direct-index)
+    //   bank2_start = B1_sounds1_ctl → sSYAudioSequenceBank2 (music CSP players)
+    // sys/audio.c then does n_alCSPSetBank(player, sSYAudioSequenceBank2) and
+    // reads SFX sounds from sSYAudioSequenceBank1->instArray[0]->soundArray.
+    // Loading the swapped pair (which the bridge previously did) feeds the
+    // music CSP a single-instrument 322-sound table with degenerate keymaps,
+    // and every NoteOn misses in __n_lookupSoundQuick → silent BGM.
     {
         BankParser parser(sounds1_ctl.data, sounds1_ctl.size, tbl1, &sSYAudioHeap);
         ALBankFile* bf = parser.parseBankFile();
+        sSYAudioSequenceBank2 = bf->bankArray[0];
+        spdlog::info("audio_bridge: parsed sounds1_ctl → sSYAudioSequenceBank2 (music): {} instruments, rate={}",
+                     sSYAudioSequenceBank2->instCount, sSYAudioSequenceBank2->sampleRate);
+    }
+    {
+        BankParser parser(sounds2_ctl.data, sounds2_ctl.size, tbl2, &sSYAudioHeap);
+        ALBankFile* bf = parser.parseBankFile();
         sSYAudioSequenceBank1 = bf->bankArray[0];
-        spdlog::info("audio_bridge: parsed bank1 (SFX): {} instruments, rate={}",
+        spdlog::info("audio_bridge: parsed sounds2_ctl → sSYAudioSequenceBank1 (SFX): {} instruments, rate={}",
                      sSYAudioSequenceBank1->instCount, sSYAudioSequenceBank1->sampleRate);
     }
 
