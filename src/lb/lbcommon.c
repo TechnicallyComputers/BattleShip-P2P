@@ -739,7 +739,7 @@ void lbCommonFuncUpdate(void)
 alSoundEffect* lbCommonMakePositionFGM(u16 fgm, f32 pos)
 {
     alSoundEffect *snd = func_80026A10_27610(fgm);
-    
+
     if (snd != NULL)
     {
         s32 balance = ((pos / 8000.0F) * 60.0F);
@@ -753,8 +753,25 @@ alSoundEffect* lbCommonMakePositionFGM(u16 fgm, f32 pos)
             balance = -60;
         }
         balance = 64 - balance;
-        
+
+#ifdef PORT
+        /* PORT: func_80026A10_27610 returns ALWhatever8009EDD0_siz34*,
+         * which is type-punned via `alSoundEffect *snd` here.  On N64
+         * (4-byte pointers) alSoundEffect.balance and siz34's u8 at
+         * byte offset 0x2F coincided, so writing snd->balance updated
+         * the right byte.  On LP64 the siz34 struct's pointer fields
+         * widened, shifting that target byte to offset 0x43 — but
+         * alSoundEffect.balance still lives at offset 0x3F (the high
+         * byte of siz34's unk_0x28 EE0C pointer slot).  Writing through
+         * the alSoundEffect view would corrupt unk_0x28's high byte
+         * and crash the FGM ucode parser the first time the EE0C is
+         * dereferenced.  Reach siz34's `unk_0x2F` (offset 0x43 on LP64)
+         * directly via byte arithmetic — siz34's struct definition is
+         * private to n_env.c, so no header is available to share. */
+        *((u8 *)snd + 0x43) = (u8)balance;
+#else
         snd->balance = balance;
+#endif
 
         func_800267F4_273F4(snd);
     }

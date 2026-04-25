@@ -1018,7 +1018,14 @@ void syAudioMakeBGMPlayers(void)
     }
     audio_config.fgm_ucode_data = sSYAudioCurrentSettings.fgm_ucode_data;
     audio_config.fgm_table_data = sSYAudioCurrentSettings.fgm_table_data;
+#ifdef PORT
+    /* PORT: unk44 is a real heap pointer to the FGM unk44 package data;
+     * widened SYAudioConfig.unk_80026204_0x1C accepts the full 64-bit
+     * value without truncation. */
+    audio_config.unk_80026204_0x1C = sSYAudioCurrentSettings.unk44;
+#else
     audio_config.unk_80026204_0x1C = (s32)(uintptr_t)sSYAudioCurrentSettings.unk44;
+#endif
     audio_config.fgm_ucode_count = sSYAudioCurrentSettings.fgm_ucode_count;
     audio_config.fgm_table_count = sSYAudioCurrentSettings.fgm_table_count;
     audio_config.unk_80026204_0xC = sSYAudioCurrentSettings.unk4C;

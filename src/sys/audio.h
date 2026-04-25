@@ -161,7 +161,13 @@ typedef struct SYAudioConfig
     void *inst_sound_array;
     void *fgm_ucode_data;
     void *fgm_table_data;
+#ifdef PORT
+    /* PORT: see N_ALUnk80026204.unk_80026204_0x1C — widened to native
+     * pointer so the FGM unk44 array address survives LP64. */
+    void *unk_80026204_0x1C;
+#else
     s32 unk_80026204_0x1C;
+#endif
     ALHeap *heap;
     u8 unk_80026204_0x24;
     u16 unk_80026204_0x26;

@@ -7,6 +7,7 @@
  * with CPU function calls.  Must come AFTER abi.h (via mbi.h → n_libaudio.h)
  * so the original macros exist to be #undef'd. */
 #include "audio/mixer.h"
+#include <stddef.h>
 #include <assert.h>
 #endif
 
@@ -51,7 +52,14 @@ typedef struct N_ALUnk80026204
     void *unk_80026204_0x10;
     void *fgm_ucode_data;
     void *fgm_table_data;
+#ifdef PORT
+    /* PORT: holds a native pointer into the FGM unk44 package
+     * (ALWhatever8009EE0C_3 *).  N64 stored it as s32 (32-bit pointer);
+     * widen so it survives LP64 without truncation. */
+    void *unk_80026204_0x1C;
+#else
     s32 unk_80026204_0x1C;
+#endif
     ALHeap *heap;
     u8 unk_80026204_0x24;
     u16 unk_80026204_0x26;
@@ -112,6 +120,68 @@ typedef struct ALWhatever8009EDD0_siz24
     f32 unkALWhatever8009EDD0_siz24_0x20;
 } ALWhatever8009EDD0_siz24;
 
+#ifdef PORT
+/* PORT: Unified FGM-node struct.  Decomp had two N64-equivalent typedefs
+ * for the same heap allocation: `ALWhatever8009EE0C` (header view with
+ * pad arrays + s32 ucode-pointer fields) and `ALWhatever8009EE0C_2`
+ * (parser view with inline N_ALVoice + u8* ucode fields).  Both relied
+ * on N64 ILP32 layout where pointers fit in 4 bytes — on LP64 the two
+ * views diverge: pad arrays under-size relative to 8-byte pointers, s32
+ * truncates ucode addresses, and inline N_ALVoice grew from 0x1C to
+ * 0x30, so &this_node->voice → n_alSynAllocVoice/StopVoice no longer
+ * lands at the same offset both writers and the parser agree on.
+ *
+ * Single canonical layout below: native-width `next` pointer, inline
+ * N_ALVoice voice (parser takes its address), u8* ucode pointers, and
+ * struct-typed unk44.  EE0C_2 typedef'd to the same struct so all
+ * existing code paths keep compiling unchanged.  func_80026A6C_2766C's
+ * `(s32)(uintptr_t)arg0` truncating cast is also replaced below to
+ * store the full 64-bit ucode pointer. */
+typedef struct ALWhatever8009EE0C
+{
+    struct ALWhatever8009EE0C *next;
+    /* Anonymous union: parser uses &voice (n_alSynAllocVoice/etc.); FGM
+     * cleanup helpers read/write `unkC` which on N64 aliased the byte
+     * slot occupied by N_ALVoice.pvoice (an N_PVoice*).  Keep both
+     * names live without changing call sites. */
+    union {
+        N_ALVoice voice;
+        struct {
+            ALLink _aliaslink;
+            ALWhatever8009EDD0_off5C_offC *unkC;
+        };
+    };
+    u8 *unk20;
+    u8 *unk24;
+    u16 unk28;
+    u8 unk2A;
+    u8 unk2B;
+    s16 unk2C;
+    s16 unk2E;
+    s16 unk30;
+    u8 unk32;
+    u8 unk33;
+    u8 unk34;
+    u8 unk35;
+    u8 unk36;
+    u8 unk37;
+    u8 unk38;
+    u8 unk39;
+    u8 unk3A;
+    u8 unk3B;
+    u8 unk3C;
+    u8 unk3D;
+    /* PORT: unk40 holds an ALWaveTable* (assigned from ALSound.wavetable
+     * by ucode opcode 0x60).  N64 stored it as s32 (a 32-bit pointer);
+     * widen to native pointer so the read at func_80027460_28060's voice
+     * start path can pass a real address to n_alSynStartVoiceParams. */
+    ALWaveTable *unk40;
+    ALWhatever8009EDD0_siz24 *unk44;
+    u16 unk48;
+} ALWhatever8009EE0C;
+
+typedef ALWhatever8009EE0C ALWhatever8009EE0C_2;
+#else
 typedef struct ALWhatever8009EE0C
 {
 	struct ALWhatever8009EE0C *next;
@@ -175,6 +245,7 @@ struct ALWhatever8009EE0C_2
     void *unk44;
 	u16 unk48;
 };
+#endif
 
 typedef struct ALWhatever8009EE0C_3
 {
@@ -212,6 +283,23 @@ typedef struct ALWhatever8009EDD0_siz34
     u8 unkALWhatever8009EDD0_siz34_0x30;
 
 } ALWhatever8009EDD0_siz34;
+
+#ifdef PORT
+_Static_assert(offsetof(ALWhatever8009EE0C, unk30) == 0x50,
+    "EE0C.unk30 must be at offset 0x50 — parser asm hard-codes this");
+_Static_assert(offsetof(ALWhatever8009EDD0_siz34, unkALWhatever8009EDD0_siz34_0x28) == 0x38,
+    "siz34.unk_0x28 must be at offset 0x38");
+_Static_assert(sizeof(ALWhatever8009EDD0_siz34) == 0x48,
+    "siz34 sizeof must be 0x48 (72 bytes) on LP64");
+_Static_assert(offsetof(ALWhatever8009EDD0_siz34, unkALWhatever8009EDD0_siz34_0x2F) == 0x43,
+    "siz34.unk_0x2F must be at offset 0x43 on LP64 — lbCommonMakePositionFGM "
+    "writes this byte via byte arithmetic in lbcommon.c (the alSoundEffect "
+    "type-pun trick is a no-op on LP64 because pointer widening shifted layouts).");
+_Static_assert(offsetof(ALWhatever8009EE0C, unk44) == 0x68,
+    "EE0C.unk44 expected at 0x68 on LP64");
+_Static_assert(offsetof(ALWhatever8009EE0C, unk48) == 0x70,
+    "EE0C.unk48 expected at 0x70 on LP64");
+#endif
 
 typedef struct ALWhatever8009EDD0_off18
 {
@@ -4141,8 +4229,20 @@ void func_80027460_28060(ALWhatever8009EE0C_2 *arg0)
                     }
                     if (param2 < D_8009EDD0_406D0.unk_alsound_0x14)
                     {
+#ifdef PORT
+                        /* PORT: unk_alsound_0x18 is the SFX bank's
+                         * inst[0]->soundArray (ALSound** ).  N64 read
+                         * the wavetable pointer through a parallel
+                         * `off18` view at byte offset 0x8 — but on LP64
+                         * the `envelope` and `keyMap` ptrs grew to 8B
+                         * each, so ALSound.wavetable now lives at
+                         * offset 0x10, not 0x8.  Read it through the
+                         * real ALSound type. */
+                        arg0->unk40 = ((ALSound *)D_8009EDD0_406D0.unk_alsound_0x18[param2])->wavetable;
+#else
                         // This is probably an actual struct?
                         arg0->unk40 = D_8009EDD0_406D0.unk_alsound_0x18[param2]->unkALWhatever8009EDD0_off18_0x8;
+#endif
                         arg0->unk2A = 3;
                     }
                     break;
@@ -4501,7 +4601,14 @@ void func_80027460_28060(ALWhatever8009EE0C_2 *arg0)
             {
                 param3 = 0x7F;
             }
+#ifdef PORT
+            /* PORT: unk40 is a real ALWaveTable* (widened in the
+             * unified PORT struct); skip the (intptr_t) sign-extension
+             * cast that N64's s32-stored 32-bit pointer required. */
+            n_alSynStartVoiceParams(&arg0->voice, arg0->unk40, alCents2Ratio(arg0->unk2C + arg0->unk30), (arg0->unk32 * arg0->unk38 * D_8009EDD0_406D0.unk_alsound_0x5A) >> 7, param, param3, 0);
+#else
             n_alSynStartVoiceParams(&arg0->voice, (ALWaveTable *)(intptr_t)arg0->unk40, alCents2Ratio(arg0->unk2C + arg0->unk30), (arg0->unk32 * arg0->unk38 * D_8009EDD0_406D0.unk_alsound_0x5A) >> 7, param, param3, 0);
+#endif
             arg0->unk2A = 1;
         }
         else arg0->unk2A = 0;
@@ -5033,20 +5140,7 @@ ALWhatever8009EE0C* func_80026B40_27740(u16 id)
     {
         return NULL;
     }
-#ifdef PORT
-    /* PORT: FGM (sound effect) playback is not yet wired up on PC.
-     * The synthesis path that runs the per-effect envelope ucode reads
-     * stale pointer data from a heap that gets corrupted across scene
-     * transitions, causing SIGSEGV in func_80027460_28060 → *ucode++.
-     *
-     * Until the audio implementation reaches Phase 5/6 (n_a* N_MICRO
-     * replacement + BGM byte-swap), short-circuit the FGM start path so
-     * no sound effects ever get added to the active list.  BGM still
-     * works through a separate code path. */
-    return NULL;
-#else
     return func_80026A6C_2766C(D_8009EDD0_406D0.fgm_table_data[id]);
-#endif
 }
 
 ALWhatever8009EE0C* func_80026A6C_2766C(void *arg0)
@@ -5064,8 +5158,15 @@ ALWhatever8009EE0C* func_80026A6C_2766C(void *arg0)
         D_8009EDD0_406D0.unk_alsound_0x3C = temp_v1;
         
         temp_v1->unk28 = 1;
+#ifdef PORT
+        /* PORT: unified EE0C layout makes unk20/unk24 native u8* — store
+         * full 64-bit ucode pointer instead of truncating via (s32). */
+        temp_v1->unk20 = (u8*)arg0;
+        temp_v1->unk24 = (u8*)arg0;
+#else
         temp_v1->unk20 = (s32)(uintptr_t)arg0;
         temp_v1->unk24 = (s32)(uintptr_t)arg0;
+#endif
         temp_v1->unk2A = 3;
         temp_v1->unk32 = 0x7F;
         temp_v1->unk34 = 0x40;
@@ -5097,26 +5198,7 @@ ALWhatever8009EDD0_siz34* func_80026A10_27610(u16 id)
 	{
 		return NULL;
 	}
-#ifdef PORT
-	/* PORT: same class of stub as func_800269C0_275C0 / func_80026B40_27740.
-	 * This is the positional-FGM allocator used by lbCommonMakePositionFGM,
-	 * which ftMainPlayHitSFX (src/ft/ftmain.c:2184) calls on every attack
-	 * that connects.  It pops a siz34 from the free pool, sets its ucode
-	 * pointer to fgm_ucode_data[id], and hands it to the caller, which
-	 * then adds it to the active FGM list via func_800267F4_273F4.  On
-	 * the next audio frame, func_80026B90_27790 walks that list and
-	 * parses the ucode bytes — reading from fgm_ucode_data which is not
-	 * set up correctly on PC, so the parser eventually dereferences
-	 * garbage via arg0->_0x28->unk30 and faults.
-	 *
-	 * Until FGM playback is phase-implemented (see the handoff doc's
-	 * "audio implementation reaches Phase 5/6" note), return NULL so the
-	 * active list never grows and the ucode parser never runs.
-	 * lbCommonMakePositionFGM's caller already NULL-checks. */
-	return NULL;
-#else
 	return func_80026844_27444(D_8009EDD0_406D0.fgm_ucode_data[id]);
-#endif
 }
 
 ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
@@ -5125,18 +5207,7 @@ ALWhatever8009EDD0_siz34* func_800269C0_275C0(u16 id)
 	{
 		return NULL;
 	}
-#ifdef PORT
-	/* PORT: same class of stub as func_80026B40_27740 above. The FGM
-	 * sound-effect dispatch reads fgm_ucode_data[id] and walks a linked
-	 * list that relies on audio-heap state we don't build on PC yet.
-	 * Scene 38 (OpeningRun) calls this directly at tic 190 for the
-	 * explosion effect, which hangs the audio list walk on PC.
-	 * Returning NULL here is consistent with the already-stubbed sibling
-	 * function — callers already handle a NULL return. */
-	return NULL;
-#else
 	return func_80026958_27558(D_8009EDD0_406D0.fgm_ucode_data[id]);
-#endif
 }
 
 ALWhatever8009EDD0_siz34* func_80026958_27558(void *id)
@@ -5496,7 +5567,14 @@ void func_80026204_26E04(N_ALUnk80026204 *arg0)
     D_8009EDD0_406D0.fgm_ucode_count = arg0->fgm_ucode_count;
     D_8009EDD0_406D0.fgm_table_data = arg0->fgm_table_data;
     D_8009EDD0_406D0.fgm_table_count = arg0->fgm_table_count;
+#ifdef PORT
+    /* PORT: unk_80026204_0x1C is now a native pointer; skip the
+     * (intptr_t) sign-extension cast that was needed when the
+     * field was s32 holding a truncated 32-bit pointer. */
+    D_8009EDD0_406D0.unk_alsound_0x24 = (ALWhatever8009EE0C_3 *)arg0->unk_80026204_0x1C;
+#else
     D_8009EDD0_406D0.unk_alsound_0x24 = (ALWhatever8009EE0C_3 *)(intptr_t)arg0->unk_80026204_0x1C;
+#endif
     D_8009EDD0_406D0.unk_alsound_0x2C = arg0->unk_80026204_0xC;
     D_8009EDD0_406D0.unk_alsound_0x14 = arg0->unk_80026204_0x6;
     D_8009EDD0_406D0.unk_alsound_0x18 =  arg0->unk_80026204_0x10;

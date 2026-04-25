@@ -8,7 +8,6 @@
  */
 
 #include <ssb_types.h>
-#include <gm/gmsound.h>
 
 /* ========================================================================= */
 /*  Debug scene entry points (from src/db/)                                  */
@@ -35,11 +34,17 @@ void dbMapsStartScene(void)
 /* ========================================================================= */
 
 /*
- * D_8009EDD0_406D0 is an alSoundEffect struct defined in the excluded
- * n_audio library (src/libultra/n_audio/n_env.c).  It is referenced by
- * src/sc/sc1pmode/sc1pgame.c.  Zero-initialised stub.
+ * D_8009EDD0_406D0 was previously stubbed here as alSoundEffect (64
+ * bytes) when src/libultra/n_audio/ was excluded from the build.  It is
+ * the global ALWhatever8009EDD0 audio-engine state struct, ~168 bytes
+ * on LP64.  Now that n_audio is in the build, the n_env.c definition is
+ * authoritative — keeping this stub silently corrupted memory because
+ * the linker chose the smaller "real" symbol over n_env.c's tentative
+ * definition, so all writes past byte 64 (fgm_table_count, every
+ * unk_alsound_* freelist head, etc.) hit adjacent BSS — most visibly
+ * the FGM siz34 array, where byte 0x3F of unk_0x28 was getting
+ * clobbered by writes intended for unk_alsound_0x* fields.
  */
-alSoundEffect D_8009EDD0_406D0 = { 0 };
 
 /*
  * D_NF_00006010 and D_NF_00006450 are file-relative offsets used in
