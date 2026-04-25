@@ -642,11 +642,19 @@ void ftManagerInitFighter(GObj *fighter_gobj, FTDesc *desc)
 #ifdef PORT
             /* PORT: FTKirbyCopy's first u32 word is [u16 copy_id][s16 copy_modelpart_id]
              * — adjacent u16s in one word.  Pass1's blanket BSWAP32 position-swaps the
-             * two halves, so without this fixup `copy[8].copy_modelpart_id` returns
-             * what should be `copy[8].copy_id` and Kirby ends up wearing the wrong
-             * model part (e.g. Samus's helmet) in the opening scene.  Idempotent
-             * via sStructU16Fixups (keyed on the entry pointer). */
-            portFixupStructU16(&copy[fp->passive_vars.kirby.copy_id], 0, 1);
+             * two halves, so without this fixup the copy_id/copy_modelpart_id read as
+             * each other's values.  Array is indexed by any fkind (0..nFTKindNEnd) via
+             * the eat/inhale path `copy[victim_fp->fkind]`, so every entry must be
+             * fixed up — not just copy[8] (Kirby).  26 entries span all playable
+             * (0..11), Boss (12), MMario (13), and N-series (14..25).
+             * Idempotent via sStructU16Fixups (keyed on per-entry pointer). */
+            {
+                s32 i;
+                for (i = 0; i <= nFTKindNEnd; i++)
+                {
+                    portFixupStructU16(&copy[i], 0, 1);
+                }
+            }
 #endif
             ftParamSetModelPartDefaultID(fighter_gobj, FTKIRBY_COPY_MODELPARTS_JOINT, copy[fp->passive_vars.kirby.copy_id].copy_modelpart_id);
         }
