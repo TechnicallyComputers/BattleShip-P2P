@@ -597,7 +597,7 @@ void aEnvMixerImpl(uint8_t flags, int16_t *state) {
 
 /* ================================================================== */
 /*  A_MIXER (opcode 12) — Gain-weighted mix                           */
-/*  out = ((out * 0x7FFF) + (in * gain) + 0x4000) >> 15              */
+/*  out = clamp(out + ((in * gain) >> 15))                            */
 /*  Count from rspa.nbytes (set by prior A_SETBUFF).                  */
 /* ================================================================== */
 
@@ -625,7 +625,7 @@ void aMixImpl(uint8_t flags, int16_t gain, uint16_t in_addr, uint16_t out_addr) 
 	while (nbytes > 0) {
 		int i;
 		for (i = 0; i < 16 && nbytes > 0; i++) {
-			sample = ((*out * 0x7fff + *in++ * gain) + 0x4000) >> 15;
+			sample = *out + (((int32_t)*in++ * gain) >> 15);
 			*out++ = clamp16(sample);
 			nbytes -= sizeof(int16_t);
 		}
@@ -633,39 +633,113 @@ void aMixImpl(uint8_t flags, int16_t gain, uint16_t in_addr, uint16_t out_addr) 
 }
 
 /* ================================================================== */
-/*  A_POLEF (opcode 14) — Single-pole IIR low-pass filter             */
-/*                                                                    */
-/*  Uses coefficients loaded via A_LOADADPCM into rspa.adpcm_table    */
-/*  (the pole filter reuses the ADPCM codebook load mechanism).       */
-/*                                                                    */
-/*  Algorithm: y[n] = ((x[n] * gain) + (y[n-1] * (0x7FFF - gain))    */
-/*                     + 0x4000) >> 15                                */
-/*                                                                    */
-/*  The N64 pole filter uses the first row of loaded coefficients     */
-/*  as the filter kernel. The 'gain' parameter controls the filter    */
-/*  cutoff: higher gain = higher cutoff (more input, less feedback).  */
-/*                                                                    */
-/*  POLEF_STATE[4]: [0] = previous output sample, [1-3] = unused.    */
+/*  A_POLEF (opcode 14) — N_AUDIO pole / IIR filter                   */
 /* ================================================================== */
 
-void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state) {
-	int16_t *buf = BUF_S16(rspa.in);
+static inline int32_t vmulf(int16_t x, int16_t y) {
+	return (((int32_t)x * (int32_t)y) + 0x4000) >> 15;
+}
+
+static int32_t reverse_dot(int n, const int16_t *x, const int16_t *y) {
+	int32_t acc = 0;
+	y += n;
+	while (n != 0) {
+		acc += *x++ * *--y;
+		n--;
+	}
+	return acc;
+}
+
+static void aPoleFilterPoleImpl(uint8_t flags, uint16_t gain, int16_t *state) {
+	int16_t *src = BUF_S16(rspa.in);
+	int16_t *dst = BUF_S16(rspa.out);
 	int nbytes = ROUND_UP_16(rspa.nbytes);
-	int16_t prev;
+	int16_t *table = &rspa.adpcm_table[0][0][0];
+	int16_t *h1 = table;
+	int16_t *h2 = table + 8;
+	int16_t h2_before[8];
+	int16_t l1 = 0;
+	int16_t l2 = 0;
 	int i;
-	int32_t g = (int32_t)(int16_t)gain;
 
-	if (flags) { /* First call — init state */
-		prev = 0;
+	if (!(flags & 0x01)) {
+		l1 = state[2];
+		l2 = state[3];
+	}
+
+	for (i = 0; i < 8; i++) {
+		h2_before[i] = h2[i];
+		h2[i] = (int16_t)(((int32_t)h2[i] * gain) >> 14);
+	}
+
+	while (nbytes > 0) {
+		int16_t frame[8];
+		for (i = 0; i < 8; i++) {
+			frame[i] = src[i];
+		}
+		for (i = 0; i < 8; i++) {
+			int32_t acc = (int32_t)frame[i] * gain;
+			acc += (int32_t)h1[i] * l1 + (int32_t)h2_before[i] * l2;
+			acc += reverse_dot(i, h2, frame);
+			dst[i] = clamp16(acc >> 14);
+		}
+		l1 = dst[6];
+		l2 = dst[7];
+		src += 8;
+		dst += 8;
+		nbytes -= 16;
+	}
+
+	memcpy(state, dst - 4, 4 * sizeof(int16_t));
+}
+
+static void aPoleFilterIirImpl(uint8_t flags, int16_t *state) {
+	int16_t *src = BUF_S16(rspa.in);
+	int16_t *dst = BUF_S16(rspa.out);
+	int nbytes = ROUND_UP_16(rspa.nbytes);
+	int16_t *table = &rspa.adpcm_table[0][0][0];
+	int16_t frame[8] = {0};
+	int16_t ibuf[4] = {0};
+	uint16_t index = 7;
+	int32_t prev;
+	int i;
+
+	if (!(flags & 0x01)) {
+		frame[6] = state[2];
+		frame[7] = state[3];
+		ibuf[1] = state[4];
+		ibuf[2] = state[5];
+	}
+
+	prev = vmulf(table[9], frame[6]) * 2;
+	while (nbytes > 0) {
+		for (i = 0; i < 8; i++) {
+			int32_t acc;
+			ibuf[index & 3] = *src++;
+			acc = prev +
+			      vmulf(table[0], ibuf[index & 3]) +
+			      vmulf(table[1], ibuf[(index - 1) & 3]) +
+			      vmulf(table[0], ibuf[(index - 2) & 3]);
+			acc += vmulf(table[8], frame[index]) * 2;
+			prev = vmulf(table[9], frame[index]) * 2;
+			dst[i] = frame[i] = (int16_t)acc;
+			index = (index + 1) & 7;
+		}
+		dst += 8;
+		nbytes -= 16;
+	}
+
+	state[2] = frame[6];
+	state[3] = frame[7];
+	state[4] = ibuf[(index - 2) & 3];
+	state[5] = ibuf[(index - 1) & 3];
+}
+
+void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state) {
+	int16_t *table = &rspa.adpcm_table[0][0][0];
+	if (table[0] == 0 && table[1] == 0) {
+		aPoleFilterPoleImpl(flags, gain, state);
 	} else {
-		prev = state[0];
+		aPoleFilterIirImpl(flags, state);
 	}
-
-	for (i = 0; i < nbytes / (int)sizeof(int16_t); i++) {
-		int32_t sample = (buf[i] * g + prev * (0x7FFF - g) + 0x4000) >> 15;
-		prev = clamp16(sample);
-		buf[i] = prev;
-	}
-
-	state[0] = prev;
 }

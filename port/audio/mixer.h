@@ -335,6 +335,9 @@ void aPoleFilterImpl(uint8_t flags, uint16_t gain, int16_t *state);
 	do { (void)(pkt); \
 	     acmd_trace_log_cmd(_SHIFTL(A_POLEF, 24, 8) | _SHIFTL(f, 16, 8) | _SHIFTL(g, 0, 16), \
 	                        _SHIFTL(t, 24, 8) | _SHIFTL((uint32_t)(uintptr_t)(s), 0, 24)); \
+	     aSetBufferImpl(0, ((t) == 0) ? PORT_NAUDIO_MAIN : PORT_NAUDIO_MAIN2, \
+	                    ((t) == 0) ? PORT_NAUDIO_MAIN : PORT_NAUDIO_MAIN2, \
+	                    PORT_NAUDIO_COUNT); \
 	     aPoleFilterImpl(f, g, (int16_t*)(uintptr_t)(s)); \
 	} while (0)
 

@@ -248,6 +248,7 @@ u8 *sSYAudioBGMSequenceDatas[SYAUDIO_BGMPLAYERS_NUM];
 #ifdef PORT
 static u8 sSYAudioCSPlayerStatusesBuf[SYAUDIO_BGMPLAYERS_NUM];
 u8 *sSYAudioCSPlayerStatuses = sSYAudioCSPlayerStatusesBuf;
+static s32 sSYAudioPortPaceError;
 #else
 u8 *sSYAudioCSPlayerStatuses;
 #endif
@@ -283,6 +284,39 @@ extern void func_80026094_26C94(void*, u8);
 extern void* func_800269C0_275C0(u16);
 extern void func_80026070_26C70(u8);
 extern void func_80026174_26D74(void*, u8);
+
+#ifdef PORT
+static s16 syAudioGetPortSampleCount(void)
+{
+    s32 high_count = sSYAudioFrequency;
+    s32 low_count = D_8009D920_96D20;
+    s32 target_rate = sSYAudioCurrentSettings.output_rate;
+    s32 error_step;
+    s32 error_limit;
+
+    if ((low_count <= 0) || (high_count <= low_count) || (target_rate <= 0))
+    {
+        return high_count;
+    }
+
+    error_step = (high_count * 60) - target_rate;
+    error_limit = (high_count - low_count) * 60;
+
+    if (error_step <= 0)
+    {
+        return high_count;
+    }
+
+    sSYAudioPortPaceError += error_step;
+
+    if (sSYAudioPortPaceError >= error_limit)
+    {
+        sSYAudioPortPaceError -= error_limit;
+        return low_count;
+    }
+    return high_count;
+}
+#endif
 
 // // // // // // // // // // // //
 //                               //
@@ -949,6 +983,9 @@ void syAudioMakeBGMPlayers(void)
     sSYAudioFrequency = (syn_config.outputRate / 60.0F);
     sSYAudioFrequency = ((sSYAudioFrequency / 184) * 184) + 184;
     D_8009D920_96D20 = sSYAudioFrequency - 184;
+#ifdef PORT
+    sSYAudioPortPaceError = 0;
+#endif
     audio_config.unk_80026204_0x0 = sSYAudioCurrentSettings.unk31;
     audio_config.unk_80026204_0x2 = sSYAudioCurrentSettings.unk32;
     audio_config.unk_80026204_0x4 = sSYAudioCurrentSettings.sndplayers_num;
@@ -1087,6 +1124,10 @@ void syAudioThreadMain(void *arg)
 
         port_log("SSB64 Audio: thread entering synthesis loop (freq=%d)\n",
                  (int)sSYAudioFrequency);
+        port_log("SSB64 Audio: port pacing target=%d high=%d low=%d\n",
+                 (int)sSYAudioCurrentSettings.output_rate,
+                 (int)sSYAudioFrequency,
+                 (int)D_8009D920_96D20);
 
         while (TRUE)
         {
@@ -1096,7 +1137,7 @@ void syAudioThreadMain(void *arg)
             sSYAudioCurrentAcmdListBuffer = sSYAudioAcmdListBuffers[port_i];
             port_id_mod3 = dSYAudioCurrentTic % 3;
 
-            dSYAudioSampleCounts[port_id_mod3] = sSYAudioFrequency;
+            dSYAudioSampleCounts[port_id_mod3] = syAudioGetPortSampleCount();
 
             acmd_trace_begin_task();
 
