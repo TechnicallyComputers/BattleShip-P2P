@@ -67,7 +67,18 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext->InitWindow(window)) { port_log("SSB64: InitWindow failed\n"); return 1; }
 	port_log("SSB64: Window OK\n");
 
-	if (!sContext->InitAudio({})) { port_log("SSB64: InitAudio failed\n"); return 1; }
+	{
+		/* SSB64's audio synthesis path produces interleaved s16 stereo PCM at
+		 * 32 kHz (sSYAudioFrequency, see src/sys/audio.c).  LUS's default
+		 * AudioSettings::SampleRate is 44100 Hz — passing an empty {} settings
+		 * struct makes the host audio device expect 44.1 kHz samples while we
+		 * feed it 32 kHz, causing pitch-shift / time-stretch / aliasing that
+		 * shows up as broadband noise in the output. */
+		Ship::AudioSettings audio;
+		audio.SampleRate = 32000;
+		if (!sContext->InitAudio(audio)) { port_log("SSB64: InitAudio failed\n"); return 1; }
+		port_log("SSB64: Audio initialized at %d Hz\n", (int)audio.SampleRate);
+	}
 	if (!sContext->InitGfxDebugger()) { port_log("SSB64: InitGfxDebugger failed\n"); return 1; }
 	if (!sContext->InitFileDropMgr()) { port_log("SSB64: InitFileDropMgr failed\n"); return 1; }
 	port_log("SSB64: All subsystems initialized\n");
