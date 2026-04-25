@@ -455,28 +455,6 @@ void ftCommonGuardOnSetStatus(GObj *fighter_gobj, s32 slide_tics)
     ftMainSetStatus(fighter_gobj, nFTCommonStatusGuardOn, 0.0F, 1.0F, FTSTATUS_PRESERVE_NONE);
     ftMainPlayAnimEventsAll(fighter_gobj);
 
-#ifdef PORT
-    /* PORT: skip shield effect+joint setup when joints[YRotN] isn't populated.
-     * The hidden-parts mechanism that should populate joints[1..3] isn't
-     * working on PC due to a struct-size mismatch in FTMotionDesc (intptr_t
-     * is 4 bytes on N64 vs 8 bytes on x64) — same class as
-     * project_addr64_relocation_bug.md.  Until that's fixed, the shield
-     * mechanic is effectively disabled to prevent NULL derefs.
-     *
-     * Without this, the shield effect dobj attaches user_data.p = NULL
-     * which crashes in func_ovl0_800C994C → gcPrepDObjMatrix during the
-     * shield's per-frame display proc. */
-    if (fp->joints[nFTPartsJointYRotN] == NULL)
-    {
-        fp->status_vars.common.guard.release_lag = FTCOMMON_GUARD_RELEASE_LAG;
-        fp->status_vars.common.guard.shield_decay_wait = FTCOMMON_GUARD_DECAY_INT;
-        fp->status_vars.common.guard.is_release = FALSE;
-        fp->status_vars.common.guard.slide_tics = slide_tics;
-        fp->status_vars.common.guard.is_setoff = FALSE;
-        return;
-    }
-#endif
-
     if (fp->shield_health != 0)
     {
         if (fp->fkind == nFTKindYoshi)
