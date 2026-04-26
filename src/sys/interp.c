@@ -2,16 +2,111 @@
 #ifdef PORT
 #include <sys/objtypes.h>
 #include <port_log.h>
+#include <port_aobj_fixup.h>
+#include <stdlib.h>
+#include <string.h>
+extern void *realloc(void *ptr, size_t size);
 #endif
 #include <PR/gu.h>
 
 // Biquadrate; easier to make a symbol than quartic (QT looks familiar to me)
 #define BIQUAD(x) ((x) * (x) * (x) * (x))
 
+#ifdef PORT
+/* Halfswap fixup for SYInterpDesc + its data blocks loaded from fighter
+ * figatree files.  portRelocFixupFighterFigatree halfswaps every non-reloc
+ * u32 in the file: that is correct for AObjEvent16 streams (u16 pairs
+ * packed into u32s) but corrupts full-width data — Vec3f points, f32
+ * keyframes, f32 quartics, and SYInterpDesc's own header words (kind +
+ * pad + s16 points_num at +0x00, f32 length at +0x0C).  We undo the
+ * halfswap on first access, idempotent via a visited-pointer set.
+ *
+ * Token slots (desc->points/keyframes/quartics at +0x08/+0x10/+0x14)
+ * were skipped by the figatree fixup (reloc_words[i]==1) and are
+ * already correct — leave them alone.
+ *
+ * Only data inside a port_aobj_register_halfswapped_range region is
+ * touched; non-figatree-derived interp blocks (e.g. CObj camera anim
+ * data from non-fighter files) pass through unchanged.
+ */
+static u32 port_unhalfswap_u32(u32 v)
+{
+    return ((v & 0xFFFFu) << 16) | ((v >> 16) & 0xFFFFu);
+}
+
+static uintptr_t *sUnhalfswappedSet = NULL;
+static size_t sUnhalfswappedCount = 0;
+static size_t sUnhalfswappedCap = 0;
+
+static int port_unhalfswap_visit(const void *p)
+{
+    uintptr_t key = (uintptr_t)p;
+    size_t i;
+    for (i = 0; i < sUnhalfswappedCount; i++)
+    {
+        if (sUnhalfswappedSet[i] == key) return 1;
+    }
+    if (sUnhalfswappedCount == sUnhalfswappedCap)
+    {
+        size_t new_cap = sUnhalfswappedCap ? sUnhalfswappedCap * 2 : 64;
+        uintptr_t *new_set = (uintptr_t*)realloc(sUnhalfswappedSet, new_cap * sizeof(uintptr_t));
+        if (new_set == NULL) return 1; /* on OOM, claim "visited" so we don't crash */
+        sUnhalfswappedSet = new_set;
+        sUnhalfswappedCap = new_cap;
+    }
+    sUnhalfswappedSet[sUnhalfswappedCount++] = key;
+    return 0;
+}
+
+static void port_unhalfswap_block(void *p, size_t n_u32)
+{
+    u32 *w;
+    size_t i;
+    if (p == NULL) return;
+    if (!port_aobj_is_in_halfswapped_range(p)) return;
+    if (port_unhalfswap_visit(p)) return;
+    w = (u32*)p;
+    for (i = 0; i < n_u32; i++)
+    {
+        w[i] = port_unhalfswap_u32(w[i]);
+    }
+}
+
+/* The SYInterpDesc header is left as-is: the LE struct happens to read
+ * back kind/points_num/length values that the spline code consumes
+ * coherently (e.g. SetTranslateInterp data ends up with kind=0/Linear
+ * with points_num=5 in figatree files, which matches the linear
+ * interpolation path the data is actually structured for).  An attempt
+ * to un-halfswap the header word produces out-of-range kind/points_num
+ * and crashes the spline math in syInterpCubicSplineTimeFrac.  Only the
+ * data blocks need fixing.
+ */
+static void port_unhalfswap_interp_desc(SYInterpDesc *desc)
+{
+    (void)desc;
+}
+
+/* Compute u32-count for the quartics block.  IDO's encoding uses
+ * (points_num - 1) * 5 floats for cubic kinds; Linear has none. */
+static size_t port_interp_quartics_u32_count(const SYInterpDesc *desc)
+{
+    if (desc == NULL || desc->kind == nSYInterpKindLinear) return 0;
+    if (desc->points_num < 2) return 0;
+    return (size_t)(desc->points_num - 1) * 5u;
+}
+#endif
+
 static Vec3f* syInterpGetPoints(SYInterpDesc *desc)
 {
 #ifdef PORT
-    return (Vec3f*)PORT_RESOLVE(desc->points);
+    Vec3f *p;
+    port_unhalfswap_interp_desc(desc);
+    p = (Vec3f*)PORT_RESOLVE(desc->points);
+    if ((p != NULL) && (desc->points_num > 0))
+    {
+        port_unhalfswap_block(p, (size_t)desc->points_num * 3u);
+    }
+    return p;
 #else
     return desc->points;
 #endif
@@ -20,7 +115,14 @@ static Vec3f* syInterpGetPoints(SYInterpDesc *desc)
 static f32* syInterpGetKeyframes(SYInterpDesc *desc)
 {
 #ifdef PORT
-    return (f32*)PORT_RESOLVE(desc->keyframes);
+    f32 *kf;
+    port_unhalfswap_interp_desc(desc);
+    kf = (f32*)PORT_RESOLVE(desc->keyframes);
+    if ((kf != NULL) && (desc->points_num > 0))
+    {
+        port_unhalfswap_block(kf, (size_t)desc->points_num);
+    }
+    return kf;
 #else
     return desc->keyframes;
 #endif
@@ -29,7 +131,15 @@ static f32* syInterpGetKeyframes(SYInterpDesc *desc)
 static f32* syInterpGetQuartics(SYInterpDesc *desc)
 {
 #ifdef PORT
-    return (f32*)PORT_RESOLVE(desc->quartics);
+    f32 *q;
+    port_unhalfswap_interp_desc(desc);
+    q = (f32*)PORT_RESOLVE(desc->quartics);
+    if (q != NULL)
+    {
+        size_t n = port_interp_quartics_u32_count(desc);
+        if (n > 0) port_unhalfswap_block(q, n);
+    }
+    return q;
 #else
     return desc->quartics;
 #endif
@@ -399,15 +509,6 @@ f32 syInterpGetFracFrame(SYInterpDesc *desc, f32 t)
 
 void syInterpCubic(Vec3f *out, SYInterpDesc *desc, f32 t)
 {
-#ifdef PORT
-    static s32 sSYInterpCubicLogCount = 0;
-
-    if (sSYInterpCubicLogCount < 16)
-    {
-        sSYInterpCubicLogCount++;
-        port_log("SSB64: syInterpCubic - out=%p desc=%p t=%f\n", out, desc, t);
-    }
-#endif
     syInterpCubicSplineTimeFrac(out, desc, syInterpGetFracFrame(desc, t));
 }
 
