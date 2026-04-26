@@ -7,8 +7,21 @@
 
 typedef struct SYInterpDesc
 {
+#if IS_BIG_ENDIAN
+    u8 kind;
+    /* implicit 1-byte pad to 2-align points_num */
+    s16 points_num;
+#else
+    /* PORT/LE: figatree halfswap pass leaves the original BE kind byte
+     * (originally at struct offset 0) at memory offset 1, and the
+     * original BE pad byte at offset 0.  Re-arranging the LE field
+     * order so that kind reads from the correct byte avoids needing
+     * any per-access byteswap of this word.  See
+     * docs/bugs/spline_interp_block_halfswap_2026-04-25.md. */
+    u8 _pad0;
     u8 kind;
     s16 points_num;
+#endif
     f32 unk04;          // CR scale? count?
 #ifdef PORT
     u32 points;         // Relocation token — use PORT_RESOLVE()

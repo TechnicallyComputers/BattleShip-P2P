@@ -27,6 +27,12 @@ std::unordered_set<uintptr_t> sRejectedHeads;  /* walked once, didn't look like 
 struct Range { uintptr_t base; uintptr_t end; };
 std::vector<Range> sHalfswappedRanges;
 
+/* Visited set for one-shot idempotent in-place fixups (e.g. interp.c
+ * spline-data un-halfswap).  Cleared per-range when
+ * port_aobj_register_halfswapped_range adds a new range so that
+ * figatree-heap reloads at the same address get re-fixed. */
+std::unordered_set<uintptr_t> sUnhalfswappedVisited;
+
 bool is_in_halfswapped_range(const void *p) {
     uintptr_t addr = reinterpret_cast<uintptr_t>(p);
     for (const auto &r : sHalfswappedRanges) {
@@ -292,13 +298,31 @@ extern "C" void port_aobj_event32_unhalfswap_stream(void *head) {
 extern "C" void port_aobj_register_halfswapped_range(void *base, unsigned long size) {
     if (base == nullptr || size == 0) return;
     uintptr_t b = reinterpret_cast<uintptr_t>(base);
-    sHalfswappedRanges.push_back({b, b + static_cast<uintptr_t>(size)});
+    uintptr_t e = b + static_cast<uintptr_t>(size);
+    /* Evict any visited-set entries that fall in the new range —
+     * figatree-heap reloads land fresh halfswapped bytes at the same
+     * address and need their spline-data fixup re-applied. */
+    for (auto it = sUnhalfswappedVisited.begin(); it != sUnhalfswappedVisited.end(); ) {
+        if (*it >= b && *it < e) {
+            it = sUnhalfswappedVisited.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    sHalfswappedRanges.push_back({b, e});
+}
+
+extern "C" int port_aobj_unhalfswap_visit(const void *p) {
+    if (p == nullptr) return 1;
+    uintptr_t key = reinterpret_cast<uintptr_t>(p);
+    return sUnhalfswappedVisited.insert(key).second ? 0 : 1;
 }
 
 extern "C" void port_aobj_event32_unhalfswap_reset(void) {
     sUnswappedHeads.clear();
     sRejectedHeads.clear();
     sHalfswappedRanges.clear();
+    sUnhalfswappedVisited.clear();
 }
 
 extern "C" int port_aobj_is_in_halfswapped_range(const void *p) {

@@ -68,6 +68,21 @@ void port_aobj_event32_unhalfswap_reset(void);
  */
 int port_aobj_is_in_halfswapped_range(const void *p);
 
+/**
+ * Idempotency tracking for one-shot in-place fixups on figatree-loaded
+ * memory (e.g. the spline-data un-halfswap in src/sys/interp.c).  The
+ * fixup callee passes the data pointer it is about to mutate; this
+ * returns 1 if the pointer was already visited (= skip the fixup) or 0
+ * if newly recorded (= proceed with the fixup).
+ *
+ * The visited set is automatically scrubbed inside
+ * port_aobj_register_halfswapped_range whenever a new range is added,
+ * so that figatree-heap reloads (same address, fresh halfswapped bytes)
+ * trigger a fresh fixup pass.  See docs/bugs/spline_interp_block_halfswap_2026-04-25.md
+ * and project_fixup_idempotency_heap_reuse for the failure mode.
+ */
+int port_aobj_unhalfswap_visit(const void *p);
+
 #ifdef __cplusplus
 }
 #endif
