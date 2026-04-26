@@ -8,6 +8,8 @@
 #include "libc/math.h"
 #ifdef PORT
 #include "port_log.h"
+#include <stdbool.h>
+#include <stdlib.h>
 #ifdef _MSC_VER
 #include <excpt.h>
 #endif
@@ -73,6 +75,157 @@ Gfx *sGCCameraDL;
 #ifdef PORT
 static s32 sGCMObjResolveWarningCount;
 static s32 sGCDLPointerWarningCount;
+static s32 sGCMObjRenderDiagCount;
+
+extern bool portRelocDescribePointer(const void *ptr, uintptr_t *out_base, size_t *out_size, u32 *out_file_id, const char **out_path);
+extern char *getenv(const char *name);
+extern int atoi(const char *nptr);
+extern unsigned long strtoul(const char *nptr, char **endptr, int base);
+
+static s32 gcRenderDiagLimit(void)
+{
+    const char *value = getenv("SSB64_RENDER_DIAG_LIMIT");
+    s32 limit = (value != NULL && value[0] != '\0') ? atoi(value) : 400;
+
+    return (limit > 0) ? limit : 400;
+}
+
+static bool gcRenderDiagParseUlongEnv(const char *name, unsigned long *out)
+{
+    const char *value = getenv(name);
+    char *end = NULL;
+
+    if (value == NULL || value[0] == '\0')
+    {
+        return FALSE;
+    }
+    *out = strtoul(value, &end, 0);
+
+    return (end != value) ? TRUE : FALSE;
+}
+
+static bool gcRenderDiagFileIdMatches(u32 file_id, const char *list)
+{
+    const char *cursor;
+
+    if (list == NULL || list[0] == '\0')
+    {
+        return FALSE;
+    }
+    cursor = list;
+    while (*cursor != '\0')
+    {
+        char *end = NULL;
+        unsigned long parsed = strtoul(cursor, &end, 0);
+
+        if ((end != cursor) && ((u32)parsed == file_id))
+        {
+            return TRUE;
+        }
+        cursor = (end != cursor) ? end : cursor + 1;
+        while ((*cursor == ',') || (*cursor == ' ') || (*cursor == ';') || (*cursor == ':'))
+        {
+            cursor++;
+        }
+    }
+    return FALSE;
+}
+
+static bool gcRenderDiagPointerMatches(const void *ptr)
+{
+    uintptr_t base = 0;
+    size_t size = 0;
+    u32 file_id = 0;
+    unsigned long min_off = 0;
+    unsigned long max_off = 0;
+    bool has_min_off;
+    bool has_max_off;
+    uintptr_t offset;
+
+    if ((ptr == NULL) || !portRelocDescribePointer(ptr, &base, &size, &file_id, NULL))
+    {
+        return FALSE;
+    }
+    if (!gcRenderDiagFileIdMatches(file_id, getenv("SSB64_RENDER_DIAG_FILE_ID")))
+    {
+        return FALSE;
+    }
+
+    has_min_off = gcRenderDiagParseUlongEnv("SSB64_RENDER_DIAG_MIN_OFF", &min_off);
+    has_max_off = gcRenderDiagParseUlongEnv("SSB64_RENDER_DIAG_MAX_OFF", &max_off);
+    offset = (uintptr_t)ptr - base;
+
+    if (has_min_off && offset < min_off)
+    {
+        return FALSE;
+    }
+    if (has_max_off && offset > max_off)
+    {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+static void gcRenderDiagDescribePointer(const void *ptr, u32 *file_id, uintptr_t *offset, const char **path)
+{
+    uintptr_t base = 0;
+    size_t size = 0;
+
+    *file_id = 0;
+    *offset = 0;
+    *path = "(raw)";
+    if ((ptr != NULL) && portRelocDescribePointer(ptr, &base, &size, file_id, path))
+    {
+        *offset = (uintptr_t)ptr - base;
+    }
+}
+
+static void gcRenderDiagLogMObj(DObj *dobj, MObj *mobj, u16 flags, void *current_sprite, u32 current_sprite_token,
+                                void *next_sprite, u32 next_sprite_token, void *palette_data, u32 palette_token)
+{
+    const char *enabled = getenv("SSB64_RENDER_DIAG");
+    bool matches;
+    u32 cur_file;
+    u32 next_file;
+    u32 pal_file;
+    u32 dl_file;
+    uintptr_t cur_off;
+    uintptr_t next_off;
+    uintptr_t pal_off;
+    uintptr_t dl_off;
+    const char *cur_path;
+    const char *next_path;
+    const char *pal_path;
+    const char *dl_path;
+
+    if ((enabled == NULL) || (enabled[0] == '\0') || (enabled[0] == '0') || (sGCMObjRenderDiagCount >= gcRenderDiagLimit()))
+    {
+        return;
+    }
+
+    matches = gcRenderDiagPointerMatches(current_sprite) || gcRenderDiagPointerMatches(next_sprite) ||
+              gcRenderDiagPointerMatches(palette_data) || gcRenderDiagPointerMatches(dobj->dl);
+    if (!matches)
+    {
+        return;
+    }
+
+    gcRenderDiagDescribePointer(current_sprite, &cur_file, &cur_off, &cur_path);
+    gcRenderDiagDescribePointer(next_sprite, &next_file, &next_off, &next_path);
+    gcRenderDiagDescribePointer(palette_data, &pal_file, &pal_off, &pal_path);
+    gcRenderDiagDescribePointer(dobj->dl, &dl_file, &dl_off, &dl_path);
+
+    sGCMObjRenderDiagCount++;
+    port_log(
+        "SSB64_RENDER_DIAG mobj dobj=%p mobj=%p flags=0x%04x fmt=%u siz=%u block_fmt=%u block_siz=%u tex_curr=%d tex_next=%d "
+        "cur=%p cur_token=0x%08x cur_file=%u cur_off=0x%lx cur_path=%s next=%p next_token=0x%08x next_file=%u next_off=0x%lx next_path=%s "
+        "pal=%p pal_token=0x%08x pal_file=%u pal_off=0x%lx pal_path=%s dl=%p dl_file=%u dl_off=0x%lx dl_path=%s scau=%f scav=%f trau=%f trav=%f\n",
+        dobj, mobj, flags, mobj->sub.fmt, mobj->sub.siz, mobj->sub.block_fmt, mobj->sub.block_siz, mobj->texture_id_curr,
+        mobj->texture_id_next, current_sprite, current_sprite_token, cur_file, (unsigned long)cur_off, cur_path,
+        next_sprite, next_sprite_token, next_file, (unsigned long)next_off, next_path, palette_data, palette_token,
+        pal_file, (unsigned long)pal_off, pal_path, dobj->dl, dl_file, (unsigned long)dl_off, dl_path, mobj->sub.scau,
+        mobj->sub.scav, mobj->sub.trau, mobj->sub.trav);
+}
 
 static void gcLogMObjResolveWarning(const char *issue, DObj *dobj, MObj *mobj, u32 array_token, void *array_ptr, s32 index, u32 value_token)
 {
@@ -1560,6 +1713,10 @@ void gcDrawMObjForDObj(DObj *dobj, Gfx **dl_head)
                 }
             }
         }
+#endif
+#ifdef PORT
+        gcRenderDiagLogMObj(dobj, mobj, flags, current_sprite, current_sprite_token, next_sprite, next_sprite_token,
+                            palette_data, palette_token);
 #endif
         if (flags & (MOBJ_FLAG_FRAC | MOBJ_FLAG_SPLIT))
         {
