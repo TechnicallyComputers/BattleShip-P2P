@@ -1074,18 +1074,22 @@ void mvOpeningRoomMakeLogoCamera(void)
 void mvOpeningRoomTransitionOverlayProcDisplay(GObj *gobj)
 {
 #ifdef PORT
-	{
-		static sb32 sLogged = FALSE;
-		if (!sLogged) {
-			DObj *d = DObjGetStruct(gobj);
-			port_log("SSB64: mvOpeningRoom transition-overlay display gobj=%p dobj=%p dl=%p tics=%d trans=(%.2f,%.2f,%.2f) scale=(%.3f,%.3f,%.3f)\n",
-				gobj, d, d ? d->dl : NULL, sMVOpeningRoomTotalTimeTics,
-				d ? d->translate.vec.f.x : 0.0F, d ? d->translate.vec.f.y : 0.0F, d ? d->translate.vec.f.z : 0.0F,
-				d ? d->scale.vec.f.x : 0.0F, d ? d->scale.vec.f.y : 0.0F, d ? d->scale.vec.f.z : 0.0F);
-			sLogged = TRUE;
-		}
-	}
-#endif
+	// On N64 this callback redirects the color image to the Z buffer and
+	// draws a white-PRIM mesh, which (via Fast3D's color-image-redirect)
+	// writes a Z=far mask into the depth attachment without ever painting
+	// pixels. The wallpaper then Z_CMPs against that mask so it draws only
+	// inside the Overlay shape, leaving the explosion area transparent for
+	// the Outline silhouette to render against. libultraship's Fast3D
+	// backend doesn't emulate the color-image redirect, so the white-PRIM
+	// mesh lands directly on the framebuffer as an opaque white blob in
+	// the center of the explosion. Skip the draw entirely on PORT — the
+	// Outline silhouette then renders against the wallpaper/underlying
+	// scene, which approximates the intended visual much better than a
+	// flat white center. See
+	// docs/intro_explosion_alpha_cutout_handoff_2026-04-25.md.
+	(void)gobj;
+	return;
+#else
 	gDPPipeSync(gSYTaskmanDLHeads[0]++);
 	gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
 	gDPSetColorImage(gSYTaskmanDLHeads[0]++, G_IM_FMT_RGBA, G_IM_SIZ_16b, gSYVideoResWidth, gSYVideoZBuffer);
@@ -1099,24 +1103,12 @@ void mvOpeningRoomTransitionOverlayProcDisplay(GObj *gobj)
 	gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
 	gDPSetColorImage(gSYTaskmanDLHeads[0]++, G_IM_FMT_RGBA, gSYVideoColorDepth, gSYVideoResWidth, (void*)0x0F000000);
 	gDPSetRenderMode(gSYTaskmanDLHeads[0]++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+#endif
 }
 
 // 0x80133CEC
 void mvOpeningRoomTransitionOutlineProcDisplay(GObj *gobj)
 {
-#ifdef PORT
-	{
-		static sb32 sLogged = FALSE;
-		if (!sLogged) {
-			DObj *d = DObjGetStruct(gobj);
-			port_log("SSB64: mvOpeningRoom transition-outline display gobj=%p dobj=%p dl=%p tics=%d trans=(%.2f,%.2f,%.2f) scale=(%.3f,%.3f,%.3f)\n",
-				gobj, d, d ? d->dl : NULL, sMVOpeningRoomTotalTimeTics,
-				d ? d->translate.vec.f.x : 0.0F, d ? d->translate.vec.f.y : 0.0F, d ? d->translate.vec.f.z : 0.0F,
-				d ? d->scale.vec.f.x : 0.0F, d ? d->scale.vec.f.y : 0.0F, d ? d->scale.vec.f.z : 0.0F);
-			sLogged = TRUE;
-		}
-	}
-#endif
 	gDPPipeSync(gSYTaskmanDLHeads[0]++);
 	gDPSetCycleType(gSYTaskmanDLHeads[0]++, G_CYC_1CYCLE);
 	gDPSetColorImage(gSYTaskmanDLHeads[0]++, G_IM_FMT_RGBA, G_IM_SIZ_16b, gSYVideoResWidth, gSYVideoZBuffer);
@@ -1169,7 +1161,22 @@ void mvOpeningRoomMakeTransitionCamera(void)
 		16,
 		GOBJ_PRIORITY_DEFAULT,
 		func_80017EC0,
+#ifdef PORT
+		// PORT: cam dl_link_priority is processed in descending order
+		// (lower number = later in the draw stack). Original 95 put the
+		// transition camera FIRST, so the Outline silhouette rendered
+		// behind the wallpaper and every other scene camera (fighter=40,
+		// main=80, wallpaper=90). On N64 this was masked by the
+		// color-image-redirect idiom (the Outline-fill cleared Z to a
+		// value that Z-rejected later draws over the explosion area).
+		// libultraship's Fast3D doesn't emulate that redirect, so we
+		// instead lower this camera below every other one (30 < 40) to
+		// force the silhouette to render in front of all geometry. See
+		// docs/intro_explosion_alpha_cutout_handoff_2026-04-25.md.
+		30,
+#else
 		95,
+#endif
 		COBJ_MASK_DLLINK(30),
 		~0,
 		TRUE,

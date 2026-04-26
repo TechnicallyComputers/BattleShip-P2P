@@ -1,5 +1,17 @@
 # Intro Explosion-Through-Window — Handoff (2026-04-25, updated 2026-04-26)
 
+> **STATUS 2026-04-26: RESOLVED via game-side workaround.** See
+> [`docs/bugs/intro_explosion_overlay_layering_2026-04-26.md`](bugs/intro_explosion_overlay_layering_2026-04-26.md).
+> The shipped fix is two `#ifdef PORT` hunks in
+> `src/mv/mvopening/mvopeningroom.c`: skip the Overlay mesh draw
+> entirely (it would paint an opaque white blob without redirect
+> emulation), and lower the transition camera's `dl_link_priority`
+> 95 → 30 so the Outline silhouette renders on top of all scene
+> geometry. The libultraship-side approaches (3, 4, 5) below remain
+> the right long-term fix if/when someone implements real depth
+> writes from redirect-active draws — at that point both PORT
+> branches should be removed.
+
 The mvOpeningRoom desk→arena transition explosion is **still not
 visible** correctly on the port. After a long iteration session this
 file replaces the original handoff with a corrected understanding of
