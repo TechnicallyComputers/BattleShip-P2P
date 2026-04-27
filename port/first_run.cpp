@@ -232,6 +232,13 @@ namespace {
 // gui->StartDraw() / interpreter / gui->EndDraw() sequence used by
 // Fast3dWindow::DrawAndRunGraphicsCommands but substitutes RunGuiOnly()
 // for the game-render step.
+//
+// window->EndFrame() at the end is critical: RunGuiOnly's StartFrame
+// acquires a drawable from the swap chain, but only EndFrame's
+// SwapBuffers actually presents it. Skipping EndFrame leaks drawables
+// into CAImageQueue (Metal) / DXGI's swap chain; after enough wizard
+// frames the queue corrupts and the very next nextDrawable call (the
+// game's first real frame) segfaults inside QuartzCore.
 void DrawWizardFrame(const std::function<void()>& drawContents) {
     auto context = Ship::Context::GetInstance();
     auto window = context->GetWindow();
@@ -243,6 +250,7 @@ void DrawWizardFrame(const std::function<void()>& drawContents) {
     drawContents();
     window->RunGuiOnly();
     gui->EndDraw();
+    window->EndFrame();
 }
 
 } // namespace
@@ -280,6 +288,25 @@ bool RunFirstRunWizard(const std::string& target_o2r_path) {
     int frameCount = 0;
 
     auto fdm = context->GetFileDropMgr();
+
+    /* Register a "consume everything" drop handler for the duration of
+     * the wizard.  FileDropMgr::CallHandlers fires synchronously from
+     * the SDL_DROPFILE event in the SDL2 backend; if no handler claims
+     * the drop (returns true), it falls through to
+     *   gui->GetGameOverlay()->TextDrawNotification("Unsupported file
+     *                                                dropped, ignoring")
+     * which queues an overlay notification.  GameOverlay's font hasn't
+     * been initialized yet (Gui::Init / GameOverlay::Init normally runs
+     * during the first game frame), so the notification's later
+     * ImGui::PushFont(nullptr) deref crashes once the user clicks
+     * Extract and another frame draws.
+     *
+     * We register and unregister around the wizard so this only changes
+     * behavior here — outside the wizard, drops still surface the
+     * standard "unsupported" toast. */
+    using DropFunc = bool (*)(char*);
+    DropFunc consumer = [](char*) -> bool { return true; };
+    if (fdm) fdm->RegisterDropHandler(consumer);
 
     while (state != State::Done && state != State::Cancelled) {
         if (!window->IsRunning()) {
@@ -415,6 +442,8 @@ bool RunFirstRunWizard(const std::string& target_o2r_path) {
             }
         }
     }
+
+    if (fdm) fdm->UnregisterDropHandler(consumer);
 
     if (state == State::Cancelled) {
         port_log("first_run: wizard cancelled by user\n");
