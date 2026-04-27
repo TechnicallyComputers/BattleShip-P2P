@@ -39,7 +39,15 @@ done
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$ROOT/build"
-ROM="$ROOT/baserom.us.z64"
+ROM=""
+for ext in z64 n64 v64; do
+    candidate="$ROOT/baserom.us.$ext"
+    if [[ -f "$candidate" ]]; then
+        ROM="$candidate"
+        break
+    fi
+done
+[[ -n "$ROM" ]] || ROM="$ROOT/baserom.us.z64"
 O2R="$ROOT/ssb64.o2r"
 F3D_O2R="$ROOT/f3d.o2r"
 FAST3D_SHADER_DIR="$ROOT/libultraship/src/fast/shaders"
@@ -81,8 +89,9 @@ fi
 
 # ── Validate ROM ──
 if [[ ! -f "$ROM" ]]; then
-    fail "ROM not found at $ROM
-Place your NTSC-U v1.0 ROM as baserom.us.z64 in the project root."
+    fail "ROM not found.
+Place your NTSC-U v1.0 ROM in the project root as baserom.us.z64,
+baserom.us.n64, or baserom.us.v64 (Torch will normalize byte order)."
 fi
 
 # ── Submodules ──

@@ -66,15 +66,23 @@ step()  { printf '\n\033[36m=== %s ===\033[0m\n' "$1"; }
 fail()  { printf '\033[31mERROR: %s\033[0m\n' "$1" >&2; exit 1; }
 
 [[ -e "$WT_DIR" ]] && fail "$WT_DIR already exists. Remove it or pick a different slug."
-[[ -f "$ROOT/baserom.us.z64" ]] || fail "baserom.us.z64 missing from $ROOT"
+ROM_SRC=""
+for ext in z64 n64 v64; do
+    if [[ -f "$ROOT/baserom.us.$ext" ]]; then
+        ROM_SRC="$ROOT/baserom.us.$ext"
+        ROM_EXT="$ext"
+        break
+    fi
+done
+[[ -n "$ROM_SRC" ]] || fail "baserom.us.{z64,n64,v64} missing from $ROOT"
 
 # ── 1. Worktree + branch ──
 step "Creating worktree $WT_DIR on branch $BRANCH (base: $BASE)"
 git -C "$ROOT" worktree add "$WT_DIR" -b "$BRANCH" "$BASE"
 
 # ── 2. ROM symlink (gitignored, ~12 MB) ──
-step "Symlinking baserom.us.z64"
-ln -sf "$ROOT/baserom.us.z64" "$WT_DIR/baserom.us.z64"
+step "Symlinking baserom.us.$ROM_EXT"
+ln -sf "$ROM_SRC" "$WT_DIR/baserom.us.$ROM_EXT"
 
 # ── 3. Independent submodule clones ──
 # Submodules pin SHAs to JRickey/libultraship and JRickey/Torch on `ssb64`.

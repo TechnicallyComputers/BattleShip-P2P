@@ -34,7 +34,12 @@ if ($Jobs -le 0) {
 }
 
 $BuildDir = Join-Path $Root "build"
-$ROM = Join-Path $Root "baserom.us.z64"
+$ROM = $null
+foreach ($ext in @("z64", "n64", "v64")) {
+    $candidate = Join-Path $Root "baserom.us.$ext"
+    if (Test-Path $candidate) { $ROM = $candidate; break }
+}
+if (-not $ROM) { $ROM = Join-Path $Root "baserom.us.z64" }
 $O2R = Join-Path $Root "ssb64.o2r"
 $F3DO2R = Join-Path $Root "f3d.o2r"
 $Fast3DShaderDir = Join-Path $Root "libultraship\src\fast\shaders"
@@ -63,7 +68,8 @@ if ($Clean) {
 # ── Validate ROM ──
 if (-not (Test-Path $ROM)) {
     Write-Host "ERROR: ROM not found at $ROM" -ForegroundColor Red
-    Write-Host "Place your NTSC-U v1.0 ROM as baserom.us.z64 in the project root."
+    Write-Host "Place your NTSC-U v1.0 ROM in the project root as baserom.us.z64,"
+    Write-Host "baserom.us.n64, or baserom.us.v64 (Torch will normalize byte order)."
     exit 1
 }
 

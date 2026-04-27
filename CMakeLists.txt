@@ -295,11 +295,24 @@ else()
     set(TORCH_EXECUTABLE ${CMAKE_BINARY_DIR}/torch-install/bin/torch)
 endif()
 
+# Accept .z64 (big-endian), .n64 (little-endian), or .v64 (byteswapped).
+# Torch's Cartridge::Normalize converts non-z64 byte orders in-memory.
+set(SSB64_BASEROM "")
+foreach(ext z64 n64 v64)
+    if(EXISTS "${CMAKE_SOURCE_DIR}/baserom.us.${ext}")
+        set(SSB64_BASEROM "${CMAKE_SOURCE_DIR}/baserom.us.${ext}")
+        break()
+    endif()
+endforeach()
+if(NOT SSB64_BASEROM)
+    set(SSB64_BASEROM "${CMAKE_SOURCE_DIR}/baserom.us.z64")
+endif()
+
 add_custom_target(ExtractAssets
     DEPENDS TorchExternal
-    COMMAND ${TORCH_EXECUTABLE} o2r ${CMAKE_SOURCE_DIR}/baserom.us.z64
+    COMMAND ${TORCH_EXECUTABLE} o2r ${SSB64_BASEROM}
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Extracting assets from baserom.us.z64 into O2R archive"
+    COMMENT "Extracting assets from ${SSB64_BASEROM} into O2R archive"
 )
 
 add_custom_target(GeneratePortO2R
