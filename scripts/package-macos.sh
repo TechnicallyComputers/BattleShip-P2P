@@ -122,9 +122,32 @@ EOF
 # Make the binaries executable (cp preserves mode, but be defensive).
 chmod +x "$APP/Contents/MacOS/$APP_NAME" "$APP/Contents/MacOS/torch"
 
-# ── 5. Report ──
+# ── 5. Build a drag-and-drop DMG ──
+# Standard macOS UX: user double-clicks the .dmg, sees a window with the
+# .app and a shortcut to /Applications side by side, drags one onto the
+# other. hdiutil ships with macOS so no extra tooling needed.
+step "Building DMG"
+DMG="$DIST_DIR/$APP_NAME.dmg"
+DMG_STAGE="$DIST_DIR/dmg-stage"
+rm -rf "$DMG_STAGE" "$DMG"
+mkdir -p "$DMG_STAGE"
+cp -R "$APP" "$DMG_STAGE/"
+ln -s /Applications "$DMG_STAGE/Applications"
+hdiutil create \
+    -volname "Super Smash Bros. 64" \
+    -srcfolder "$DMG_STAGE" \
+    -ov \
+    -format UDZO \
+    "$DMG" >/dev/null
+rm -rf "$DMG_STAGE"
+[[ -f "$DMG" ]] || fail "DMG was not created"
+
+# ── 6. Report ──
 APP_KB=$(du -sk "$APP" | awk '{print $1}')
-printf '\n\033[32m✓ Bundle ready: %s (%s KB)\033[0m\n' "$APP" "$APP_KB"
-printf '   To run: open "%s"\n' "$APP"
+DMG_KB=$(du -sk "$DMG" | awk '{print $1}')
+printf '\n\033[32m✓ Bundle: %s (%s KB)\033[0m\n' "$APP" "$APP_KB"
+printf '\033[32m✓ DMG:    %s (%s KB)\033[0m\n' "$DMG" "$DMG_KB"
+printf '   To run from the bundle:        open "%s"\n' "$APP"
+printf '   To install from the DMG:       open "%s"  (then drag to Applications)\n' "$DMG"
 printf '   App-data: ~/Library/Application Support/ssb64/\n'
 printf '   First launch will prompt for your ROM via the ImGui wizard.\n'

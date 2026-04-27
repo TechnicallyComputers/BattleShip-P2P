@@ -41,19 +41,16 @@ jobs:
           brew install cmake ninja \
             sdl2 glew libzip nlohmann-json tinyxml2 spdlog \
             zip
-      - name: Package macOS .app
+      - name: Package macOS .app + .dmg
         run: bash scripts/package-macos.sh
-      - name: Zip the .app for upload
-        # GitHub artifacts strip executable bits and recurse into .app
-        # bundles unpredictably. Wrapping in a zip preserves Unix modes
-        # and the bundle hierarchy.
-        run: |
-          cd dist
-          zip -ry SuperSmashBros64-macos.zip SuperSmashBros64.app
       - uses: actions/upload-artifact@v4
+        # The .dmg is the standard drag-to-Applications installer macOS
+        # users expect. We don't ship the loose .app zip anymore — anyone
+        # wanting the bundle alone can pop the .dmg open and drag the
+        # .app out. Smaller release surface, friendlier UX.
         with:
           name: SuperSmashBros64-macos
-          path: dist/SuperSmashBros64-macos.zip
+          path: dist/SuperSmashBros64.dmg
           if-no-files-found: error
 
   build-linux:
@@ -154,7 +151,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/SuperSmashBros64-macos.zip
+            artifacts/SuperSmashBros64.dmg
             artifacts/SuperSmashBros64-x86_64.AppImage
             artifacts/SuperSmashBros64-windows.zip
           generate_release_notes: true
