@@ -91,9 +91,42 @@ struct GMColScript
 	u32 *p_script; // Pointer to Color Animation script?
 	u16 color_event_timer;
 	u16 script_id;
+#ifdef PORT
+	/* The decomp's loop / subroutine handlers in ftMainUpdateColAnim
+	 * use p_subroutine[]/loop_count[]/p_goto[] as ONE stack accessed
+	 * by three different array names that physically overlap on N64
+	 * (each slot is 4 bytes there). The handlers walk the stack via
+	 * out-of-bounds indexing like p_subroutine[2] and rely on the
+	 * next struct member being adjacent in memory.
+	 *
+	 * On LP64 each slot is 8 bytes, so naive replication breaks the
+	 * offset arithmetic. Worse, out-of-bounds array access is UB
+	 * under -fstrict-aliasing (default in -O2/-O3) — the compiler can
+	 * reorder, cache, or elide writes through the OOB index.
+	 *
+	 * Concrete crash: a script like dGMColScriptsFighterDamageElectric*
+	 * does LoopBegin(N) → Subroutine(...) → inner LoopBegin(M) inside
+	 * the called subroutine, pushing 2+1+2 = 5 stack entries. The OG
+	 * struct only has 4 effective slots (p_subroutine[1] +
+	 * loop_count[1] + p_goto[2] = 16 bytes / 4 ptr-slots), so even
+	 * the OG decomp would have overflowed; on N64 it lucked into
+	 * unk_ca_timer's slot. On LP64, the compiler treats OOB writes as
+	 * UB and the slot read returns a truncated low-32-bit value.
+	 *
+	 * Fix: drop the loop_count[] / p_goto[] views entirely under PORT
+	 * (only this function reads them) and provide one proper
+	 * p_subroutine[8] stack — 8 slots of 8 bytes = 64 bytes, enough
+	 * for the deepest observed nesting plus headroom. ftMainUpdateColAnim
+	 * is patched to read the loop counter via p_subroutine[script_id-1]
+	 * instead of loop_count[script_id-2] (same slot the LoopBegin push
+	 * wrote it to).
+	 */
+	void *p_subroutine[8];
+#else
 	void *p_subroutine[1];
 	s32 loop_count[1];
 	void *p_goto[2];
+#endif
 	s32 unk_ca_timer;
 };
 

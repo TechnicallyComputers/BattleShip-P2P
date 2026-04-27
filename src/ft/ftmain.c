@@ -1073,11 +1073,27 @@ sb32 ftMainUpdateColAnim(GMColAnim *colanim, GObj *fighter_gobj, sb32 is_muted, 
                 break;
 
             case nGMColEventLoopEnd:
+#ifdef PORT
+            {
+                /* On N64 loop_count[script_id-2] aliases p_subroutine[script_id-1]
+                 * (the second push from LoopBegin, which stored
+                 * (void*)(uintptr_t)count). Under PORT we only have
+                 * p_subroutine[]; pull the count out of that slot
+                 * directly, decrement, and write back as a void*. */
+                s32 *count = (s32*)&colanim->cs[i].p_subroutine[colanim->cs[i].script_id - 1];
+                if (--*count != 0)
+                {
+                    colanim->cs[i].p_script = colanim->cs[i].p_subroutine[colanim->cs[i].script_id - 2];
+                }
+                else gmColEventAdvance(colanim->cs[i].p_script, GMColEventDefault), colanim->cs[i].script_id -= 2;
+            }
+#else
                 if (--colanim->cs[i].loop_count[colanim->cs[i].script_id - 2] != 0)
                 {
                     colanim->cs[i].p_script = colanim->cs[i].p_subroutine[colanim->cs[i].script_id - 2];
                 }
                 else gmColEventAdvance(colanim->cs[i].p_script, GMColEventDefault), colanim->cs[i].script_id -= 2;
+#endif
                 break;
 
             case nGMColEventSubroutine:
