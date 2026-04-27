@@ -466,9 +466,32 @@ int main(int argc, char* argv[]) {
 		maxFrames = std::atoi(env);
 	}
 	int frame = 0;
+	bool firstRunHintShown = false;
 	while (WindowIsRunning()) {
 		PortPushFrame();
 		frame++;
+
+		// First-launch UX hint: most users won't know F1 toggles the menu
+		// bar. Show a one-shot LUS GameOverlay notification on frame 60
+		// (~1 s in) so it lands after the title screen has materialized.
+		// Persisted via cvar gFirstRunHintShown so it never repeats.
+		if (!firstRunHintShown && frame == 60) {
+			auto cv = sContext->GetConsoleVariables();
+			if (cv && cv->GetInteger("gFirstRunHintShown", 0) == 0) {
+				if (auto gui = sContext->GetWindow()->GetGui()) {
+					if (auto overlay = gui->GetGameOverlay()) {
+						overlay->TextDrawNotification(
+							8.0f, true,
+							"Press F1 to open the menu");
+					}
+				}
+				cv->SetInteger("gFirstRunHintShown", 1);
+				if (auto gui = sContext->GetWindow()->GetGui()) {
+					gui->SaveConsoleVariablesNextFrame();
+				}
+			}
+			firstRunHintShown = true;
+		}
 		if (maxFrames > 0 && frame >= maxFrames) {
 			port_log("SSB64: SSB64_MAX_FRAMES=%d reached — triggering clean shutdown\n", maxFrames);
 			if (auto ctx = Ship::Context::GetInstance()) {
