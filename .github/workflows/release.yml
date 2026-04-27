@@ -31,11 +31,16 @@ jobs:
         with:
           submodules: recursive
       - name: Install build deps
-        # glew + libzip are pulled in by libultraship's CMake. Local dev
-        # workflows inherit them from existing brew installs; CI hosts
-        # need them explicit.
+        # libultraship's CMake calls find_package on:
+        #   libzip, nlohmann_json, tinyxml2, spdlog (libultraship/src)
+        #   SDL2, GLEW                              (mac.cmake)
+        # Local dev workflows inherit these from existing brew installs;
+        # CI hosts need them explicit. spdlog has a FetchContent fallback
+        # in mac.cmake but the others don't.
         run: |
-          brew install cmake ninja sdl2 glew libzip zip
+          brew install cmake ninja \
+            sdl2 glew libzip nlohmann-json tinyxml2 spdlog \
+            zip
       - name: Package macOS .app
         run: bash scripts/package-macos.sh
       - name: Zip the .app for upload
@@ -52,26 +57,31 @@ jobs:
           if-no-files-found: error
 
   build-linux:
-    runs-on: ubuntu-22.04
+    # ubuntu-22.04 jammy doesn't package the libzip CLI tools (zipcmp /
+    # zipmerge / ziptool), but libzip-dev's CMake config imports them as
+    # IMPORTED targets at find_package() time, so configure fails before
+    # we even get to compile. ubuntu-24.04 noble has libzip-tools and is
+    # what we'd ship against anyway. Trade-off: AppImages built on noble
+    # (glibc 2.39) won't run on distros older than ~Debian 13. If we
+    # need wider compat later, switch back to jammy + vendor libzip via
+    # FetchContent in libultraship.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install build deps
-        # libzip-dev is pulled in by libultraship/src/CMakeLists.txt via
-        # find_package(libzip). On Debian/Ubuntu the package's CMake
-        # config also imports libzip::zipcmp / libzip::zipmerge /
-        # libzip::ziptool as IMPORTED targets pointing at /usr/bin/*;
-        # those binaries live in the separate libzip-tools package.
-        # Without libzip-tools, find_package fails at config time even
-        # though the headers and library are present.
-        # libglew-dev mirrors the macOS GLEW dependency. python3 is
-        # needed for tools/creditsTextConverter.py.
+        # libultraship find_package set: libzip, nlohmann_json, tinyxml2,
+        # spdlog, SDL2, GLEW. libzip-tools provides /usr/bin/zipcmp etc.
+        # which libzip-dev's CMake config imports as IMPORTED targets at
+        # find_package() time — without it, configure fails despite
+        # libzip headers/library being present.
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             cmake ninja-build zip \
             libsdl2-dev libzip-dev libzip-tools libglew-dev \
+            nlohmann-json3-dev libtinyxml2-dev libspdlog-dev \
             libgl1-mesa-dev libegl1-mesa-dev \
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
             python3 imagemagick
