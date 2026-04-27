@@ -1,26 +1,45 @@
-# build.ps1 - Build SSB64 port and extract assets
+# build.ps1 - Build SSB64 port and extract assets (Windows)
 #
 # Usage:
-#   .\build.ps1              # Full build + extract
-#   .\build.ps1 -SkipExtract # Build only, skip asset extraction
-#   .\build.ps1 -ExtractOnly # Extract assets only (assumes Torch already built)
-#   .\build.ps1 -Clean       # Clean build from scratch
+#   .\build.ps1                # Full build + extract (Debug)
+#   .\build.ps1 -SkipExtract   # Build only, skip asset extraction
+#   .\build.ps1 -ExtractOnly   # Extract assets only (assumes Torch already built)
+#   .\build.ps1 -Clean         # Clean build from scratch
+#   .\build.ps1 -Release       # Release config (default: Debug)
+#   .\build.ps1 -Jobs 8        # Parallel build job count (default: NUMBER_OF_PROCESSORS)
+#   .\build.ps1 -Help          # Show this help
 
 param(
     [switch]$SkipExtract,
     [switch]$ExtractOnly,
-    [switch]$Clean
+    [switch]$Clean,
+    [switch]$Release,
+    [switch]$Debug,
+    [int]$Jobs = 0,
+    [switch]$Help
 )
+
+if ($Help) {
+    Get-Content $MyInvocation.MyCommand.Path | Select-Object -First 11 | ForEach-Object { Write-Host $_ }
+    exit 0
+}
 
 $ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+$Config = if ($Release) { "Release" } else { "Debug" }
+if ($Jobs -le 0) {
+    $Jobs = [int]($env:NUMBER_OF_PROCESSORS)
+    if ($Jobs -le 0) { $Jobs = 4 }
+}
+
 $BuildDir = Join-Path $Root "build"
 $ROM = Join-Path $Root "baserom.us.z64"
 $O2R = Join-Path $Root "ssb64.o2r"
 $F3DO2R = Join-Path $Root "f3d.o2r"
 $Fast3DShaderDir = Join-Path $Root "libultraship\src\fast\shaders"
-$TorchExe = Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\Debug\torch.exe"
-$GameExe = Join-Path $BuildDir "Debug\ssb64.exe"
+$TorchExe = Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\$Config\torch.exe"
+$GameExe = Join-Path $BuildDir "$Config\ssb64.exe"
 $ExeDir = Split-Path $GameExe -Parent
 
 function Write-Step($msg) {
@@ -114,15 +133,15 @@ if (-not $ExtractOnly) {
 
 # ── CMake configure ──
 if (-not $ExtractOnly) {
-    Write-Step "Configuring CMake"
+    Write-Step "Configuring CMake ($Config)"
     cmake -S $Root -B $BuildDir
     if ($LASTEXITCODE -ne 0) { Write-Host "CMake configure failed" -ForegroundColor Red; exit 1 }
 }
 
 # ── Build game ──
 if (-not $ExtractOnly) {
-    Write-Step "Building ssb64"
-    cmake --build $BuildDir --target ssb64 --config Debug
+    Write-Step "Building ssb64 ($Config, j=$Jobs)"
+    cmake --build $BuildDir --target ssb64 --config $Config --parallel $Jobs
     if ($LASTEXITCODE -ne 0) { Write-Host "Game build failed" -ForegroundColor Red; exit 1 }
     Write-Host "Game built: $GameExe" -ForegroundColor Green
 }
@@ -130,18 +149,24 @@ if (-not $ExtractOnly) {
 # ── Build Torch + Extract assets ──
 if (-not $SkipExtract) {
     # Build Torch via ExternalProject
-    Write-Step "Building Torch"
-    cmake --build $BuildDir --target TorchExternal
+    Write-Step "Building Torch ($Config, j=$Jobs)"
+    cmake --build $BuildDir --target TorchExternal --config $Config --parallel $Jobs
     if ($LASTEXITCODE -ne 0) { Write-Host "Torch build failed" -ForegroundColor Red; exit 1 }
 
-    if (-not (Test-Path $TorchExe)) {
-        # Try Release config
-        $TorchExe = Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\Release\torch.exe"
+    # Try several known torch.exe locations (mirrors build.sh fallback list)
+    $TorchExe = $null
+    foreach ($cand in @(
+        (Join-Path $BuildDir "torch-install\bin\torch.exe"),
+        (Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\$Config\torch.exe"),
+        (Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\Debug\torch.exe"),
+        (Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\Release\torch.exe"),
+        (Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\torch.exe")
+    )) {
+        if (Test-Path $cand) { $TorchExe = $cand; break }
     }
 
-    if (-not (Test-Path $TorchExe)) {
+    if (-not $TorchExe) {
         Write-Host "ERROR: torch.exe not found after build" -ForegroundColor Red
-        Write-Host "Searched in Debug/ and Release/ under TorchExternal build dir"
         exit 1
     }
 
