@@ -2,6 +2,7 @@
 #include "port_log.h"
 
 #include <libultraship/libultraship.h>
+#include <SDL2/SDL.h>
 
 #include <array>
 #include <cstdlib>
@@ -123,6 +124,12 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
         port_log("first_run: ERROR no ROM found.\n"
                  "  Drop a baserom.us.{z64,n64,v64} into %s\n",
                  appData.c_str());
+        const std::string msg =
+            "Asset extraction needs your Super Smash Bros. NTSC-U v1.0 ROM.\n\n"
+            "Place a baserom.us.z64 (or .n64 / .v64) into:\n  " + appData +
+            "\n\nThen launch the game again.";
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                                 "ROM not found", msg.c_str(), nullptr);
         return false;
     }
     port_log("first_run: using ROM %s\n", rom.c_str());
@@ -164,6 +171,14 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
     int rc = std::system(cmd.c_str());
     if (rc != 0) {
         port_log("first_run: ERROR torch exited with %d\n", rc);
+        const std::string msg =
+            "Torch failed to extract assets from your ROM.\n\n"
+            "Check the extraction log for details:\n  " + logPath +
+            "\n\nThe most common cause is a non-NTSC-U-v1.0 ROM. Verify your "
+            "dump's SHA-1 matches a supported hash printed in that log.";
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                                 "Asset extraction failed", msg.c_str(),
+                                 nullptr);
         return false;
     }
 

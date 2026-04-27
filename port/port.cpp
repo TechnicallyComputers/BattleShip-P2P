@@ -19,6 +19,7 @@
 
 #include "bridge/audio_bridge.h"
 #include "first_run.h"
+#include "gui/MenuBar.h"
 #include "renderdoc_trigger.h"
 #include "port_log.h"
 
@@ -282,6 +283,12 @@ int PortInit(int argc, char* argv[]) {
 	auto window = std::make_shared<Fast::Fast3dWindow>();
 	if (!sContext->InitWindow(window)) { port_log("SSB64: InitWindow failed\n"); return 1; }
 	port_log("SSB64: Window OK\n");
+
+	// Top-of-screen menu bar (File / View / Help). Toggle with F1.
+	if (auto gui = window->GetGui()) {
+		gui->SetMenuBar(std::make_shared<ssb64::MenuBar>());
+		port_log("SSB64: MenuBar attached\n");
+	}
 
 	{
 		/* SSB64's audio synthesis path produces interleaved s16 stereo PCM at
