@@ -41,6 +41,21 @@ fail() { printf '\033[31mERROR: %s\033[0m\n' "$1" >&2; exit 1; }
 
 [[ "$(uname -s)" == "Darwin" ]] || fail "package-macos.sh runs on macOS only"
 
+# ── 0. Run codegen scripts that don't need the ROM ──
+# Encoded credit files are gitignored (input text is in src/credits/),
+# so a fresh checkout (CI or otherwise) must run the encoder before
+# cmake builds scstaffroll.c. ROM-independent — same step as build.sh.
+step "Encoding credits text"
+(
+    cd "$ROOT/src/credits"
+    for f in staff.credits.us.txt titles.credits.us.txt; do
+        python3 "$ROOT/tools/creditsTextConverter.py" "$f" > /dev/null
+    done
+    for f in info.credits.us.txt companies.credits.us.txt; do
+        python3 "$ROOT/tools/creditsTextConverter.py" -paragraphFont "$f" > /dev/null
+    done
+)
+
 # ── 1. Configure + build with NON_PORTABLE=ON ──
 step "Configuring release build with NON_PORTABLE=ON"
 cmake -B "$BUILD_DIR" "$ROOT" \

@@ -31,8 +31,11 @@ jobs:
         with:
           submodules: recursive
       - name: Install build deps
+        # glew is pulled in by libultraship/cmake/dependencies/mac.cmake
+        # via find_package(GLEW). The local dev workflow inherits it from
+        # an existing brew install; CI hosts need it explicitly.
         run: |
-          brew install cmake ninja sdl2 zip
+          brew install cmake ninja sdl2 glew zip
       - name: Package macOS .app
         run: bash scripts/package-macos.sh
       - name: Zip the .app for upload
@@ -55,14 +58,18 @@ jobs:
         with:
           submodules: recursive
       - name: Install build deps
+        # libzip-dev is pulled in by libultraship/src/CMakeLists.txt via
+        # find_package(libzip). libglew-dev mirrors the macOS GLEW
+        # dependency. python3 is needed for tools/creditsTextConverter.py
+        # (gets run from package-linux.sh before cmake build).
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             cmake ninja-build zip \
-            libsdl2-dev \
+            libsdl2-dev libzip-dev libglew-dev \
             libgl1-mesa-dev libegl1-mesa-dev \
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
-            imagemagick
+            python3 imagemagick
           # appimagetool isn't packaged on apt; fetch the upstream AppImage.
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
             -O /usr/local/bin/appimagetool
