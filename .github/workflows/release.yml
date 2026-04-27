@@ -72,19 +72,29 @@ jobs:
           submodules: recursive
       - name: Install build deps
         # libultraship find_package set: libzip, nlohmann_json, tinyxml2,
-        # spdlog, SDL2, GLEW. libzip-tools provides /usr/bin/zipcmp etc.
-        # which libzip-dev's CMake config imports as IMPORTED targets at
-        # find_package() time — without it, configure fails despite
-        # libzip headers/library being present.
+        # spdlog, SDL2, GLEW.
+        #
+        # libzip CLI tools workaround: libzip-dev's installed CMake
+        # config (libzip-targets.cmake) imports libzip::zipcmp /
+        # libzip::zipmerge / libzip::ziptool as IMPORTED EXECUTABLE
+        # targets pointing at /usr/bin/{zipcmp,zipmerge,ziptool}. Ubuntu
+        # (jammy AND noble) doesn't ship those binaries in any package.
+        # CMake checks IMPORTED_LOCATION exists at find_package time and
+        # errors out — even though we don't actually need the tools at
+        # build or runtime (libultraship only links against libzip.so).
+        # Stub them in with `touch + chmod +x` so the existence check
+        # passes; nothing ever invokes them.
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             cmake ninja-build zip \
-            libsdl2-dev libzip-dev libzip-tools libglew-dev \
+            libsdl2-dev libzip-dev libglew-dev \
             nlohmann-json3-dev libtinyxml2-dev libspdlog-dev \
             libgl1-mesa-dev libegl1-mesa-dev \
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
             python3 imagemagick
+          sudo touch /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
+          sudo chmod +x /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
           # appimagetool isn't packaged on apt; fetch the upstream AppImage.
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
             -O /usr/local/bin/appimagetool
