@@ -2,11 +2,18 @@
 #include "port_log.h"
 
 #include <libultraship/libultraship.h>
+#include <fast/Fast3dWindow.h>
+#include <ship/window/gui/Gui.h>
+
 #include <SDL2/SDL.h>
+#include <imgui.h>
 
 #include <array>
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -110,7 +117,7 @@ std::string FindBaseRom() {
 
 } // namespace
 
-bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
+bool ExtractAssetsIfNeeded(const std::string& target_o2r_path, bool silent) {
     if (fs::exists(target_o2r_path)) {
         return true;
     }
@@ -128,8 +135,10 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
             "Asset extraction needs your Super Smash Bros. NTSC-U v1.0 ROM.\n\n"
             "Place a baserom.us.z64 (or .n64 / .v64) into:\n  " + appData +
             "\n\nThen launch the game again.";
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-                                 "ROM not found", msg.c_str(), nullptr);
+        if (!silent) {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                                     "ROM not found", msg.c_str(), nullptr);
+        }
         return false;
     }
     port_log("first_run: using ROM %s\n", rom.c_str());
@@ -176,9 +185,11 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
             "Check the extraction log for details:\n  " + logPath +
             "\n\nThe most common cause is a non-NTSC-U-v1.0 ROM. Verify your "
             "dump's SHA-1 matches a supported hash printed in that log.";
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
-                                 "Asset extraction failed", msg.c_str(),
-                                 nullptr);
+        if (!silent) {
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,
+                                     "Asset extraction failed", msg.c_str(),
+                                     nullptr);
+        }
         return false;
     }
 
@@ -210,6 +221,158 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path) {
 
     port_log("first_run: extracted ssb64.o2r -> %s\n",
              target_o2r_path.c_str());
+    return true;
+}
+
+namespace {
+
+// Render one pre-gameloop GUI frame (no game commands). Mirrors the
+// gui->StartDraw() / interpreter / gui->EndDraw() sequence used by
+// Fast3dWindow::DrawAndRunGraphicsCommands but substitutes RunGuiOnly()
+// for the game-render step.
+void DrawWizardFrame(const std::function<void()>& drawContents) {
+    auto context = Ship::Context::GetInstance();
+    auto window = context->GetWindow();
+    auto gui = window->GetGui();
+
+    window->HandleEvents();
+
+    gui->StartDraw();
+    drawContents();
+    window->RunGuiOnly();
+    gui->EndDraw();
+}
+
+} // namespace
+
+bool RunFirstRunWizard(const std::string& target_o2r_path) {
+    port_log("first_run: launching ImGui wizard\n");
+
+    auto context = Ship::Context::GetInstance();
+    auto window = context->GetWindow();
+    if (!window || !window->GetGui()) {
+        port_log("first_run: ERROR wizard requires Window+Gui already up\n");
+        return false;
+    }
+
+    const std::string appData = Ship::Context::GetAppDirectoryPath();
+    const std::string targetParent = fs::path(target_o2r_path).parent_path().string();
+
+    // 256 char ImGui input buffer. Pre-fill with the conventional path the
+    // user is most likely to try first; they can edit/replace freely.
+    char romPath[1024] = {0};
+    std::snprintf(romPath, sizeof(romPath), "%s/baserom.us.z64",
+                  appData.c_str());
+
+    enum class State { WaitingForRom, Extracting, Done, Cancelled };
+    State state = State::WaitingForRom;
+    std::string statusMsg;
+
+    while (state != State::Done && state != State::Cancelled) {
+        if (!window->IsRunning()) {
+            state = State::Cancelled;
+            break;
+        }
+
+        DrawWizardFrame([&] {
+            ImGui::OpenPopup("First-run setup");
+
+            const ImVec2 viewportCenter =
+                ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(viewportCenter, ImGuiCond_Always,
+                                    ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowSize(ImVec2(620, 0));
+
+            if (ImGui::BeginPopupModal("First-run setup", nullptr,
+                                       ImGuiWindowFlags_AlwaysAutoResize |
+                                       ImGuiWindowFlags_NoMove |
+                                       ImGuiWindowFlags_NoSavedSettings)) {
+                ImGui::TextWrapped(
+                    "Super Smash Bros. 64 needs to extract assets from your "
+                    "Nintendo 64 ROM before it can launch.");
+                ImGui::Spacing();
+                ImGui::TextWrapped(
+                    "Required: a Super Smash Bros. (NTSC-U v1.0) dump in "
+                    ".z64, .n64, or .v64 format.");
+                ImGui::Separator();
+
+                ImGui::Text("ROM path:");
+                ImGui::SetNextItemWidth(-1);
+                ImGui::InputText("##rompath", romPath, sizeof(romPath));
+
+                ImGui::TextDisabled("Tip: drop a baserom.us.{z64,n64,v64}");
+                ImGui::TextDisabled("     into %s and click Extract.",
+                                    appData.c_str());
+                ImGui::Spacing();
+
+                if (state == State::Extracting) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f),
+                                       "Extracting assets — please wait...");
+                } else if (!statusMsg.empty()) {
+                    ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f),
+                                       "%s", statusMsg.c_str());
+                }
+
+                ImGui::Spacing();
+
+                const bool busy = (state == State::Extracting);
+                ImGui::BeginDisabled(busy);
+
+                if (ImGui::Button("Extract", ImVec2(120, 0))) {
+                    if (!fs::exists(romPath)) {
+                        statusMsg = "ROM not found at that path.";
+                    } else {
+                        // Stage the ROM into appData so FindBaseRom picks
+                        // it up, then re-run extraction.
+                        fs::create_directories(appData);
+                        const std::string staged =
+                            appData + "/baserom.us." +
+                            fs::path(romPath).extension().string().substr(1);
+                        std::error_code ec;
+                        if (fs::path(romPath) != fs::path(staged)) {
+                            fs::copy_file(romPath, staged,
+                                          fs::copy_options::overwrite_existing,
+                                          ec);
+                        }
+                        if (ec) {
+                            statusMsg = "Could not stage ROM: " + ec.message();
+                        } else {
+                            state = State::Extracting;
+                            statusMsg.clear();
+                        }
+                    }
+                }
+
+                ImGui::SameLine();
+                if (ImGui::Button("Quit", ImVec2(120, 0))) {
+                    state = State::Cancelled;
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndDisabled();
+                ImGui::EndPopup();
+            }
+        });
+
+        // Drive extraction synchronously after the frame that flipped to
+        // Extracting has rendered (so the user sees the "please wait..."
+        // text). One extra frame's latency is fine; extraction takes ~2s.
+        if (state == State::Extracting) {
+            DrawWizardFrame([] {});  // give the user a frame of feedback
+            if (ExtractAssetsIfNeeded(target_o2r_path, /*silent=*/true)) {
+                state = State::Done;
+            } else {
+                state = State::WaitingForRom;
+                statusMsg = "Extraction failed — see logs/torch-extract.log.";
+            }
+        }
+    }
+
+    if (state == State::Cancelled) {
+        port_log("first_run: wizard cancelled by user\n");
+        return false;
+    }
+    port_log("first_run: wizard completed successfully\n");
     return true;
 }
 

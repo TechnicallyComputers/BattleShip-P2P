@@ -15,6 +15,21 @@ namespace ssb64 {
  *
  * Logs every step via port_log so failures are diagnosable from ssb64.log.
  */
-bool ExtractAssetsIfNeeded(const std::string& target_o2r_path);
+// silent=true suppresses native SDL_ShowSimpleMessageBox popups. The
+// ImGui wizard sets this so failures land in the wizard's own status
+// line instead of an alien-looking second dialog.
+bool ExtractAssetsIfNeeded(const std::string& target_o2r_path,
+                           bool silent = false);
+
+/* Drive an ImGui first-run wizard until either:
+ *   - the user provides a ROM and extraction succeeds (returns true,
+ *     target_o2r_path now exists), or
+ *   - the user closes the window / picks Quit (returns false, caller
+ *     should exit).
+ *
+ * Requires Window/Gui already initialized. Spins its own pre-gameloop
+ * render loop using gui->StartDraw() / window->RunGuiOnly() / gui->EndDraw().
+ */
+bool RunFirstRunWizard(const std::string& target_o2r_path);
 
 } // namespace ssb64

@@ -233,43 +233,17 @@ int PortInit(int argc, char* argv[]) {
 	sContext->GetConfig()->SetString("Window.Backend.Name", "Metal");
 #endif
 
-	/* First-run extraction: if ssb64.o2r is missing at the canonical
-	 * app-data location, try to extract it now. The helper finds a ROM
-	 * (.z64/.n64/.v64) in the app-data dir, bundle dir, or cwd, locates
-	 * the bundled torch binary + yamls, and shells out to extract. On
-	 * failure it logs and falls through to InitResourceManager's existing
-	 * "OTR not found" error path. */
-	{
-		const std::string targetO2r =
-			Ship::Context::GetPathRelativeToAppDirectory("ssb64.o2r");
-		if (!ssb64::ExtractAssetsIfNeeded(targetO2r)) {
-			port_log("SSB64: first-run extraction skipped or failed; "
-			         "continuing with existing search paths\n");
-		}
-	}
-
-	/* Resolve archive locations across:
-	 *   1. App data dir (~/Library/Application Support/SuperSmashBros64 on
-	 *      mac, %APPDATA%\SuperSmashBros64 on Windows, $XDG_DATA_HOME on
-	 *      Linux) — canonical home for shipped builds.
-	 *   2. App bundle / install dir (next to the exe on Win/Linux,
-	 *      MyApp.app/Contents/Resources on mac).
-	 *   3. Current working dir — covers the dev workflow where build.sh
-	 *      copies the o2r next to the build/ssb64 binary and the project
-	 *      root is cwd.
-	 * LocateFileAcrossAppDirs returns the first hit in that order, or a
-	 * cwd-relative path if none exist (so InitResourceManager surfaces
-	 * the same "OTR not found" error path as before). */
-	std::vector<std::string> archivePaths = {
-		Ship::Context::LocateFileAcrossAppDirs("ssb64.o2r"),
-		Ship::Context::LocateFileAcrossAppDirs("f3d.o2r"),
-	};
-	for (const auto& p : archivePaths) {
-		port_log("SSB64: archive path -> %s\n", p.c_str());
-	}
-	if (!sContext->InitResourceManager(archivePaths)) { port_log("SSB64: InitResourceManager failed\n"); return 1; }
-	port_log("SSB64: ResourceManager OK\n");
-
+	/* New init order:
+	 *   1. CrashHandler / Console / ControlDeck     — resource-agnostic
+	 *   2. ResourceManager bootstrapped with f3d.o2r only — the renderer
+	 *      backend (Metal / OpenGL / D3D11) compiles shaders out of
+	 *      f3d.o2r during InitWindow's first frame setup, so the
+	 *      ResourceManager has to exist by then.  f3d.o2r is shipped
+	 *      with the binary (always present, no ROM needed).
+	 *   3. Window + MenuBar
+	 *   4. First-run flow: silent shell-out, then ImGui wizard if needed.
+	 *      Once ssb64.o2r is on disk we add it via ArchiveManager.
+	 *   5. Audio / GfxDebugger / FileDropMgr / factory registration. */
 	if (!sContext->InitCrashHandler()) { port_log("SSB64: InitCrashHandler failed\n"); return 1; }
 	if (!sContext->InitConsole()) { port_log("SSB64: InitConsole failed\n"); return 1; }
 	port_log("SSB64: CrashHandler + Console OK\n");
@@ -280,6 +254,21 @@ int PortInit(int argc, char* argv[]) {
 	if (!sContext->InitControlDeck(controlDeck)) { port_log("SSB64: InitControlDeck failed\n"); return 1; }
 	port_log("SSB64: ControlDeck OK\n");
 
+	{
+		// Bootstrap ResourceManager with f3d.o2r only. Allow empty paths
+		// so a missing f3d.o2r logs but doesn't fatal — the Window init
+		// would still partially work for the wizard, which is enough.
+		const std::string f3d = Ship::Context::LocateFileAcrossAppDirs("f3d.o2r");
+		port_log("SSB64: bootstrap archive (shaders) -> %s\n", f3d.c_str());
+		std::vector<std::string> bootstrapPaths = {f3d};
+		if (!sContext->InitResourceManager(bootstrapPaths, {}, 0,
+		                                   /*allowEmptyPaths=*/true)) {
+			port_log("SSB64: bootstrap InitResourceManager failed\n");
+			return 1;
+		}
+		port_log("SSB64: bootstrap ResourceManager OK\n");
+	}
+
 	auto window = std::make_shared<Fast::Fast3dWindow>();
 	if (!sContext->InitWindow(window)) { port_log("SSB64: InitWindow failed\n"); return 1; }
 	port_log("SSB64: Window OK\n");
@@ -288,6 +277,42 @@ int PortInit(int argc, char* argv[]) {
 	if (auto gui = window->GetGui()) {
 		gui->SetMenuBar(std::make_shared<ssb64::MenuBar>());
 		port_log("SSB64: MenuBar attached\n");
+	}
+
+	/* First-run flow:
+	 *   1. Silent shell-out: if a ROM sits at app-data / bundle / cwd we
+	 *      just extract without bothering the user.
+	 *   2. If still missing, drive an ImGui wizard modal in a pre-gameloop
+	 *      render loop until the user provides a ROM and extraction
+	 *      succeeds — or quits the window. */
+	{
+		const std::string targetO2r =
+			Ship::Context::GetPathRelativeToAppDirectory("ssb64.o2r");
+		// silent=true: any failure during this auto-attempt should land in
+		// the wizard's status text, not a native popup that races the
+		// ImGui modal.
+		ssb64::ExtractAssetsIfNeeded(targetO2r, /*silent=*/true);
+		if (!std::filesystem::exists(targetO2r) &&
+		    !std::filesystem::exists(
+		        Ship::Context::LocateFileAcrossAppDirs("ssb64.o2r"))) {
+			if (!ssb64::RunFirstRunWizard(targetO2r)) {
+				port_log("SSB64: first-run wizard cancelled — exiting\n");
+				return 1;
+			}
+		}
+	}
+
+	{
+		// Add ssb64.o2r to the running ResourceManager now that it exists.
+		const std::string ssb64o2r =
+			Ship::Context::LocateFileAcrossAppDirs("ssb64.o2r");
+		port_log("SSB64: adding game archive -> %s\n", ssb64o2r.c_str());
+		auto am = sContext->GetResourceManager()->GetArchiveManager();
+		if (!am->AddArchive(ssb64o2r)) {
+			port_log("SSB64: AddArchive failed for %s\n", ssb64o2r.c_str());
+			return 1;
+		}
+		port_log("SSB64: game archive registered\n");
 	}
 
 	{
