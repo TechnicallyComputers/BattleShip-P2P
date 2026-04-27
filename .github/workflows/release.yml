@@ -87,7 +87,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            cmake ninja-build zip \
+            cmake ninja-build zip clang \
             libsdl2-dev libzip-dev libglew-dev \
             nlohmann-json3-dev libtinyxml2-dev libspdlog-dev \
             libgl1-mesa-dev libegl1-mesa-dev \
@@ -95,6 +95,17 @@ jobs:
             python3 imagemagick
           sudo touch /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
           sudo chmod +x /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
+      - name: Use clang as the C/C++ compiler
+        # The codebase has been built on macOS Clang and validated there;
+        # the decomp-style shadow headers and PORT macro plumbing trip
+        # GCC's -Wint-conversion / -Wimplicit-function-declaration on
+        # va_args paths in src/sys/debug.c that Clang accepts. Switch
+        # Linux CI to Clang to match macOS toolchain. The runtime is
+        # unchanged (still libstdc++ / glibc) so AppImage compat is the
+        # same as a GCC-built binary.
+        run: |
+          echo "CC=clang"   >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
           # appimagetool isn't packaged on apt; fetch the upstream AppImage.
           wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
             -O /usr/local/bin/appimagetool
