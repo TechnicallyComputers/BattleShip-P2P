@@ -18,6 +18,7 @@
 #include <ship/resource/ResourceType.h>
 
 #include "bridge/audio_bridge.h"
+#include "first_run.h"
 #include "renderdoc_trigger.h"
 #include "port_log.h"
 
@@ -230,6 +231,21 @@ int PortInit(int argc, char* argv[]) {
 		static_cast<int>(Ship::WindowBackend::FAST3D_SDL_METAL));
 	sContext->GetConfig()->SetString("Window.Backend.Name", "Metal");
 #endif
+
+	/* First-run extraction: if ssb64.o2r is missing at the canonical
+	 * app-data location, try to extract it now. The helper finds a ROM
+	 * (.z64/.n64/.v64) in the app-data dir, bundle dir, or cwd, locates
+	 * the bundled torch binary + yamls, and shells out to extract. On
+	 * failure it logs and falls through to InitResourceManager's existing
+	 * "OTR not found" error path. */
+	{
+		const std::string targetO2r =
+			Ship::Context::GetPathRelativeToAppDirectory("ssb64.o2r");
+		if (!ssb64::ExtractAssetsIfNeeded(targetO2r)) {
+			port_log("SSB64: first-run extraction skipped or failed; "
+			         "continuing with existing search paths\n");
+		}
+	}
 
 	/* Resolve archive locations across:
 	 *   1. App data dir (~/Library/Application Support/SuperSmashBros64 on
