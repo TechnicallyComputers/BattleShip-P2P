@@ -10,6 +10,7 @@
 #include <vector>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 
 #include "resource/ResourceType.h"
 #include "resource/RelocFileFactory.h"
@@ -18,6 +19,172 @@
 
 #include "bridge/audio_bridge.h"
 #include "renderdoc_trigger.h"
+#include "port_log.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#include <dbghelp.h>
+#include <psapi.h>
+#include <crtdbg.h>
+#include <signal.h>
+#include <exception>
+#include <ctime>
+#pragma comment(lib, "dbghelp.lib")
+
+static void portCrtInvalidParameter(const wchar_t* expr, const wchar_t* func,
+                                    const wchar_t* file, unsigned line, uintptr_t)
+{
+	port_log("\n*** CRT INVALID PARAMETER ***\n");
+	if (expr) port_log("    expr: %ls\n", expr);
+	if (func) port_log("    func: %ls\n", func);
+	if (file) port_log("    file: %ls:%u\n", file, line);
+	port_log_close();
+}
+
+static void portTerminateHandler()
+{
+	port_log("\n*** std::terminate called (uncaught C++ exception) ***\n");
+	port_log_close();
+	std::abort();
+}
+
+static void portSignalHandler(int sig)
+{
+	const char *name = "?";
+	switch (sig) {
+		case SIGABRT: name = "SIGABRT"; break;
+		case SIGFPE:  name = "SIGFPE";  break;
+		case SIGILL:  name = "SIGILL";  break;
+		case SIGINT:  name = "SIGINT";  break;
+		case SIGSEGV: name = "SIGSEGV"; break;
+		case SIGTERM: name = "SIGTERM"; break;
+	}
+	port_log("\n*** SIGNAL %s (%d) raised ***\n", name, sig);
+	port_log_close();
+}
+
+static volatile LONG sMinidumpWritten = 0;
+
+static void portResolveSymbol(void* addr, char* out, size_t cap)
+{
+	out[0] = '\0';
+	HMODULE mod = nullptr;
+	if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+	                       GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+	                       (LPCSTR)addr, &mod) && mod) {
+		char modPath[MAX_PATH] = {0};
+		GetModuleFileNameA(mod, modPath, sizeof(modPath));
+		const char *modName = std::strrchr(modPath, '\\');
+		modName = modName ? modName + 1 : modPath;
+		std::snprintf(out, cap, "%s+0x%llx", modName,
+		             (unsigned long long)((uintptr_t)addr - (uintptr_t)mod));
+	}
+}
+
+static void portWriteMinidump(EXCEPTION_POINTERS* info, const char* prefix)
+{
+	char dumpPath[MAX_PATH];
+	std::time_t t = std::time(nullptr);
+	std::snprintf(dumpPath, sizeof(dumpPath), "crash_%lld.dmp", (long long)t);
+	HANDLE hf = CreateFileA(dumpPath, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+	                        FILE_ATTRIBUTE_NORMAL, nullptr);
+	if (hf == INVALID_HANDLE_VALUE) {
+		port_log("    %s minidump create failed (err=%lu)\n", prefix, GetLastError());
+		return;
+	}
+
+	MINIDUMP_EXCEPTION_INFORMATION mei = {};
+	mei.ThreadId = GetCurrentThreadId();
+	mei.ExceptionPointers = info;
+	mei.ClientPointers = FALSE;
+	MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hf,
+	                  (MINIDUMP_TYPE)(MiniDumpWithDataSegs | MiniDumpWithThreadInfo |
+	                                  MiniDumpWithIndirectlyReferencedMemory),
+	                  &mei, nullptr, nullptr);
+	CloseHandle(hf);
+	port_log("    %s minidump = %s\n", prefix, dumpPath);
+}
+
+static LONG CALLBACK portWindowsVectoredHandler(EXCEPTION_POINTERS* info)
+{
+	DWORD code = info->ExceptionRecord->ExceptionCode;
+	if (code == 0xE06D7363 || code == EXCEPTION_BREAKPOINT ||
+	    code == DBG_PRINTEXCEPTION_C || code == DBG_PRINTEXCEPTION_WIDE_C ||
+	    code == 0x406D1388) {
+		return EXCEPTION_CONTINUE_SEARCH;
+	}
+
+	void* addr = info->ExceptionRecord->ExceptionAddress;
+	char sym[768] = {0};
+	portResolveSymbol(addr, sym, sizeof(sym));
+	port_log("\n*** VECTORED EXCEPTION (first-chance) tid=%lu code=0x%08X addr=%p %s ***\n",
+	         GetCurrentThreadId(), (unsigned)code, addr, sym[0] ? sym : "(no sym)");
+	if (code == EXCEPTION_ACCESS_VIOLATION && info->ExceptionRecord->NumberParameters >= 2) {
+		const char* op = info->ExceptionRecord->ExceptionInformation[0] == 0 ? "read" :
+		                 info->ExceptionRecord->ExceptionInformation[0] == 1 ? "write" : "execute";
+		port_log("    AV: %s at %p\n", op, (void*)info->ExceptionRecord->ExceptionInformation[1]);
+	}
+
+	void* frames[32];
+	WORD nframes = RtlCaptureStackBackTrace(0, 32, frames, nullptr);
+	for (WORD i = 0; i < nframes; i++) {
+		char fsym[768] = {0};
+		portResolveSymbol(frames[i], fsym, sizeof(fsym));
+		port_log("    [%2u] %p %s\n", i, frames[i], fsym[0] ? fsym : "(no sym)");
+	}
+
+	if (InterlockedCompareExchange(&sMinidumpWritten, 1, 0) == 0) {
+		portWriteMinidump(info, "first-chance");
+	}
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+static LONG WINAPI portWindowsCrashFilter(EXCEPTION_POINTERS* info)
+{
+	const EXCEPTION_RECORD* er = info->ExceptionRecord;
+	void* addr = er->ExceptionAddress;
+
+	HMODULE mod = nullptr;
+	char modname[MAX_PATH] = {0};
+	if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+	                       GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+	                       (LPCSTR)addr, &mod)) {
+		GetModuleFileNameA(mod, modname, sizeof(modname));
+	}
+
+	uintptr_t base = (uintptr_t)mod;
+	uintptr_t rva  = (uintptr_t)addr - base;
+
+	port_log("\n*** UNHANDLED EXCEPTION ***\n");
+	port_log("  code     = 0x%08X\n", (unsigned)er->ExceptionCode);
+	port_log("  address  = %p\n", addr);
+	port_log("  module   = %s (base=%p, rva=0x%llx)\n",
+	         modname[0] ? modname : "(unknown)", (void*)base, (unsigned long long)rva);
+	if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION && er->NumberParameters >= 2) {
+		const char* op = er->ExceptionInformation[0] == 0 ? "read" :
+		                 er->ExceptionInformation[0] == 1 ? "write" :
+		                 er->ExceptionInformation[0] == 8 ? "execute" : "?";
+		port_log("  AV: %s at %p\n", op, (void*)er->ExceptionInformation[1]);
+	}
+#if defined(_M_X64) || defined(_M_AMD64)
+	const CONTEXT* c = info->ContextRecord;
+	port_log("  RIP=%p RSP=%p RBP=%p\n", (void*)c->Rip, (void*)c->Rsp, (void*)c->Rbp);
+	port_log("  RAX=%016llx RBX=%016llx RCX=%016llx RDX=%016llx\n",
+	         (unsigned long long)c->Rax, (unsigned long long)c->Rbx,
+	         (unsigned long long)c->Rcx, (unsigned long long)c->Rdx);
+	port_log("  RSI=%016llx RDI=%016llx R8 =%016llx R9 =%016llx\n",
+	         (unsigned long long)c->Rsi, (unsigned long long)c->Rdi,
+	         (unsigned long long)c->R8,  (unsigned long long)c->R9);
+#endif
+
+	if (InterlockedCompareExchange(&sMinidumpWritten, 1, 0) == 0) {
+		portWriteMinidump(info, "unhandled");
+	}
+	port_log("*** END EXCEPTION ***\n");
+	port_log_close();
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+#endif
 
 static std::shared_ptr<Ship::Context> sContext;
 
@@ -140,6 +307,29 @@ int PortIsRunning(void) {
 int main(int argc, char* argv[]) {
 	port_log_init("ssb64.log");
 
+#ifdef _WIN32
+	SetUnhandledExceptionFilter(portWindowsCrashFilter);
+	AddVectoredExceptionHandler(1, portWindowsVectoredHandler);
+	std::atexit([]() {
+		port_log("\n*** atexit reached — process is shutting down voluntarily ***\n");
+		port_log_close();
+	});
+	_set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_ERROR,  _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR,  _CRTDBG_FILE_STDERR);
+	_CrtSetReportMode(_CRT_WARN,   _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_WARN,   _CRTDBG_FILE_STDERR);
+	_set_invalid_parameter_handler(portCrtInvalidParameter);
+	std::set_terminate(portTerminateHandler);
+	signal(SIGABRT, portSignalHandler);
+	signal(SIGFPE,  portSignalHandler);
+	signal(SIGILL,  portSignalHandler);
+	signal(SIGSEGV, portSignalHandler);
+	signal(SIGTERM, portSignalHandler);
+#endif
+
 	// Initialize RenderDoc trigger BEFORE PortInit so the RenderDoc DLL
 	// can hook D3D11 before LUS creates the device.
 	portRenderDocInit();
@@ -178,7 +368,11 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	port_log("SSB64: main loop exited cleanly at frame=%d (WindowIsRunning=%d)\n",
+	         frame, WindowIsRunning());
+
 	PortGameShutdown();
+	port_log("SSB64: PortGameShutdown returned\n");
 
 	PortShutdown();
 	portRenderDocShutdown();

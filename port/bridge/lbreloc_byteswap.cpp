@@ -36,6 +36,8 @@
 extern "C" void port_log(const char *fmt, ...);
 extern "C" int  portRelocFindContainingFile(const void *ptr, uintptr_t *out_base, size_t *out_size);
 extern "C" int  portRelocFindFileIdAndBase(const void *ptr, uintptr_t *out_base);
+extern "C" bool portRelocDescribePointer(const void *ptr, uintptr_t *out_base, size_t *out_size,
+                                          unsigned int *out_file_id, const char **out_path);
 
 // ============================================================
 //  Stage audit (SSB64_STAGE_AUDIT=1)
@@ -1399,9 +1401,14 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 
 	uintptr_t target = reinterpret_cast<uintptr_t>(addr);
 	size_t    target_offset = target - fileBase;
-	if (target_offset + num_bytes > fileSize)
+	if (target_offset >= fileSize)
 	{
-		num_bytes = (unsigned int)(fileSize - target_offset);
+		return;
+	}
+	size_t available_bytes = fileSize - target_offset;
+	if ((size_t)num_bytes > available_bytes)
+	{
+		num_bytes = (unsigned int)available_bytes;
 	}
 
 	// Clip the fix range so it can't enter a previously-registered protected
@@ -1472,6 +1479,26 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 
 	// Fix the delta: bytes from already_fixed_bytes to num_bytes.
 	unsigned int fix_start = already_fixed_bytes & ~3u;
+	if (fix_start >= num_bytes)
+	{
+		return;
+	}
+
+	static unsigned int sRuntimeTexTraceCount = 0;
+	if (sRuntimeTexTraceCount < 512)
+	{
+		uintptr_t descBase = 0;
+		size_t descSize = 0;
+		unsigned int descFileId = 0;
+		const char *descPath = nullptr;
+		int described = portRelocDescribePointer(addr, &descBase, &descSize, &descFileId, &descPath);
+		port_log("SSB64: runtimeTexFix addr=%p req=0x%x fileBase=%p fileSize=0x%zx off=0x%zx num=0x%x already=0x%x fixStart=0x%x desc=%d file=%u descBase=%p descSize=0x%zx path=%s\n",
+		         addr, num_bytes, (void*)fileBase, fileSize, target_offset, num_bytes,
+		         already_fixed_bytes, fix_start, described, descFileId, (void*)descBase,
+		         descSize, descPath ? descPath : "(unknown)");
+		sRuntimeTexTraceCount++;
+	}
+
 	uint32_t *region = reinterpret_cast<uint32_t *>(target + fix_start);
 	size_t fix_bytes = num_bytes - fix_start;
 	size_t num_words = fix_bytes / 4;
@@ -1770,7 +1797,7 @@ extern "C" void portFixupSpriteBitmapData(void *sprite_v, void *bitmaps_v)
 		uint32_t buf_token    = *reinterpret_cast<uint32_t *>(bm + 0x08);
 		int16_t  actualHeight = *reinterpret_cast<int16_t *>(bm + 0x0C);
 
-		void *buf = portRelocResolvePointer(buf_token);
+		void *buf = portRelocTryResolvePointer(buf_token);
 		if (buf == NULL || width_img <= 0 || actualHeight <= 0)
 			continue;
 
@@ -1923,7 +1950,7 @@ extern "C" void portDeswizzleDecodedSprite4c(void *sprite_v, void *bitmaps_v)
 		uint32_t buf_token    = *reinterpret_cast<uint32_t *>(bm + 0x08);
 		int16_t  actualHeight = *reinterpret_cast<int16_t *>(bm + 0x0C);
 
-		void *buf = portRelocResolvePointer(buf_token);
+		void *buf = portRelocTryResolvePointer(buf_token);
 		if (buf == NULL || width_img <= 0 || actualHeight <= 0)
 			continue;
 

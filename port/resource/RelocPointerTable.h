@@ -13,7 +13,8 @@
  *   - Game code resolves tokens back to pointers via RELOC_RESOLVE().
  *
  * Token 0 is reserved for NULL.
- * Tokens are indices into a flat array — resolution is O(1).
+ * Tokens contain a generation plus an index into a flat array — resolution is
+ * O(1), and stale tokens from earlier scene/setup generations are rejected.
  */
 
 #include <stdint.h>
@@ -33,6 +34,7 @@ uint32_t portRelocRegisterPointer(void *ptr);
  * Token 0 returns NULL.
  */
 void *portRelocResolvePointer(uint32_t token);
+void *portRelocResolvePointerDebug(uint32_t token, const char *file, int line);
 
 /**
  * Try to resolve a token without logging when the value is not registered.

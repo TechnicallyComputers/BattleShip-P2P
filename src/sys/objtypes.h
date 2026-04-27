@@ -407,9 +407,10 @@ struct DObjTransformTypes
 // On non-PORT builds both macros are no-op passthroughs.
 #ifdef PORT
 extern void *portRelocResolvePointer(unsigned int token);
+extern void *portRelocResolvePointerDebug(unsigned int token, const char *file, int line);
 extern unsigned int portRelocRegisterPointer(void *ptr);
 extern void *portRelocResolveArrayEntry(const void *array_ptr, unsigned int index);
-#define PORT_RESOLVE(token) portRelocResolvePointer((unsigned int)(token))
+#define PORT_RESOLVE(token) portRelocResolvePointerDebug((unsigned int)(token), __FILE__, __LINE__)
 #define PORT_REGISTER(ptr) portRelocRegisterPointer((void*)(ptr))
 #define PORT_RESOLVE_ARRAY(array_ptr, index) portRelocResolveArrayEntry((const void*)(array_ptr), (unsigned int)(index))
 #else

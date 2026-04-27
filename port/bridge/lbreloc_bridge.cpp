@@ -14,6 +14,7 @@
 #include <ship/resource/ResourceManager.h>
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -90,6 +91,7 @@ extern void syDebugPrintf(const char *fmt, ...);
 extern void scManagerRunPrintGObjStatus(void);
 extern void portResetPackedDisplayListCache(void);
 extern void port_log(const char *fmt, ...);
+extern void gmColScriptsLinkRelocTargets(void);
 
 // Forward declarations for functions used in mutual recursion
 void* lbRelocGetExternBufferFile(u32 id);
@@ -119,6 +121,27 @@ struct PortRelocFileRange
 };
 
 static std::vector<PortRelocFileRange> sPortRelocFileRanges;
+
+static void portRelocEvictFileRangesInRange(void *base, size_t size)
+{
+	if ((base == nullptr) || (size == 0))
+	{
+		return;
+	}
+
+	uintptr_t begin = reinterpret_cast<uintptr_t>(base);
+	uintptr_t end = begin + size;
+
+	sPortRelocFileRanges.erase(
+		std::remove_if(sPortRelocFileRanges.begin(), sPortRelocFileRanges.end(),
+			[begin, end](const PortRelocFileRange &range) {
+				uintptr_t range_begin = range.base;
+				uintptr_t range_end = range_begin + range.size;
+
+				return (range.size != 0) && (range_begin < end) && (begin < range_end);
+			}),
+		sPortRelocFileRanges.end());
+}
 
 static bool portRelocIsFighterFigatreeFile(u32 file_id)
 {
@@ -362,6 +385,7 @@ void lbRelocLoadAndRelocFile(u32 file_id, void *ram_dst, u32 bytes_num, s32 loc)
 	// the prior scene's wallpaper. See docs/dk_intro_wallpaper_*.md
 	extern void portTextureCacheDeleteRange(const void *base, size_t size);
 	portTextureCacheDeleteRange(ram_dst, copySize);
+	portRelocEvictFileRangesInRange(ram_dst, copySize);
 	memcpy(ram_dst, relocFile->Data.data(), copySize);
 
 	// One-shot raw dump for verification against ROM extraction.
@@ -857,6 +881,7 @@ void lbRelocInitSetup(LBRelocSetup *setup)
 	// Clear token table from previous scene — prevents unbounded growth
 	// and stale tokens pointing to freed heap memory
 	portRelocResetPointerTable();
+	gmColScriptsLinkRelocTargets();
 	portResetPackedDisplayListCache();
 	sPortRelocFileRanges.clear();
 
@@ -879,6 +904,7 @@ void lbRelocInitSetup(LBRelocSetup *setup)
 	sLBRelocInternBuffer.status_buffer = setup->status_buffer;
 
 	sLBRelocInternBuffer.force_status_buffer_max = setup->force_status_buffer_size;
+	sLBRelocInternBuffer.force_status_buffer_num = 0;
 	sLBRelocInternBuffer.force_status_buffer = setup->force_status_buffer;
 }
 

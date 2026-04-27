@@ -15,6 +15,7 @@
 #include <stddef.h>
 
 #ifdef PORT
+#include <stdlib.h>
 extern void port_log(const char *fmt, ...);
 #endif
 
@@ -271,16 +272,13 @@ void unref_80004934(u16 arg0, u16 arg1)
 void syTaskmanInitGeneralHeap(void *start, u32 size)
 {
 #ifdef PORT
-	/* On N64, 'start' and 'size' come from overlay linker symbols that
-	 * describe free RDRAM between overlay BSS and the subsystem overlay.
-	 * On PC, these symbols have no meaningful addresses (they're just dummy
-	 * externs), so the calculated size is garbage.
-	 *
-	 * Use a fixed static buffer instead of malloc so we avoid host libc
-	 * header/prototype differences in decomp C translation units. */
-	#define PORT_GENERAL_HEAP_SIZE (2 * 1024 * 1024)
-	static u8 sPortGeneralHeap[PORT_GENERAL_HEAP_SIZE];
-	syMallocInit(&gSYTaskmanGeneralHeap, 0x10000, sPortGeneralHeap, PORT_GENERAL_HEAP_SIZE);
+	if ((start == NULL) || (size == 0))
+	{
+		port_log("SSB64: syTaskmanInitGeneralHeap received invalid PORT heap start=%p size=0x%x\n",
+		         start, (unsigned)size);
+		while (TRUE);
+	}
+	syMallocInit(&gSYTaskmanGeneralHeap, 0x10000, start, size);
 #else
 	syMallocInit(&gSYTaskmanGeneralHeap, 0x10000, start, size);
 #endif
@@ -1316,8 +1314,28 @@ void syTaskmanStartTask(SYTaskmanSetup *tsetup)
 	GCSetup gcsetup;
 
 #ifdef PORT
-	port_log("SSB64: syTaskmanStartTask — entered, arena_start=%p arena_size=0x%x\n",
-	         tsetup->scene_setup.arena_start, (unsigned)tsetup->scene_setup.arena_size);
+	/* The original arena_start / arena_size values come from N64 linker
+	 * symbols. In the host port those symbols are ordinary globals, so their
+	 * relative addresses are not a valid heap on any platform. Use a fresh
+	 * scene heap instead; this keeps scene memory ownership explicit instead
+	 * of relying on host linker layout or allocator reuse. */
+	{
+		static const size_t kPortHeapSize = 16 * 1024 * 1024;
+		void *heap = malloc(kPortHeapSize);
+		if (heap == NULL)
+		{
+			port_log("SSB64: syTaskmanStartTask — failed to allocate PORT heap size=0x%llx\n",
+			         (unsigned long long)kPortHeapSize);
+			while (TRUE);
+		}
+		port_log("SSB64: syTaskmanStartTask — decomp arena_start=%p arena_size=0x%llx (ignored on PORT)\n",
+		         tsetup->scene_setup.arena_start,
+		         (unsigned long long)tsetup->scene_setup.arena_size);
+		tsetup->scene_setup.arena_start = heap;
+		tsetup->scene_setup.arena_size = (u32)kPortHeapSize;
+		port_log("SSB64: syTaskmanStartTask — using fresh PORT heap arena_start=%p arena_size=0x%llx\n",
+		         heap, (unsigned long long)kPortHeapSize);
+	}
 #endif
 	syTaskmanInitGeneralHeap(tsetup->scene_setup.arena_start, tsetup->scene_setup.arena_size);
 #ifdef PORT
