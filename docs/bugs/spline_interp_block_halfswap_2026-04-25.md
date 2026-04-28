@@ -60,7 +60,7 @@ The Bezier / Catrom paths read `points[target_frame .. target_frame+3]` (sliding
 
 2. **Bezier phantom control points** — `port_interp_points_u32_count(desc)` returns `(points_num + 2) * 3` u32 for non-Linear kinds, `points_num * 3` for Linear. Covers the trailing phantoms so cubic sliding-window reads land on un-halfswapped data.
 
-3. **SYInterpDesc layout** — added `#if IS_BIG_ENDIAN` branch in `interp.h` that swaps `kind` and the implicit pad on LE: `{u8 _pad0; u8 kind; s16 points_num;}` instead of `{u8 kind; s16 points_num;}`. This makes the LE struct read `kind` from the byte that *post-halfswap* holds the original BE kind value. No byte mutation needed for this word.
+3. **SYInterpDesc layout** — added `#if IS_BIG_ENDIAN` branch in `interp.h` that swaps `kind` and the implicit pad on LE: `{u8 _pad0; u8 kind; s16 points_num;}` instead of `{u8 kind; s16 points_num;}`. This makes the LE struct read `kind` from the byte that *post-halfswap* holds the original BE kind value. A later Sector Z fix normalized non-figatree descriptors into the same byte order on first access; see `sector_arwing_interp_desc_byteswap_2026-04-28.md`.
 
 4. **length f32** — `port_unhalfswap_interp_desc` un-halfswaps the u32 word at offset 0x0C on first access. Same idempotency-via-visited-set as the data blocks.
 

@@ -12,12 +12,9 @@ typedef struct SYInterpDesc
     /* implicit 1-byte pad to 2-align points_num */
     s16 points_num;
 #else
-    /* PORT/LE: figatree halfswap pass leaves the original BE kind byte
-     * (originally at struct offset 0) at memory offset 1, and the
-     * original BE pad byte at offset 0.  Re-arranging the LE field
-     * order so that kind reads from the correct byte avoids needing
-     * any per-access byteswap of this word.  See
-     * docs/bugs/spline_interp_block_halfswap_2026-04-25.md. */
+    /* PORT/LE: syInterp's accessors normalize file-loaded descriptor
+     * word 0 to this byte order for both normal pass1-swapped resources
+     * and fighter figatree halfswapped resources. */
     u8 _pad0;
     u8 kind;
     s16 points_num;

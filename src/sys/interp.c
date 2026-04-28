@@ -3,6 +3,7 @@
 #include <sys/objtypes.h>
 #include <port_log.h>
 #include <port_aobj_fixup.h>
+extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
 #endif
 #include <PR/gu.h>
 
@@ -22,9 +23,10 @@
  * were skipped by the figatree fixup (reloc_words[i]==1) and are
  * already correct — leave them alone.
  *
- * Only data inside a port_aobj_register_halfswapped_range region is
- * touched; non-figatree-derived interp blocks (e.g. CObj camera anim
- * data from non-fighter files) pass through unchanged.
+ * Only data blocks inside a port_aobj_register_halfswapped_range region are
+ * un-halfswapped; non-figatree-derived interp blocks (stage Arwings, CObj
+ * camera anim data from non-fighter files) are already native f32 arrays
+ * after pass1.
  */
 static u32 port_unhalfswap_u32(u32 v)
 {
@@ -57,21 +59,29 @@ static void port_unhalfswap_block(void *p, size_t n_u32)
  *   bytes 10..13 = keyframes token (correct)
  *   bytes 14..17 = quartics token (correct)
  *
- * The LE struct definition in interp.h swaps the kind/pad order to
- * match the post-halfswap byte layout, so kind reads correctly without
- * any byte mutation.  But the f32 length word is still halfswapped —
- * un-halfswap it once on first access here.  Idempotency uses the
- * shared port_aobj_unhalfswap_visit set so that figatree-heap reloads
- * (eviction in port_aobj_register_halfswapped_range) trigger a fresh
- * un-halfswap pass on the new bytes.
+ * Normal non-figatree files stop after pass1 BSWAP32, so the first word is
+ * [points_num_lo, points_num_hi, pad, kind].  Rotate that one word into the
+ * same layout the LE struct expects: [pad, kind, points_num_lo,
+ * points_num_hi].  The f32 fields and pointed-to f32 arrays are already
+ * correct in this path.
+ *
+ * Figatree files already have that first-word halfswap, but their full-width
+ * f32 words were corrupted by the same pass; un-halfswap unk04 and length
+ * once on first access.  Idempotency uses the shared visited set so that
+ * figatree-heap reloads trigger a fresh fixup pass on the new bytes.
  */
-static void port_unhalfswap_interp_desc(SYInterpDesc *desc)
+static void port_fixup_interp_desc(SYInterpDesc *desc)
 {
     u32 *w;
     if (desc == NULL) return;
-    if (!port_aobj_is_in_halfswapped_range(desc)) return;
+    if (!port_aobj_is_in_halfswapped_range(desc))
+    {
+        portFixupStructU16(desc, 0, 1);
+        return;
+    }
     if (port_aobj_unhalfswap_visit(desc)) return;
     w = (u32*)desc;
+    w[1] = port_unhalfswap_u32(w[1]); /* unk04 f32 at offset 0x04 */
     w[3] = port_unhalfswap_u32(w[3]); /* length f32 at offset 0x0C */
 }
 
@@ -105,7 +115,7 @@ static Vec3f* syInterpGetPoints(SYInterpDesc *desc)
 {
 #ifdef PORT
     Vec3f *p;
-    port_unhalfswap_interp_desc(desc);
+    port_fixup_interp_desc(desc);
     p = (Vec3f*)PORT_RESOLVE(desc->points);
     if (p != NULL)
     {
@@ -122,7 +132,7 @@ static f32* syInterpGetKeyframes(SYInterpDesc *desc)
 {
 #ifdef PORT
     f32 *kf;
-    port_unhalfswap_interp_desc(desc);
+    port_fixup_interp_desc(desc);
     kf = (f32*)PORT_RESOLVE(desc->keyframes);
     if ((kf != NULL) && (desc->points_num > 0))
     {
@@ -138,7 +148,7 @@ static f32* syInterpGetQuartics(SYInterpDesc *desc)
 {
 #ifdef PORT
     f32 *q;
-    port_unhalfswap_interp_desc(desc);
+    port_fixup_interp_desc(desc);
     q = (f32*)PORT_RESOLVE(desc->quartics);
     if (q != NULL)
     {
