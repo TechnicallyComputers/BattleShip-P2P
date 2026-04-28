@@ -1557,7 +1557,10 @@ void mnPlayers1PBonusUpdateFighter(s32 player)
 
 	if ((sMNPlayers1PBonusSlot.fkind == nFTKindNull) && (sMNPlayers1PBonusSlot.is_selected == FALSE))
 	{
-		sMNPlayers1PBonusSlot.player->flags = GOBJ_FLAG_HIDDEN;
+		if (sMNPlayers1PBonusSlot.player != NULL)
+		{
+			sMNPlayers1PBonusSlot.player->flags = GOBJ_FLAG_HIDDEN;
+		}
 		mnPlayers1PBonusMakeHiScore();
 		is_skip_fighter = TRUE;
 	}
@@ -2252,7 +2255,6 @@ void mnPlayers1PBonusPuckProcUpdate(GObj *gobj)
 		mnPlayers1PBonusUpdateFighter(player);
 		mnPlayers1PBonusUpdateNameAndEmblem(player);
 	}
-	mnPlayers1PBonusMakeHiScore();
 }
 
 // 0x80135D08
@@ -2755,6 +2757,7 @@ void mnPlayers1PBonusInitPlayer(void)
 	sMNPlayers1PBonusSlot.sfx_id = 0;
 	sMNPlayers1PBonusSlot.is_selected = FALSE;
 	sMNPlayers1PBonusSlot.is_recalling = FALSE;
+	sMNPlayers1PBonusSlot.player = NULL;
 	sMNPlayers1PBonusSlot.fkind = nFTKindNull;
 }
 

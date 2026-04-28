@@ -1652,6 +1652,10 @@ void sc1PStageClearInitVars(void)
 	case nSC1PGameStageBonus3:
 		sSC1PStageClearKind = nSC1PStageClearKindResult;
 		sSC1PStageClearBonusObjectivesCleared = gSCManagerSceneData.bonus_tasks_complete;
+		if (sSC1PStageClearBonusObjectivesCleared > ARRAY_COUNT(sSC1PStageClearBonusObjectiveGObjs))
+		{
+			sSC1PStageClearBonusObjectivesCleared = ARRAY_COUNT(sSC1PStageClearBonusObjectiveGObjs);
+		}
 		break;
 
 	case nSC1PGameStageBoss:
