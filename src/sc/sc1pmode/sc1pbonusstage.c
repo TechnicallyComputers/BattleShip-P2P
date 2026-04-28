@@ -512,10 +512,12 @@ void sc1PBonusStageUpdateTargetInterface(void)
 // 0x8018D510
 void sc1PBonusStageUpdateTargetCount(void)
 {
+#ifdef PORT
 	if (gGRCommonStruct.bonus1.target_count == 0)
 	{
 		return;
 	}
+#endif
 	gGRCommonStruct.bonus1.target_count--;
 
 	sc1PBonusStageUpdateTargetInterface();
@@ -1246,10 +1248,12 @@ void sc1PBonusStageStartScene(void)
 		gGRCommonStruct.bonus1.target_count :
 		gGRCommonStruct.bonus2.platform_count;
 
+#ifdef PORT
 		if (tasks_remain > SCBATTLE_BONUSGAME_TASK_MAX)
 		{
 			tasks_remain = 0;
 		}
+#endif
 		tasks_complete = SCBATTLE_BONUSGAME_TASK_MAX - tasks_remain;
 
 		if (tasks_remain > 0); // Bruh

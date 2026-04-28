@@ -1272,7 +1272,11 @@ sb32 sc1PStageClearCheckHaveBonusStats(void)
 		{
 			return TRUE;
 		}
+#ifdef PORT
+		if (i == ARRAY_COUNT(dSC1PStageClearBonusData))
+#else
 		if (i == NBITS(sSC1PStageClearBonusFlags))
+#endif
 		{
 			return FALSE;
 		}
@@ -1335,6 +1339,12 @@ s32 sc1PStageClearGetAppendBonusStatPoints(s32 bonus_id, s32 bonus_num, f32 x, f
 	// 0x801351E4
 	SYColorRGBPair colors = { { 0x00, 0x00, 0x00 }, { 0xFF, 0xFF, 0x00 } };
 
+#ifdef PORT
+	if (bonus_id >= ARRAY_COUNT(dSC1PStageClearBonusData))
+	{
+		return 0;
+	}
+#endif
 	sSC1PStageClearBonusStatGObjs[bonus_num] = gobj = gcMakeGObjSPAfter(0, NULL, 17, GOBJ_PRIORITY_DEFAULT);
 
 	gcAddGObjDisplay(gobj, sc1PStageClearTextProcDisplay, 26, GOBJ_PRIORITY_DEFAULT, ~0);
@@ -1439,7 +1449,11 @@ sb32 sc1PStageClearCheckHaveBonusStatID(s32 bonus_id)
 {
 	SC1PStageClearStats bonus;
 
+#ifdef PORT
+	while (bonus_id < ARRAY_COUNT(dSC1PStageClearBonusData))
+#else
 	while (bonus_id < NBITS(sSC1PStageClearBonusFlags))
+#endif
 	{
 		sc1PStageClearSetupBonusStats(&bonus, bonus_id);
 
@@ -1472,7 +1486,11 @@ s32 sc1PStageClearGetUpdateBonusStatPointsAll(void)
 
 	while (TRUE)
 	{
+#ifdef PORT
+		if (sSC1PStageClearBonusID >= ARRAY_COUNT(dSC1PStageClearBonusData))
+#else
 		if (sSC1PStageClearBonusID == NBITS(sSC1PStageClearBonusFlags))
+#endif
 		{
 			sSC1PStageClearIsAdvance = TRUE;
 			return points;
@@ -1652,10 +1670,12 @@ void sc1PStageClearInitVars(void)
 	case nSC1PGameStageBonus3:
 		sSC1PStageClearKind = nSC1PStageClearKindResult;
 		sSC1PStageClearBonusObjectivesCleared = gSCManagerSceneData.bonus_tasks_complete;
+#ifdef PORT
 		if (sSC1PStageClearBonusObjectivesCleared > ARRAY_COUNT(sSC1PStageClearBonusObjectiveGObjs))
 		{
 			sSC1PStageClearBonusObjectivesCleared = ARRAY_COUNT(sSC1PStageClearBonusObjectiveGObjs);
 		}
+#endif
 		break;
 
 	case nSC1PGameStageBoss:
@@ -1670,6 +1690,14 @@ void sc1PStageClearInitVars(void)
 	sSC1PStageClearBonusFlags[1] = gSCManagerSceneData.bonus_get_mask[1];
 	sSC1PStageClearBonusFlags[2] = gSCManagerSceneData.bonus_get_mask[2];
 
+#ifdef PORT
+	if ((sSC1PStageClear1PGameStage == nSC1PGameStageBonus1) || (sSC1PStageClear1PGameStage == nSC1PGameStageBonus2))
+	{
+		sSC1PStageClearBonusFlags[0] = (sSC1PStageClearBonusObjectivesCleared == SCBATTLE_BONUSGAME_TASK_MAX) ? SC1PGAME_BONUS_MASK0_PERFECT : 0;
+		sSC1PStageClearBonusFlags[1] = 0;
+		sSC1PStageClearBonusFlags[2] = 0;
+	}
+#endif
 	sSC1PStageClearIsHaveBonusStats = sc1PStageClearCheckHaveBonusStats();
 
 	sSC1PStageClearBonusID = 0;
