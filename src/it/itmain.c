@@ -8,6 +8,11 @@
 #include <config.h>
 extern void portFixupStructU16(void *base, unsigned int byte_offset, unsigned int num_words);
 extern void port_log(const char *fmt, ...);
+/* The project's shadow <stdlib.h> doesn't expose host getenv/atoi
+ * (it's the decomp's slim stdlib). Forward-declare locally for the
+ * SSB64_FORCE_ITEM_KIND test hook. Real prototypes per POSIX/C99. */
+extern char *getenv(const char *name);
+extern int atoi(const char *str);
 #endif
 
 // // // // // // // // // // // //
@@ -642,8 +647,37 @@ s32 itMainSearchRandomWeight(s32 random, ITRandomWeights *weights, u32 min, u32 
 }
 
 // 0x80173090
+#ifdef PORT
+/* Test override env vars (cached on first call). Item kinds:
+ *   0=Box  1=Taru(Barrel)  2=Capsule  3=Egg  4=Tomato  5=Heart  6=Star
+ *   7=Sword  8=Bat  9=Harisen  10=StarRod  11=LGun  12=FFlower
+ *   13=Hammer  14=MSBomb  15=BombHei  16=NBumper(item)  17=GShell
+ *   18=RShell  19=MBall
+ * Empty / unset = no override. */
+static int port_forced_item_kind(void) {
+    static int s = -2;
+    if (s == -2) {
+        const char *env = getenv("SSB64_FORCE_ITEM_KIND");
+        s = env ? atoi(env) : -1;
+    }
+    return s;
+}
+static int port_forced_container_kind(void) {
+    static int s = -2;
+    if (s == -2) {
+        const char *env = getenv("SSB64_FORCE_CONTAINER_DROP");
+        s = env ? atoi(env) : -1;
+    }
+    return s;
+}
+#endif
+
 s32 itMainGetWeightedItemKind(ITRandomWeights *weights)
 {
+#ifdef PORT
+    int forced = port_forced_item_kind();
+    if (forced >= 0) return forced;
+#endif
     return weights->kinds[itMainSearchRandomWeight(syUtilsRandIntRange(weights->weights_sum), weights, 0, weights->valids_num)];
 }
 
@@ -657,6 +691,15 @@ sb32 itMainMakeContainerItem(GObj *parent_gobj)
     if (gITManagerRandomWeights.weights_sum != 0)
     {
         kind = itMainGetWeightedItemKind(&gITManagerRandomWeights);
+#ifdef PORT
+        /* Container-drop-only override: pin the item that pops out of
+         * a smashed crate / barrel / capsule, while leaving natural
+         * spawn paths alone. Lets us tell whether breakage works. */
+        {
+            int forced = port_forced_container_kind();
+            if (forced >= 0) kind = forced;
+        }
+#endif
 
         if (kind <= nITKindCommonEnd)
         {
