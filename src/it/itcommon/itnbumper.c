@@ -2,6 +2,10 @@
 #include <ft/fighter.h>
 #include <reloc_data.h>
 
+#ifdef PORT
+extern void portFixupMObjSub(void *mobjsub);
+#endif
+
 // // // // // // // // // // // //
 //                               //
 //       INITIALIZED DATA        //
@@ -367,6 +371,9 @@ void itNBumperAttachedInitVars(GObj *item_gobj)
     mobjsub = itGetPData(ip, llITCommonDataNBumperDataStart, llITCommonDataNBumperWaitMObjSub); // ((uintptr_t)((uintptr_t)ip->attr->data - (intptr_t)llITCommonDataNBumperDataStart) + (intptr_t)llITCommonDataNBumperWaitMObjSub);
 
     gcRemoveMObjAll(dobj);
+#ifdef PORT
+    portFixupMObjSub(mobjsub);
+#endif
     gcAddMObjForDObj(dobj, mobjsub);
 
     dobj->scale.vec.f.x = dobj->scale.vec.f.y = dobj->scale.vec.f.z = 1.0F;
