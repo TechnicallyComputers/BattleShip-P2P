@@ -3979,6 +3979,15 @@ void mpCollisionFixGroundDataLayout(MPGroundData *ground_data)
         portFixupStructU16(ground_data, bounds_off, 4);
         portFixupStructU16(ground_data, team_off, (end_off - team_off + 3) / 4);
         portFixupStructU32(ground_data, lmask_off & ~3U, 1);
+
+        // SYColorRGB fog_color (3 bytes) + u8 fog_alpha + SYColorRGB emblem_colors[GMCOMMON_PLAYERS_MAX]
+        // are packed bytes that pass1 BSWAP32 scrambles word-by-word. Reverse each containing u32.
+        {
+            unsigned int fog_off    = (unsigned int)((uintptr_t)&ground_data->fog_color - (uintptr_t)ground_data);
+            unsigned int emblem_end = (unsigned int)((uintptr_t)(&ground_data->emblem_colors[GMCOMMON_PLAYERS_MAX - 1] + 1) - (uintptr_t)ground_data);
+            unsigned int aligned_off = fog_off & ~3U;
+            portFixupStructU32(ground_data, aligned_off, (emblem_end - aligned_off + 3) / 4);
+        }
     }
 #endif
 }
