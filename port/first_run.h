@@ -4,7 +4,7 @@
 
 namespace ssb64 {
 
-/* Ensure ssb64.o2r exists at `target_o2r_path`. If it doesn't, locate a ROM
+/* Ensure BattleShip.o2r exists at `target_o2r_path`. If it doesn't, locate a ROM
  * (.z64 / .n64 / .v64), the torch binary, and the asset extraction yamls,
  * then shell out to torch to extract.
  *

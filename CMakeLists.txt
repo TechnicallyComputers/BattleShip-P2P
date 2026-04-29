@@ -236,6 +236,11 @@ endif()
 
 add_executable(${PROJECT_NAME} ${SSB64_SRC_PORT} ${SSB64_DEBUG_TOOLS} $<TARGET_OBJECTS:ssb64_game>)
 
+# User-facing binary name. The CMake target keeps the historical
+# `ssb64` identifier (matches the repo, build dirs, internal symbols),
+# but the produced executable is `BattleShip` / `BattleShip.exe`.
+set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "BattleShip")
+
 ################################################################################
 # Compile definitions
 ################################################################################

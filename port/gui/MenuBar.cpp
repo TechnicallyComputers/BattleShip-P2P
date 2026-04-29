@@ -52,12 +52,12 @@ void MenuBar::DrawElement() {
     ImGui::EndMenuBar();
 
     if (mShowAboutPopup) {
-        ImGui::OpenPopup("About SSB64");
+        ImGui::OpenPopup("About BattleShip");
         mShowAboutPopup = false;
     }
-    if (ImGui::BeginPopupModal("About SSB64", nullptr,
+    if (ImGui::BeginPopupModal("About BattleShip", nullptr,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text("Super Smash Bros. 64 — PC Port");
+        ImGui::Text("BattleShip");
         ImGui::Separator();
         ImGui::Text("Built from the ssb-decomp-re decompilation");
         ImGui::Text("Powered by libultraship + Torch");
@@ -79,17 +79,17 @@ void MenuBar::DrawFileMenu() {
     }
 
     if (ImGui::MenuItem("Re-extract assets...")) {
-        // Delete the resolved ssb64.o2r so the next launch re-runs the
-        // first-run flow. We don't touch f3d.o2r — that's shader-only and
-        // ROM-independent.
+        // Delete the resolved BattleShip.o2r so the next launch re-runs
+        // the first-run flow. We don't touch f3d.o2r — that's shader-only
+        // and ROM-independent.
         const auto path =
-            Ship::Context::GetPathRelativeToAppDirectory("ssb64.o2r");
+            Ship::Context::GetPathRelativeToAppDirectory("BattleShip.o2r");
         std::error_code ec;
         std::filesystem::remove(path, ec);
         SDL_ShowSimpleMessageBox(
             SDL_MESSAGEBOX_INFORMATION, "Re-extract scheduled",
-            "ssb64.o2r will be regenerated from your ROM the next time the "
-            "game launches.",
+            "BattleShip.o2r will be regenerated from your ROM the next time "
+            "the game launches.",
             nullptr);
     }
 

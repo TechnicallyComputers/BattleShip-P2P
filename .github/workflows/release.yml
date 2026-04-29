@@ -8,7 +8,7 @@ name: Release
 # scripts/package-*.sh|.ps1 helper, then a final `release` job stitches
 # the artifacts into a GitHub Release attached to the tag.
 #
-# The build is ROM-independent end-to-end: ssb64.o2r is NEVER produced
+# The build is ROM-independent end-to-end: BattleShip.o2r is NEVER produced
 # by CI. Users extract it from their own ROM via the ImGui first-run
 # wizard at launch.
 
@@ -49,8 +49,8 @@ jobs:
         # wanting the bundle alone can pop the .dmg open and drag the
         # .app out. Smaller release surface, friendlier UX.
         with:
-          name: SuperSmashBros64-macos
-          path: dist/SuperSmashBros64.dmg
+          name: BattleShip-macos
+          path: dist/BattleShip.dmg
           if-no-files-found: error
 
   build-linux:
@@ -111,8 +111,8 @@ jobs:
         run: bash scripts/package-linux.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: SuperSmashBros64-linux
-          path: dist/SuperSmashBros64-x86_64.AppImage
+          name: BattleShip-linux
+          path: dist/BattleShip-x86_64.AppImage
           if-no-files-found: error
 
   build-windows:
@@ -133,8 +133,8 @@ jobs:
         shell: pwsh
       - uses: actions/upload-artifact@v4
         with:
-          name: SuperSmashBros64-windows
-          path: dist/SuperSmashBros64-windows.zip
+          name: BattleShip-windows
+          path: dist/BattleShip-windows.zip
           if-no-files-found: error
 
   release:
@@ -151,9 +151,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/SuperSmashBros64.dmg
-            artifacts/SuperSmashBros64-x86_64.AppImage
-            artifacts/SuperSmashBros64-windows.zip
+            artifacts/BattleShip.dmg
+            artifacts/BattleShip-x86_64.AppImage
+            artifacts/BattleShip-windows.zip
           generate_release_notes: true
           draft: true   # land as a draft so a human can sanity-check
                         # before the release is visible to the public.

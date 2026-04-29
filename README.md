@@ -1,6 +1,6 @@
-# ssb64-port
+# ssb64-port — BattleShip
 
-A PC port of **Super Smash Bros. (N64, NTSC-U v1.0)** built on top of the [VetriTheRetri/ssb-decomp-re](https://github.com/vetritheretri/ssb-decomp-re) decompilation, using [libultraship](https://github.com/Kenix3/libultraship) for PC-native rendering / audio / input and [Torch](https://github.com/HarbourMasters/Torch) for extracting assets out of the ROM at build time.
+**BattleShip** is a PC port of **Super Smash Bros. (N64, NTSC-U v1.0)** built on top of the [VetriTheRetri/ssb-decomp-re](https://github.com/vetritheretri/ssb-decomp-re) decompilation, using [libultraship](https://github.com/Kenix3/libultraship) for PC-native rendering / audio / input and [Torch](https://github.com/HarbourMasters/Torch) for extracting assets out of the ROM at build time.
 
 Runs natively on macOS (Apple Silicon + Intel), Linux, and Windows.
 
@@ -86,33 +86,33 @@ Common flags (both scripts):
 | `--release` / *(edit script for ps1)* | Release build |
 | `--skip-extract` / `-SkipExtract` | Build the executable, skip Torch asset extraction |
 | `--extract-only` / `-ExtractOnly` | Re-extract assets only (assumes Torch is already built) |
-| `--clean` / `-Clean` | Wipe `build/`, `ssb64.o2r`, `f3d.o2r` and start over |
+| `--clean` / `-Clean` | Wipe `build/`, `BattleShip.o2r`, `f3d.o2r` and start over |
 
 The script will, in order:
 
 1. Initialize submodules (`libultraship`, `torch`)
 2. Regenerate `include/reloc_data.h`, the `yamls/us/reloc_*.yml` extraction configs, and `port/resource/RelocFileTable.cpp` from `tools/reloc_data_symbols.us.txt`
 3. Encode the credits text strings (`src/credits/*.credits.us.txt` → `.credits.encoded` / `.credits.metadata`)
-4. Configure CMake and build the `ssb64` executable
-5. Build Torch as an ExternalProject and run it against your ROM to produce `ssb64.o2r`
+4. Configure CMake and build the `BattleShip` executable
+5. Build Torch as an ExternalProject and run it against your ROM to produce `BattleShip.o2r`
 6. Zip `libultraship/src/fast/shaders/` into `f3d.o2r`
 7. Copy both archives next to the executable
 
 When it finishes you'll have:
 
 ```
-build/ssb64           # the executable (ssb64.exe on Windows)
-build/ssb64.o2r       # game assets extracted from your ROM
+build/BattleShip      # the executable (BattleShip.exe on Windows)
+build/BattleShip.o2r  # game assets extracted from your ROM
 build/f3d.o2r         # Fast3D shader archive
 ```
 
 ### 5. Run it
 
 ```bash
-./build/ssb64
+./build/BattleShip
 ```
 
-On first launch the game creates `ssb64.cfg.json` next to the executable. Default keyboard controls are documented in [`CONTROLS.md`](CONTROLS.md); you can rebind them in-game via the controller settings menu, or plug in a gamepad (SDL2 controller support is on by default).
+On first launch the game creates `BattleShip.cfg.json` next to the executable. Default keyboard controls are documented in [`CONTROLS.md`](CONTROLS.md); you can rebind them in-game via the controller settings menu, or plug in a gamepad (SDL2 controller support is on by default).
 
 ## Why the submodules are forks
 

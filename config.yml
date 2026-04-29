@@ -9,7 +9,7 @@ e2929e10fccc0aa84e5776227e798abc07cedabf:
     sort: OFFSET
     logging: INFO
     output:
-      binary: ssb64.o2r
+      binary: BattleShip.o2r
       headers: include/assets
       code: src/assets
       modding: src/assets

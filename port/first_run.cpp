@@ -160,8 +160,8 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path, bool silent) {
     port_log("first_run: torch config dir -> %s\n", cfgDir.c_str());
 
     // Compose: cd "<cfgDir>" && "<torch>" o2r "<rom>"
-    // Torch reads config.yml from cwd and emits ssb64.o2r in cwd
-    // (the `binary:` key in config.yml is just "ssb64.o2r").
+    // Torch reads config.yml from cwd and emits BattleShip.o2r in cwd
+    // (the `binary:` key in config.yml is just "BattleShip.o2r").
     //
     // Append the ssb64.log path to the child's stdio. Our parent process
     // has spdlog and assorted file descriptors open; if the child writes
@@ -199,7 +199,7 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path, bool silent) {
         return false;
     }
 
-    const std::string emitted = cfgDir + "/ssb64.o2r";
+    const std::string emitted = cfgDir + "/BattleShip.o2r";
     if (!fs::exists(emitted)) {
         port_log("first_run: ERROR torch reported success but %s is missing\n",
                  emitted.c_str());
@@ -225,7 +225,7 @@ bool ExtractAssetsIfNeeded(const std::string& target_o2r_path, bool silent) {
         fs::remove(emitted, ec);
     }
 
-    port_log("first_run: extracted ssb64.o2r -> %s\n",
+    port_log("first_run: extracted BattleShip.o2r -> %s\n",
              target_o2r_path.c_str());
     return true;
 }
@@ -366,7 +366,7 @@ bool RunFirstRunWizard(const std::string& target_o2r_path) {
                                        ImGuiWindowFlags_NoMove |
                                        ImGuiWindowFlags_NoSavedSettings)) {
                 ImGui::TextWrapped(
-                    "Super Smash Bros. 64 needs to extract assets from your "
+                    "BattleShip needs to extract assets from your "
                     "Nintendo 64 ROM before it can launch.");
                 ImGui::Spacing();
                 ImGui::TextWrapped(

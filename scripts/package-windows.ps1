@@ -1,10 +1,10 @@
-# Builds Super Smash Bros. 64 as a self-contained Windows release zip.
+# Builds BattleShip as a self-contained Windows release zip.
 #
-# Output: <repo-root>\dist\SuperSmashBros64-windows.zip
+# Output: <repo-root>\dist\BattleShip-windows.zip
 #
 # Layout produced (extracted):
-#   SuperSmashBros64\
-#     SuperSmashBros64.exe       — main executable
+#   BattleShip\
+#     BattleShip.exe             — main executable
 #     torch.exe                  — sidecar for first-run extraction
 #     f3d.o2r                    — Fast3D shader archive (ROM-independent)
 #     config.yml                 — Torch extraction config
@@ -14,16 +14,16 @@
 #     <other vcpkg DLLs>         — picked up by Get-ChildItem from build dir
 #
 # Built with NON_PORTABLE=ON so saves and config land in
-# %APPDATA%\ssb64\ instead of next to the .exe — same as macOS bundle.
-# ssb64.o2r is NOT bundled; the first-run wizard extracts it from the
-# user's ROM into %APPDATA%\ssb64\ssb64.o2r.
+# %APPDATA%\BattleShip\ instead of next to the .exe — same as macOS bundle.
+# BattleShip.o2r is NOT bundled; the first-run wizard extracts it from the
+# user's ROM into %APPDATA%\BattleShip\BattleShip.o2r.
 
 $ErrorActionPreference = "Stop"
 
 $Root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 $BuildDir = Join-Path $Root "build-bundle-win"
 $DistDir = Join-Path $Root "dist"
-$AppName = "SuperSmashBros64"
+$AppName = "BattleShip"
 $StageDir = Join-Path $DistDir $AppName
 $ZipPath = Join-Path $DistDir "$AppName-windows.zip"
 $Jobs = if ($env:NUMBER_OF_PROCESSORS) { [int]$env:NUMBER_OF_PROCESSORS } else { 4 }
@@ -55,7 +55,7 @@ cmake -B $BuildDir $Root `
     | Out-Null
 if ($LASTEXITCODE -ne 0) { Fail "cmake configure failed" }
 
-Write-Step "Building ssb64 + torch"
+Write-Step "Building BattleShip + torch"
 cmake --build $BuildDir --config Release -j $Jobs
 if ($LASTEXITCODE -ne 0) { Fail "build failed" }
 
@@ -70,10 +70,10 @@ Pop-Location
 if (-not (Test-Path $F3DO2R)) { Fail "f3d.o2r was not created" }
 
 # ── 3. Locate built artifacts ──
-$SsbExe = Join-Path $BuildDir "Release\ssb64.exe"
-if (-not (Test-Path $SsbExe)) {
+$GameExe = Join-Path $BuildDir "Release\BattleShip.exe"
+if (-not (Test-Path $GameExe)) {
     # Fall back to non-multi-config layout (Ninja).
-    $SsbExe = Join-Path $BuildDir "ssb64.exe"
+    $GameExe = Join-Path $BuildDir "BattleShip.exe"
 }
 $TorchExe = $null
 foreach ($cand in @(
@@ -84,7 +84,7 @@ foreach ($cand in @(
     $p = Join-Path $BuildDir $cand
     if (Test-Path $p) { $TorchExe = $p; break }
 }
-if (-not (Test-Path $SsbExe))    { Fail "ssb64.exe not found at $SsbExe" }
+if (-not (Test-Path $GameExe))   { Fail "BattleShip.exe not found at $GameExe" }
 if (-not $TorchExe)              { Fail "torch.exe not found in $BuildDir" }
 
 # ── 4. Stage the release tree ──
@@ -93,19 +93,19 @@ if (Test-Path $StageDir) { Remove-Item -Recurse -Force $StageDir }
 New-Item -ItemType Directory -Path $StageDir | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $StageDir "yamls\us") | Out-Null
 
-Copy-Item $SsbExe        (Join-Path $StageDir "$AppName.exe")
+Copy-Item $GameExe        (Join-Path $StageDir "$AppName.exe")
 Copy-Item $TorchExe      (Join-Path $StageDir "torch.exe")
 Copy-Item $F3DO2R        (Join-Path $StageDir "f3d.o2r")
 Copy-Item (Join-Path $Root "gamecontrollerdb.txt") $StageDir
 Copy-Item (Join-Path $Root "config.yml") $StageDir
 Copy-Item (Join-Path $Root "yamls\us\*.yml") (Join-Path $StageDir "yamls\us")
 # Standalone .ico for shortcut/installer use — the icon is also embedded
-# directly in SuperSmashBros64.exe via port/ssb64.rc, so Explorer picks
-# it up without this file. Keep it bundled for future installer work.
-Copy-Item (Join-Path $Root "assets\icon.ico") (Join-Path $StageDir "SuperSmashBros64.ico")
+# directly in BattleShip.exe via port/ssb64.rc, so Explorer picks it up
+# without this file. Keep it bundled for future installer work.
+Copy-Item (Join-Path $Root "assets\icon.ico") (Join-Path $StageDir "$AppName.ico")
 
-# Bundle DLLs that landed next to ssb64.exe (vcpkg drops SDL2.dll, etc.).
-$ExeBuildDir = Split-Path $SsbExe -Parent
+# Bundle DLLs that landed next to BattleShip.exe (vcpkg drops SDL2.dll, etc.).
+$ExeBuildDir = Split-Path $GameExe -Parent
 Get-ChildItem -Path $ExeBuildDir -Filter "*.dll" | ForEach-Object {
     Copy-Item $_.FullName $StageDir
 }
@@ -118,5 +118,5 @@ if (-not (Test-Path $ZipPath)) { Fail "zip was not created" }
 
 $ZipKB = [int]((Get-Item $ZipPath).Length / 1024)
 Write-Host "`n✓ Release zip ready: $ZipPath ($ZipKB KB)" -ForegroundColor Green
-Write-Host "   App-data: %APPDATA%\ssb64\"
+Write-Host "   App-data: %APPDATA%\BattleShip\"
 Write-Host "   First launch will prompt for your ROM via the ImGui wizard."

@@ -48,10 +48,10 @@ for ext in z64 n64 v64; do
     fi
 done
 [[ -n "$ROM" ]] || ROM="$ROOT/baserom.us.z64"
-O2R="$ROOT/ssb64.o2r"
+O2R="$ROOT/BattleShip.o2r"
 F3D_O2R="$ROOT/f3d.o2r"
 FAST3D_SHADER_DIR="$ROOT/libultraship/src/fast/shaders"
-GAME_EXE="$BUILD_DIR/ssb64"
+GAME_EXE="$BUILD_DIR/BattleShip"
 
 if [[ -z "${JOBS:-}" ]]; then
     if command -v sysctl >/dev/null 2>&1; then
@@ -190,11 +190,11 @@ if [[ $SKIP_EXTRACT -eq 0 ]]; then
     ( cd "$ROOT" && "$TORCH_EXE" o2r "$ROM" )
 
     if [[ ! -f "$O2R" ]]; then
-        fail "ssb64.o2r was not created"
+        fail "BattleShip.o2r was not created"
     fi
 
     O2R_SIZE_MB="$(awk "BEGIN {printf \"%.1f\", $(stat -f%z "$O2R" 2>/dev/null || stat -c%s "$O2R") / 1048576}")"
-    printf '\033[32mAssets extracted: ssb64.o2r (%s MB)\033[0m\n' "$O2R_SIZE_MB"
+    printf '\033[32mAssets extracted: BattleShip.o2r (%s MB)\033[0m\n' "$O2R_SIZE_MB"
 fi
 
 # ── Package Fast3D shader archive ──
@@ -218,25 +218,25 @@ F3D_SIZE_KB="$(awk "BEGIN {printf \"%.1f\", $(stat -f%z "$F3D_O2R" 2>/dev/null |
 printf '\033[32mPackaged f3d.o2r (%s KB)\033[0m\n' "$F3D_SIZE_KB"
 
 # ── Copy assets next to the executable ──
-# On single-config generators (Make/Ninja), the binary lives at $BUILD_DIR/ssb64.
-# On multi-config generators (Xcode), it lives at $BUILD_DIR/$CONFIG/ssb64.
+# On single-config generators (Make/Ninja), the binary lives at $BUILD_DIR/BattleShip.
+# On multi-config generators (Xcode), it lives at $BUILD_DIR/$CONFIG/BattleShip.
 EXE_DIRS=()
 for cand in "$BUILD_DIR" "$BUILD_DIR/$CONFIG"; do
-    if [[ -x "$cand/ssb64" ]]; then
+    if [[ -x "$cand/BattleShip" ]]; then
         EXE_DIRS+=("$cand")
     fi
 done
 
 for d in "${EXE_DIRS[@]:-}"; do
     [[ -z "$d" ]] && continue
-    [[ -f "$O2R" ]] && cp -f "$O2R" "$d/ssb64.o2r"
+    [[ -f "$O2R" ]] && cp -f "$O2R" "$d/BattleShip.o2r"
     [[ -f "$F3D_O2R" ]] && cp -f "$F3D_O2R" "$d/f3d.o2r"
     printf 'Copied assets to %s\n' "$d"
 done
 
 # ── Done ──
 step "Build complete"
-[[ -f "${EXE_DIRS[0]:-$BUILD_DIR}/ssb64" ]] && printf '  Executable: %s/ssb64\n' "${EXE_DIRS[0]:-$BUILD_DIR}"
+[[ -f "${EXE_DIRS[0]:-$BUILD_DIR}/BattleShip" ]] && printf '  Executable: %s/BattleShip\n' "${EXE_DIRS[0]:-$BUILD_DIR}"
 [[ -f "$O2R" ]] && printf '  Assets:     %s\n' "$O2R"
 [[ -f "$F3D_O2R" ]] && printf '  Fast3D:     %s\n' "$F3D_O2R"
 printf '\n'

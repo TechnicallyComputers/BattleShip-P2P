@@ -40,11 +40,11 @@ foreach ($ext in @("z64", "n64", "v64")) {
     if (Test-Path $candidate) { $ROM = $candidate; break }
 }
 if (-not $ROM) { $ROM = Join-Path $Root "baserom.us.z64" }
-$O2R = Join-Path $Root "ssb64.o2r"
+$O2R = Join-Path $Root "BattleShip.o2r"
 $F3DO2R = Join-Path $Root "f3d.o2r"
 $Fast3DShaderDir = Join-Path $Root "libultraship\src\fast\shaders"
 $TorchExe = Join-Path $BuildDir "TorchExternal\src\TorchExternal-build\$Config\torch.exe"
-$GameExe = Join-Path $BuildDir "$Config\ssb64.exe"
+$GameExe = Join-Path $BuildDir "$Config\BattleShip.exe"
 $ExeDir = Split-Path $GameExe -Parent
 
 function Write-Step($msg) {
@@ -188,17 +188,17 @@ if (-not $SkipExtract) {
     }
 
     if (-not (Test-Path $O2R)) {
-        Write-Host "ERROR: ssb64.o2r was not created" -ForegroundColor Red
+        Write-Host "ERROR: BattleShip.o2r was not created" -ForegroundColor Red
         exit 1
     }
 
     $o2rSize = (Get-Item $O2R).Length / 1MB
-    Write-Host ("Assets extracted: ssb64.o2r ({0:N1} MB)" -f $o2rSize) -ForegroundColor Green
+    Write-Host ("Assets extracted: BattleShip.o2r ({0:N1} MB)" -f $o2rSize) -ForegroundColor Green
 
     # Copy o2r next to exe
     if ((Test-Path $ExeDir) -and ($ExeDir -ne $Root)) {
-        Copy-Item $O2R (Join-Path $ExeDir "ssb64.o2r") -Force
-        Write-Host "Copied ssb64.o2r to $ExeDir"
+        Copy-Item $O2R (Join-Path $ExeDir "BattleShip.o2r") -Force
+        Write-Host "Copied BattleShip.o2r to $ExeDir"
     }
 }
 

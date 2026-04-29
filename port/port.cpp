@@ -197,9 +197,9 @@ int PortInit(int argc, char* argv[]) {
 	port_log("SSB64: PortInit entered\n");
 
 	sContext = Ship::Context::CreateUninitializedInstance(
-		"Super Smash Bros. 64",
-		"ssb64",
-		"ssb64.cfg.json"
+		"BattleShip",
+		"BattleShip",
+		"BattleShip.cfg.json"
 	);
 
 	if (!sContext) {
@@ -243,7 +243,7 @@ int PortInit(int argc, char* argv[]) {
 	 *      with the binary (always present, no ROM needed).
 	 *   3. Window + MenuBar
 	 *   4. First-run flow: silent shell-out, then ImGui wizard if needed.
-	 *      Once ssb64.o2r is on disk we add it via ArchiveManager.
+	 *      Once BattleShip.o2r is on disk we add it via ArchiveManager.
 	 *   5. Audio / GfxDebugger / FileDropMgr / factory registration. */
 	if (!sContext->InitCrashHandler()) { port_log("SSB64: InitCrashHandler failed\n"); return 1; }
 	if (!sContext->InitConsole()) { port_log("SSB64: InitConsole failed\n"); return 1; }
@@ -309,14 +309,14 @@ int PortInit(int argc, char* argv[]) {
 	 *      succeeds — or quits the window. */
 	{
 		const std::string targetO2r =
-			Ship::Context::GetPathRelativeToAppDirectory("ssb64.o2r");
+			Ship::Context::GetPathRelativeToAppDirectory("BattleShip.o2r");
 		// silent=true: any failure during this auto-attempt should land in
 		// the wizard's status text, not a native popup that races the
 		// ImGui modal.
 		ssb64::ExtractAssetsIfNeeded(targetO2r, /*silent=*/true);
 		if (!std::filesystem::exists(targetO2r) &&
 		    !std::filesystem::exists(
-		        Ship::Context::LocateFileAcrossAppDirs("ssb64.o2r"))) {
+		        Ship::Context::LocateFileAcrossAppDirs("BattleShip.o2r"))) {
 			if (!ssb64::RunFirstRunWizard(targetO2r)) {
 				port_log("SSB64: first-run wizard cancelled — exiting\n");
 				// PortShutdown drops audio bridge refs + resets sContext
@@ -332,9 +332,9 @@ int PortInit(int argc, char* argv[]) {
 	}
 
 	{
-		// Add ssb64.o2r to the running ResourceManager now that it exists.
+		// Add BattleShip.o2r to the running ResourceManager now that it exists.
 		const std::string ssb64o2r =
-			Ship::Context::LocateFileAcrossAppDirs("ssb64.o2r");
+			Ship::Context::LocateFileAcrossAppDirs("BattleShip.o2r");
 		port_log("SSB64: adding game archive -> %s\n", ssb64o2r.c_str());
 		auto am = sContext->GetResourceManager()->GetArchiveManager();
 		if (!am->AddArchive(ssb64o2r)) {
@@ -400,17 +400,12 @@ int main(int argc, char* argv[]) {
 	/* Use an absolute path for ssb64.log so it lands in a predictable
 	 * place regardless of how the binary was launched (Finder / open /
 	 * shell from any cwd). SDL_GetPrefPath returns the OS app-data dir
-	 * (~/Library/Application Support/ssb64/, %APPDATA%\ssb64\,
-	 * $XDG_DATA_HOME/ssb64/) and creates it on demand — same dir
-	 * Ship::Context will later use for the user's saves and o2r.
-	 *
-	 * SDL_Init isn't needed for SDL_GetPrefPath on macOS / Linux, but
-	 * SDL2 docs note it's preferred to call after SDL_Init on Windows
-	 * for codepage handling. Doing it pre-Init is fine for our use:
-	 * the path is ASCII and the file we open is ASCII-only. */
+	 * (~/Library/Application Support/BattleShip/, %APPDATA%\BattleShip\,
+	 * $XDG_DATA_HOME/BattleShip/) and creates it on demand — same dir
+	 * Ship::Context will later use for the user's saves and o2r. */
 	{
 		std::string logPath;
-		if (char* p = SDL_GetPrefPath(NULL, "ssb64")) {
+		if (char* p = SDL_GetPrefPath(NULL, "BattleShip")) {
 			logPath = std::string(p) + "ssb64.log";
 			SDL_free(p);
 		} else {
