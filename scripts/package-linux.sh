@@ -110,18 +110,37 @@ Categories=Game;ArcadeGame;
 Terminal=false
 EOF
 
-# Placeholder icon — solid PNG until real artwork lands. Generate a
-# 256x256 transparent PNG using printf if convert isn't available.
-if command -v convert >/dev/null 2>&1; then
-    convert -size 256x256 xc:'#1a1a2e' \
-        -fill white -gravity center -pointsize 48 -annotate 0 "SSB64" \
-        "$APPDIR/ssb64.png"
+# Application icon. AppImage looks for <Icon>.png at the AppDir root and
+# (for hicolor integration) under usr/share/icons/hicolor/<size>/apps/.
+# Source is assets/icon.png; we downscale a 256x256 copy for the AppDir
+# root (kept small to keep the AppImage lean) and ship the full-resolution
+# PNG in the hicolor 512x512 slot.
+ICON_SRC="$ROOT/assets/icon.png"
+[[ -f "$ICON_SRC" ]] || fail "missing assets/icon.png"
+mkdir -p "$APPDIR/usr/share/icons/hicolor/512x512/apps" \
+         "$APPDIR/usr/share/icons/hicolor/256x256/apps"
+if command -v magick >/dev/null 2>&1; then
+    magick "$ICON_SRC" -resize 256x256 "$APPDIR/ssb64.png"
+    magick "$ICON_SRC" -resize 256x256 "$APPDIR/usr/share/icons/hicolor/256x256/apps/ssb64.png"
+elif command -v convert >/dev/null 2>&1; then
+    convert "$ICON_SRC" -resize 256x256 "$APPDIR/ssb64.png"
+    convert "$ICON_SRC" -resize 256x256 "$APPDIR/usr/share/icons/hicolor/256x256/apps/ssb64.png"
+elif python3 -c "import PIL" 2>/dev/null; then
+    python3 - "$ICON_SRC" "$APPDIR/ssb64.png" "$APPDIR/usr/share/icons/hicolor/256x256/apps/ssb64.png" <<'PY'
+import sys
+from PIL import Image
+src, *outs = sys.argv[1:]
+img = Image.open(src).convert("RGBA").resize((256, 256), Image.LANCZOS)
+for o in outs:
+    img.save(o)
+PY
 else
-    # Minimal valid 1x1 PNG. AppImage requires the icon file to exist;
-    # users can replace with real art later.
-    printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xfc\xff\xff?\x00\x05\xfe\x02\xfe\xa3o\xae\x9d\x00\x00\x00\x00IEND\xaeB`\x82' \
-        > "$APPDIR/ssb64.png"
+    # No resizer available — ship the source PNG as-is. AppImage tolerates
+    # larger icons; Explorer integration is just slightly heavier.
+    cp "$ICON_SRC" "$APPDIR/ssb64.png"
+    cp "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/256x256/apps/ssb64.png"
 fi
+cp "$ICON_SRC" "$APPDIR/usr/share/icons/hicolor/512x512/apps/ssb64.png"
 
 # ── 6. Pack into AppImage if appimagetool is available ──
 if command -v appimagetool >/dev/null 2>&1; then

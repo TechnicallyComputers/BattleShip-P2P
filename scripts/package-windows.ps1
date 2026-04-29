@@ -99,6 +99,10 @@ Copy-Item $F3DO2R        (Join-Path $StageDir "f3d.o2r")
 Copy-Item (Join-Path $Root "gamecontrollerdb.txt") $StageDir
 Copy-Item (Join-Path $Root "config.yml") $StageDir
 Copy-Item (Join-Path $Root "yamls\us\*.yml") (Join-Path $StageDir "yamls\us")
+# Standalone .ico for shortcut/installer use — the icon is also embedded
+# directly in SuperSmashBros64.exe via port/ssb64.rc, so Explorer picks
+# it up without this file. Keep it bundled for future installer work.
+Copy-Item (Join-Path $Root "assets\icon.ico") (Join-Path $StageDir "SuperSmashBros64.ico")
 
 # Bundle DLLs that landed next to ssb64.exe (vcpkg drops SDL2.dll, etc.).
 $ExeBuildDir = Split-Path $SsbExe -Parent
