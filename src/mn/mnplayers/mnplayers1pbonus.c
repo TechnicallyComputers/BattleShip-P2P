@@ -2779,6 +2779,7 @@ void mnPlayers1PBonusInitVars(void)
 	sMNPlayers1PBonusIsSelected = FALSE;
 	sMNPlayers1PBonusManPlayer = gSCManagerSceneData.player;
 	sMNPlayers1PBonusTotalTimeGObj = NULL;
+	sMNPlayers1PBonusHiScoreGObj = NULL;
 	sMNPlayers1PBonusIsTeamBattle = gSCManager1PGameBattleState.is_team_battle;
 	sMNPlayers1PBonusGameRules = gSCManager1PGameBattleState.game_rules;
 
