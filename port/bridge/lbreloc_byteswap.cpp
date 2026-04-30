@@ -1194,7 +1194,27 @@ static int chain_fixup_settimg(void *file_base, size_t file_size,
 	//         addr[0]=R, addr[1]=G, addr[2]=B, addr[3]=A
 	// Pass1 BSWAP32 reversed the byte order within each u32, so a second
 	// BSWAP32 restores the original layout for ALL of these formats.
-	for (size_t i = 0; i < num_words; i++) region[i] = BSWAP32(region[i]);
+	//
+	// Issue #4 (BTT/BTP arrow palette): we must record this fix in
+	// sTexFixupExtent and sTexFixupWords too. Without those, the runtime
+	// LOADTLUT path's early-skip — which fires when a target appears in
+	// sStructU16Fixups but NOT sTexFixupExtent — locks out runtime fixup
+	// on this target. That matters when the runtime LOADTLUT loads MORE
+	// bytes than chain just fixed (e.g. a count=3 partial palette where
+	// chain only saw a count=1 LOADTLUT in its 8-cmd window): bytes
+	// beyond the chain-fixed range stay in pass1-BSWAP state and the
+	// arrow's palette[2] reads as 0xC17B (magenta) instead of 0x0001
+	// (black). With these two records, the runtime path now passes the
+	// early-skip and falls through to the per-word loop, which skips
+	// already-fixed words via sTexFixupWords and BSWAPs the rest.
+	uintptr_t reg_base = reinterpret_cast<uintptr_t>(region);
+	for (size_t i = 0; i < num_words; i++) {
+		sTexFixupWords.insert(reg_base + i * 4);
+		region[i] = BSWAP32(region[i]);
+	}
+	auto extent_it = sTexFixupExtent.find(reg_base);
+	if (extent_it == sTexFixupExtent.end() || extent_it->second < tex_bytes)
+		sTexFixupExtent[reg_base] = tex_bytes;
 
 	// Diagnostic: record what was just fixed (chain-walk path).
 	if (tex_log_enabled() || tex_dump_enabled()) {
@@ -1449,7 +1469,17 @@ extern "C" void portRelocFixupTextureAtRuntime(const void *addr, unsigned int nu
 		num_bytes = (clip_end > target) ? (unsigned int)(clip_end - target) : 0u;
 	}
 
-	num_bytes &= ~3u;
+	// Round UP to next 4-byte boundary, then clamp to file bounds. Issue #4:
+	// a CI4 LOADTLUT with count=3 calls in with num_bytes=6, which under the
+	// old `&= ~3u` round-DOWN became 4 — leaving the second 4-byte word
+	// (containing palette[2]'s low byte) in pass1-BSWAP state. The N64
+	// LOADTLUT only copies 6 bytes into TMEM, but pass1 mangled the whole
+	// containing word, so we must un-mangle the whole word for the loaded
+	// portion to read correctly. Bounds-clamped because rounding up can't
+	// validly extend past file end.
+	num_bytes = (unsigned int)(((size_t)num_bytes + 3u) & ~(size_t)3u);
+	if ((size_t)num_bytes > available_bytes)
+		num_bytes = (unsigned int)(available_bytes & ~(size_t)3u);
 	if (num_bytes == 0) return;
 
 	// If pass2 or the chain walk already fixed this exact base and runtime has
