@@ -8,9 +8,14 @@ and SFX (Link sword swoosh, DK growl, Samus sword unsheathe, Yoshi
 "Yoshi!" voice) don't trigger. Reporter video confirms across all
 characters.
 
-**Status:** Not fixed. The win-pose animation's motion script triggers
-the SFX/VFX via `nFTMotionEventPlayFGM*` and effect-spawn events; the
-question is which step in the chain isn't firing on the port.
+**Status:** RESOLVED 2026-04-29. None of the four theories below was
+the actual cause — see `bugs/css_winpose_script_null_addend_2026-04-29.md`
+for the real fix. The investigation below is preserved as the trail
+that ruled the theories out and led to the right place. Summary:
+`ftMainSetStatus`'s defensive NULL-guard on the script-pointer addend
+turned `offset + 0 = offset` into `NULL` for win-pose entries whose
+`motion_desc->offset` is already a fully-resolved `D_ovl1_*` pointer.
+Drop the addend guard (keep the deref guard) and the script parses.
 
 ## Where the events live
 
