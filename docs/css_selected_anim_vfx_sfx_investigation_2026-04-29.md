@@ -17,6 +17,11 @@ turned `offset + 0 = offset` into `NULL` for win-pose entries whose
 `motion_desc->offset` is already a fully-resolved `D_ovl1_*` pointer.
 Drop the addend guard (keep the deref guard) and the script parses.
 
+VFX confirmed working post-fix: Link's white sword spark renders on
+VS-mode CSS lock-in (verified 2026-04-29). The single parser fix
+unblocks both SFX (`nFTMotionEventPlayFGM`) and VFX
+(`nFTMotionEventEffect`) opcodes — no separate VFX bug remains.
+
 ## Where the events live
 
 - `scSubsysFighterSetStatus(player, nFTDemoStatusWinN)` →

@@ -43,6 +43,7 @@ Three call sites in the same function — both branches of the `is_use_submotion
 
 - Yoshi Win2 lock-in: `ftMotionPlayFGM(nSYAudioVoiceYoshiAppeal)` (id `0x247`) reaches `func_800269C0_275C0`, queues an FGM slot. Voice audible.
 - Link, DK, Samus also fire their CSS-selected voices.
+- Link Win 1115 (`D_ovl1_8039191C`) lock-in: `nFTMotionEventEffect` opcode (38) following `BladeSwing3` SFX dispatches `nEFKindSparkleWhiteScale` on joint 11; white sword spark renders. Confirmed visually 2026-04-29 in VS-mode CSS. Same parser fix unblocks both SFX and VFX opcodes — issue #8 fully resolved.
 
 ## Class of bug
 
