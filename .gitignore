@@ -100,3 +100,4 @@ debug_traces/
 # Local extraction / scratch directories used during debugging
 extract/
 test.zip
+src/sys/netpeer.c
