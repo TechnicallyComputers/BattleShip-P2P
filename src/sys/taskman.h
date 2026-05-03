@@ -101,5 +101,6 @@ extern void syTaskmanUpdateDLBuffers(void);
 extern void syTaskmanSetLoadScene(void);
 extern void syTaskmanStartTask(SYTaskmanSetup *arg);
 extern void func_80006B80(void);
+extern void syTaskmanSetIntervals(u16 update, u16 framedraw);
 
 #endif

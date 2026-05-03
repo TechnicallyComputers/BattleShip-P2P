@@ -5,6 +5,7 @@
 #include <sc/scmanager.h>
 #include <sys/netinput.h>
 #include <sys/netreplay.h>
+#include <sys/netrollback.h>
 #include <sys/netsync.h>
 #include <sys/utils.h>
 
@@ -762,6 +763,8 @@ void syNetPeerInitDebugEnv(void)
 	sSYNetPeerExecutionHoldFrames = 0;
 	sSYNetPeerExecutionBeginLogged = FALSE;
 
+	syNetRollbackInit();
+
 	if ((netplay_env == NULL) || (atoi(netplay_env) == 0))
 	{
 		return;
@@ -889,6 +892,8 @@ void syNetPeerStartVSSession(void)
 
 	syNetInputSetSlotSource(sSYNetPeerLocalPlayer, nSYNetInputSourceLocal);
 	syNetInputSetSlotSource(sSYNetPeerRemotePlayer, nSYNetInputSourceRemotePredicted);
+
+	syNetRollbackStartVSSession();
 
 	port_log("SSB64 NetPeer: VS session start role=%s local=%d remote=%d delay=%u barrier=%d tick=%u\n",
 	         (sSYNetPeerBootstrapIsHost != FALSE) ? "host" : "client",
@@ -1118,6 +1123,10 @@ void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 
 	for (i = 0; i < frame_count; i++)
 	{
+#ifdef PORT
+		syNetRollbackDebugOnIncomingRemoteFrame(&frames[i].tick, &frames[i].buttons, &frames[i].stick_x,
+		                                       &frames[i].stick_y);
+#endif
 		sb32 is_new_remote_tick = (frames[i].tick > sSYNetPeerHighestRemoteTick) ? TRUE : FALSE;
 
 		if ((is_new_remote_tick != FALSE) && (frames[i].tick < current_tick))
@@ -1187,7 +1196,7 @@ void syNetPeerLogNetSyncValidation(u32 tick)
 	fighter_hash = syNetSyncHashBattleFighters();
 
 	port_log(
-		"SSB64 NetSync: role=%s lp=%d rp=%d tick=%u hist_win=[%u,%u) all=0x%08X p0=0x%08X p1=0x%08X p2=0x%08X p3=0x%08X figh=0x%08X snd_next=%u rcv_hw=%u gap=%u dup=%u ooo=%u puck=%u pko=%u pkn=%u sent=%u recv=%u dropped=%u stg=%u hr=%u late=%u inpchk=0x%08X pkt_valid=%d\n",
+		"SSB64 NetSync: role=%s lp=%d rp=%d tick=%u hist_win=[%u,%u) all=0x%08X p0=0x%08X p1=0x%08X p2=0x%08X p3=0x%08X figh=0x%08X snd_next=%u rcv_hw=%u gap=%u dup=%u ooo=%u puck=%u pko=%u pkn=%u sent=%u recv=%u dropped=%u stg=%u hr=%u late=%u inpchk=0x%08X pkt_valid=%d rb=%u lf=%u\n",
 		(sSYNetPeerBootstrapIsHost != FALSE) ? "host" : "client",
 		sSYNetPeerLocalPlayer,
 		sSYNetPeerRemotePlayer,
@@ -1215,7 +1224,9 @@ void syNetPeerLogNetSyncValidation(u32 tick)
 		sSYNetPeerHighestRemoteTick,
 		sSYNetPeerLateFrames,
 		sSYNetPeerInputChecksum,
-		sSYNetPeerLastPacketTicksValid);
+		sSYNetPeerLastPacketTicksValid,
+		syNetRollbackGetAppliedResimCount(),
+		syNetRollbackGetLoadFailCount());
 }
 #endif
 
@@ -1347,6 +1358,10 @@ void syNetPeerUpdateStartBarrier(void)
 
 void syNetPeerUpdateBattleGate(void)
 {
+	if (syNetRollbackIsResimulating() != FALSE)
+	{
+		return;
+	}
 	if (sSYNetPeerIsActive == FALSE)
 	{
 		return;
@@ -1364,6 +1379,10 @@ void syNetPeerUpdateBattleGate(void)
 
 void syNetPeerUpdate(void)
 {
+	if (syNetRollbackIsResimulating() != FALSE)
+	{
+		return;
+	}
 	if (sSYNetPeerIsActive == FALSE)
 	{
 		return;
@@ -1381,10 +1400,14 @@ void syNetPeerUpdate(void)
 	}
 	syNetPeerSendLocalInput();
 	syNetPeerLogStats();
+	syNetRollbackUpdate();
 }
 
 void syNetPeerStopVSSession(void)
 {
+#ifdef PORT
+	syNetRollbackStopVSSession();
+#endif
 #if defined(PORT) && !defined(_WIN32)
 	if (sSYNetPeerIsActive != FALSE)
 	{
@@ -1395,4 +1418,19 @@ void syNetPeerStopVSSession(void)
 	syNetPeerCloseSocket();
 #endif
 	sSYNetPeerIsActive = FALSE;
+}
+
+sb32 syNetPeerIsVSSessionActive(void)
+{
+	return sSYNetPeerIsActive;
+}
+
+s32 syNetPeerGetRemotePlayerSlot(void)
+{
+	return sSYNetPeerRemotePlayer;
+}
+
+u32 syNetPeerGetHighestRemoteTick(void)
+{
+	return sSYNetPeerHighestRemoteTick;
 }

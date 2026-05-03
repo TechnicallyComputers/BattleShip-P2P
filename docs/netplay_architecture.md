@@ -14,6 +14,7 @@ This keeps the first netplay boundary at the controller layer:
 - debug replay file I/O lives in `src/sys/netreplay.c`
 - debug UDP P2P transport and match bootstrap live in `src/sys/netpeer.c`
 - narrow gameplay-state hashing for diagnostics lives in `src/sys/netsync.c`
+- **rollback (in implementation):** deterministic gameplay snapshots, rollback coordinator (misprediction → restore → resim), and fixed session **SIM_HZ** decoupled from monitor refresh — see [Rollback netcode (in implementation)](#rollback-netcode-in-implementation)
 
 ## Current Integration
 
@@ -114,7 +115,7 @@ For full-match debug replay files, `netinput.c` also keeps a separate replay fra
 | `syNetInputReset()` | Reset slot sources and all input histories. |
 | `syNetInputStartVSSession()` | Reset netinput state for a new VS match and default slots to local input. |
 | `syNetInputGetTick()` | Return the current VS-local simulation tick used for input history. |
-| `syNetInputSetTick()` | Set the VS-local tick, reserved for future rollback/replay control. |
+| `syNetInputSetTick()` | Set the VS-local tick; used by rollback/resimulation when rewinding to a prior tick frontier. |
 | `syNetInputSetSlotSource()` | Select local, remote, predicted, or saved input for a player slot. |
 | `syNetInputGetSlotSource()` | Inspect a player slot's current source. |
 | `syNetInputSetRemoteInput()` | Stage a confirmed remote input sample for a tick. |
@@ -248,16 +249,68 @@ Before adding sockets or rollback state restoration, use the saved-input path to
 
 This verifies the input layer can reproduce the same per-tick controller stream before introducing rollback state rewind.
 
+## Rollback netcode (in implementation)
+
+Rollback builds on the existing input boundary: peers agree on **simulation tick indices** and **inputs per tick**; when confirmed remote input disagrees with what was **published** for that tick, the session **restores** saved gameplay state and **resimulates** forward with corrected inputs.
+
+**Implementation (PORT, first landing):** [`src/sys/netrollback.c`](src/sys/netrollback.c) / [`src/sys/netrollback.h`](src/sys/netrollback.h). VS saves **post-tick** fighter scalars (aligned with `syNetSyncHashBattleFighters()` fields plus velocities, `pos_prev`, **aerial knockback velocity** `vel_damage_air`, and **`hitlag_tics`**) into a ring sized like `SYNETINPUT_HISTORY_LENGTH`. `syNetRollbackAfterBattleUpdate()` runs at the end of [`scVSBattleFuncUpdate`](src/sc/sccommon/scvsbattle.c). `syNetRollbackUpdate()` runs from [`syNetPeerUpdate()`](src/sys/netpeer.c): scans recent ticks for mismatch between published history and remote confirmed history on the remote slot, loads snapshot `mismatch_tick - 1`, then resimulates using `syNetInputFuncRead()` + `scVSBattleFuncUpdate()` until the current frontier. While resimulating, [`syNetPeerUpdateBattleGate()`](src/sys/netpeer.c) and [`syNetPeerUpdate()`](src/sys/netpeer.c) return early so recv/send do not recurse.
+
+| Env var | Effect |
+| ------- | ------ |
+| `SSB64_NETPLAY_ROLLBACK=0` | Disable rollback snapshots + mismatch resim. Fixed sim pacing via taskman intervals still applies whenever a VS UDP session is active (`syNetPeerIsVSSessionActive()`). Default: rollback **on** when unset. |
+| `SSB64_NETPLAY_SIM_HZ` | Target simulation Hz for pacing (default **60**). Used by `syNetRollbackApplyPortSimPacing()` from [`port/gameloop.cpp`](port/gameloop.cpp) with the window refresh rate. |
+| `SSB64_NETPLAY_ROLLBACK_INJECT_TICK=N` | **Debug:** Select wire tick `N` (packet frame tick = sender history tick + delay) for a one-shot harness. Without `FORCE_MISMATCH`, XORs incoming remote **payload** buttons once before staging (may not create `history≠remote` on loopback if staging runs before the first `FuncRead` that consumes tick `N`). |
+| `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH=1` | **Debug:** With `INJECT_TICK`, do **not** tamper the wire. After remote is staged and once `syNetInputGetTick() > N`, XOR **`0x1000` into published history only** if history and remote still agree — guarantees `history≠remote` for mismatch detection on fast LAN. Logs `FORCE_MISMATCH armed` / `detected published history == remote` / `gave up` as appropriate. |
+| `SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG=1` | **Debug:** While scanning for mismatches, log up to **16** per-VS-session cases where exactly one of `{published history, remote history}` exists for the remote slot at a tick inside the scan window (explains silent skips when NetSync diverges but rollback never fires). |
+| `SSB64_NETPLAY_ROLLBACK_VERIFY_STRICT=1` | **Debug:** After a successful resim, if `syNetSyncHashBattleFighters()` is unchanged vs the pre-resim hash, log a **VERIFY_STRICT** warning (possible no-op snapshot or single-tick invisible delta). |
+
+[`syTaskmanSetIntervals()`](src/sys/taskman.h) is declared for the port; [`taskman.c`](src/sys/taskman.c) bundles `K` VI messages per logical update when `update_interval == K`.
+
+### Rollback harness (loopback vs production)
+
+- **Production-like prediction error:** late UDP causes `FuncRead` to publish **prediction** for tick `t`, then a later packet fills **`remoteHistory[t]`** with truth; mismatch scan sees **`history[t]≠remote[t]`** and rollback runs.
+- **Loopback / low latency:** remote is often staged **before** the first publish for tick `t`, so **`history[t]`** and **`remote[t]`** already match — wire XOR does not create a mismatch. Use **`FORCE_MISMATCH`** to validate snapshot load + resim anyway.
+
+### Determinism bisect (when `figh` diverges but inputs match)
+
+1. Fix **`SSB64_NETPLAY_SEED`**, delay, characters, and stage; capture host + client logs with **`SSB64 NetSync`** at the same nominal tick cadence.
+2. Note the **earliest** `hist_win` where **`figh`** (or `p*`) first disagrees across peers.
+3. If **`all` / `p*`** already disagree, fix input staging, tick mapping, or packet redundancy before widening snapshots.
+4. If **inputs agree** but **`figh`** disagrees, treat as **simulation divergence**: extend [`syNetSyncHashBattleFighters()`](src/sys/netsync.c) and rollback snapshots together until the first divergent subsystem is identified (RNG, items, articles, collision scratch, etc.).
+5. Use **`SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG`** when rollback stays silent despite suspected input issues — look for **history-only** or **remote-only** slots inside the scan window.
+
+**Design reference (Cursor plan `netplay_rollback_plan_cce27cd2.plan.md`):**
+
+| Layer | Responsibility |
+| ----- | ---------------- |
+| **Fixed SIM_HZ** | Negotiated logical rate (default **60 Hz**); port calls `syTaskmanSetIntervals(K, 1)` so peers stay tick-aligned across monitor refresh differences. |
+| **Snapshots** | Expand fighter/world capture until full match resim is stable; v1 is intentionally narrow. |
+| **Rollback coordinator** | `syNetRollbackUpdate()` + `syNetInputRollbackPrepareForResim()` in [`netinput.c`](src/sys/netinput.c). |
+| **Netpeer** | `SSB64_NETPLAY_DELAY`, redundant frames, `syNetPeerGet*` accessors for frontier/slot. |
+| **Verification** | NetSync `figh` + per-interval `rb`/`lf` rollback counters; post-resim logs in `syNetRollbackUpdate`; `SSB64_NETPLAY_ROLLBACK_*` harness env (see env table above). |
+
+**Explicitly out of snapshot v1:** framebuffer contents, full audio buffer rewind, raw heap dumps — same spirit as existing non-goals.
+
+## Future work: simulation cadence vs monitor refresh (pipeline revisit)
+
+Rollback and lockstep netplay require peers to agree on **simulation tick indices** and **inputs per tick**. That is **not** the same as monitor refresh rate or render FPS: tying `task_update` / netinput advancement 1:1 to uncapped VI/`PortPushFrame` lets two machines drift by tick rate (e.g. 120 Hz vs 60 Hz clients).
+
+**Direction:** Fix **session simulation Hz** (typically 60 to match original tempo)—including bundling multiple VI messages per logical update where needed (see `syTaskmanSetIntervals()` in `src/sys/taskman.c`)—while letting users keep **custom resolution and display settings** for presentation. Resolution stays in render/game-unit space; framebuffer rollback remains out of scope.
+
+**Competitive display strategy (baseline):** Prefer **duplicate-frame presentation** at high refresh (same sim output shown twice) or **VRR** pacing over mandatory **visual interpolation**. Interpolation can remain an optional graphics toggle later; it affects perceived motion and visual latency relative to sim, not necessarily gameplay sampling, but many competitors prefer truthfulness over blended poses.
+
+**Long-term:** Revisit the **core game loop / taskman / port** boundary with maintainers to make **sim stepped at SIM_HZ**, **render reading last committed state**, and **network/rollback** keyed only to sim ticks—so netplay (including future 4P/customs) stays one logical timeline while presentation varies per machine. Track this when proposing wider patches to `taskman`, scheduler, or `port/gameloop.cpp`.
+
 ## Non-Goals
 
-This module does not yet implement:
+Still **not** in scope (or not implied by rollback v1):
 
 - matchmaking, lobby, ELO, region, or ping selection
 - STUN/TURN, NAT traversal, or relay fallback
-- game-state snapshot/restore
-- framebuffer rollback
-- exhaustive determinism hashing of fighter/world state (only narrow diagnostic hashes ship today via `netsync.c`)
-- wall-clock input scheduling, rollback prediction windows, or resimulation
+- framebuffer rollback (render output is not simulation state)
+- exhaustive determinism hashing of fighter/world state (only narrow diagnostic hashes ship today via `netsync.c`; snapshots must still capture full gameplay determinism — wider **hashing** for debug remains optional)
 - netplay support for 1P Game, Training Mode, Bonus 1 Practice, or Bonus 2 Practice
+
+**Rollback-related:** PORT VS UDP builds ship an initial **snapshot / mismatch / resim** stack (`src/sys/netrollback.c`). Fighter capture is intentionally narrow for v1 — expand as full-match determinism testing exposes gaps; details in [Rollback netcode (in implementation)](#rollback-netcode-in-implementation).
 
 Those systems should build on top of this input boundary rather than bypassing it.

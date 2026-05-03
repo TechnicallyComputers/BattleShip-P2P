@@ -8,6 +8,7 @@ extern void port_coroutine_yield(void);
 #include <sys/netinput.h>
 #include <sys/netpeer.h>
 #include <sys/netreplay.h>
+#include <sys/netrollback.h>
 #include <sys/video.h>
 #include <reloc_data.h>
 #include <gm/gmcamera.h>
@@ -95,6 +96,7 @@ void scVSBattleFuncUpdate(void)
 	ifCommonBattleUpdateInterfaceAll();
 	syNetReplayUpdate();
 	syNetPeerUpdate();
+	syNetRollbackAfterBattleUpdate();
 }
 
 // 0x8018D0E0 - Get player's initial facing direction for battle start

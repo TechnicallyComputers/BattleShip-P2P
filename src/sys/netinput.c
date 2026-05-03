@@ -536,6 +536,29 @@ sb32 syNetInputGetReplayMetadata(SYNetInputReplayMetadata *out_metadata)
 	return TRUE;
 }
 
+sb32 syNetInputGetRemoteHistoryFrame(s32 player, u32 tick, SYNetInputFrame *out_frame)
+{
+	return syNetInputGetStoredFrame(sSYNetInputRemoteHistory, player, tick, out_frame);
+}
+
+#ifdef PORT
+void syNetInputDebugXorPublishedHistoryButtons(s32 player, u32 tick, u16 xor_mask)
+{
+	SYNetInputFrame hist;
+
+	if (syNetInputCheckPlayer(player) == FALSE)
+	{
+		return;
+	}
+	if (syNetInputGetStoredFrame(sSYNetInputHistory, player, tick, &hist) == FALSE)
+	{
+		return;
+	}
+	hist.buttons ^= xor_mask;
+	syNetInputStoreFrame(sSYNetInputHistory, player, &hist);
+}
+#endif
+
 void syNetInputFuncRead(void)
 {
 	SYNetInputFrame frame;
@@ -562,4 +585,58 @@ void syNetInputFuncRead(void)
 		return;
 	}
 	sSYNetInputTick++;
+}
+
+static void syNetInputRestoreRemoteConfirmedSeed(s32 player, u32 resim_start_tick)
+{
+	SYNetInputFrame frame;
+	u32 t;
+
+	if (syNetInputCheckPlayer(player) == FALSE)
+	{
+		return;
+	}
+	if (resim_start_tick == 0)
+	{
+		syNetInputClearFrame(&sSYNetInputSlots[player].last_confirmed);
+		return;
+	}
+	for (t = resim_start_tick; t > 0; t--)
+	{
+		if (syNetInputGetStoredFrame(sSYNetInputRemoteHistory, player, t - 1, &frame) != FALSE)
+		{
+			sSYNetInputSlots[player].last_confirmed = frame;
+			return;
+		}
+	}
+	syNetInputClearFrame(&sSYNetInputSlots[player].last_confirmed);
+}
+
+void syNetInputRollbackPrepareForResim(u32 resim_start_tick)
+{
+	s32 player;
+	SYNetInputFrame frame;
+
+	if (resim_start_tick > 0)
+	{
+		for (player = 0; player < MAXCONTROLLERS; player++)
+		{
+			if (syNetInputGetHistoryFrame(player, resim_start_tick - 1, &frame) != FALSE)
+			{
+				sSYNetInputSlots[player].last_published = frame;
+			}
+			else syNetInputClearFrame(&sSYNetInputSlots[player].last_published);
+		}
+	}
+	else
+	{
+		for (player = 0; player < MAXCONTROLLERS; player++)
+		{
+			syNetInputClearFrame(&sSYNetInputSlots[player].last_published);
+		}
+	}
+	for (player = 0; player < MAXCONTROLLERS; player++)
+	{
+		syNetInputRestoreRemoteConfirmedSeed(player, resim_start_tick);
+	}
 }

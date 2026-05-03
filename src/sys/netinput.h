@@ -86,5 +86,11 @@ extern u32 syNetInputGetReplayInputChecksum(void);
 extern void syNetInputSetReplayMetadata(const SYNetInputReplayMetadata *metadata);
 extern sb32 syNetInputGetReplayMetadata(SYNetInputReplayMetadata *out_metadata);
 extern void syNetInputFuncRead(void);
+extern void syNetInputRollbackPrepareForResim(u32 resim_start_tick);
+extern sb32 syNetInputGetRemoteHistoryFrame(s32 player, u32 tick, SYNetInputFrame *out_frame);
+
+#ifdef PORT
+extern void syNetInputDebugXorPublishedHistoryButtons(s32 player, u32 tick, u16 xor_mask);
+#endif
 
 #endif /* _SYNETINPUT_H_ */

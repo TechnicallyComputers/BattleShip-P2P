@@ -11,5 +11,8 @@ extern sb32 syNetPeerCheckStartBarrierReleased(void);
 extern void syNetPeerUpdateBattleGate(void);
 extern void syNetPeerUpdate(void);
 extern void syNetPeerStopVSSession(void);
+extern sb32 syNetPeerIsVSSessionActive(void);
+extern s32 syNetPeerGetRemotePlayerSlot(void);
+extern u32 syNetPeerGetHighestRemoteTick(void);
 
 #endif /* _SYNETPEER_H_ */
