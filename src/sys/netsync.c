@@ -2,6 +2,7 @@
 
 #include <ft/fighter.h>
 #include <gm/gmdef.h>
+#include <mp/map.h>
 #include <sys/objdef.h>
 #include <sys/objman.h>
 
@@ -97,4 +98,44 @@ u32 syNetSyncHashBattleFighters(void)
 		}
 		return merged;
 	}
+}
+
+#define SYNETSYNC_MAX_MP_YAKU 32
+
+u32 syNetSyncHashMapCollisionKinematics(void)
+{
+	u32 hash;
+	s32 i;
+	s32 n;
+	s32 cap;
+	DObj *dobj;
+
+	hash = 2166136261U;
+	hash = syNetSyncFnvAccumulateU32(hash, (u32)gMPCollisionUpdateTic);
+	n = gMPCollisionYakumonosNum;
+	if (n < 0)
+	{
+		n = 0;
+	}
+	cap = (n > SYNETSYNC_MAX_MP_YAKU) ? SYNETSYNC_MAX_MP_YAKU : n;
+	if ((gMPCollisionYakumonoDObjs == NULL) || (gMPCollisionSpeeds == NULL))
+	{
+		return hash;
+	}
+	for (i = 0; i < cap; i++)
+	{
+		dobj = gMPCollisionYakumonoDObjs->dobjs[i];
+		if (dobj == NULL)
+		{
+			continue;
+		}
+		hash = syNetSyncFnvAccumulateU32(hash, (u32)dobj->user_data.s);
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(dobj->translate.vec.f.x));
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(dobj->translate.vec.f.y));
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(dobj->translate.vec.f.z));
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(gMPCollisionSpeeds[i].x));
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(gMPCollisionSpeeds[i].y));
+		hash = syNetSyncFnvAccumulateU32(hash, syNetSyncHashF32(gMPCollisionSpeeds[i].z));
+	}
+	return hash;
 }

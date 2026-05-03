@@ -32,7 +32,7 @@ Build rollback netcode in phases:
 - `src/sc/sccommon/scvsbattle.c` calls `syNetPeerStartVSSession()`, `syNetPeerUpdate()`, and `syNetPeerStopVSSession()` for debug P2P sessions.
 - `src/sc/scmanager.c` calls `syNetPeerInitDebugEnv()` during port startup, next to replay debug env setup.
 - `src/sc/sc1pmode/sc1pgame.c`, `src/sc/sc1pmode/sc1ptrainingmode.c`, and `src/sc/sc1pmode/sc1pbonusstage.c` remain on `syControllerFuncRead`.
-- `src/sys/netrollback.c` / `src/sys/netrollback.h` implement VS rollback: fixed-sim taskman intervals from the port, post-tick fighter snapshot ring, mismatch detection vs remote confirmed inputs (single **remote player slot** until netpeer stages multiple human peers), resimulation with netpeer recv/send suppressed during rewind, and debug env (`SSB64_NETPLAY_ROLLBACK`, `SSB64_NETPLAY_ROLLBACK_INJECT_TICK`, `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH`, `SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG`, `SSB64_NETPLAY_ROLLBACK_VERIFY_STRICT`, `SSB64_NETPLAY_SIM_HZ`).
+- `src/sys/netrollback.c` / `src/sys/netrollback.h` implement VS rollback: fixed-sim taskman intervals from the port, post-tick fighter + **minimal map / yakumono mover** snapshot ring, mismatch detection vs remote confirmed inputs on **all `SSB64_NETPLAY_REMOTE_SLOTS`**, resimulation with netpeer recv/send suppressed during rewind, and debug env (`SSB64_NETPLAY_ROLLBACK`, `SSB64_NETPLAY_ROLLBACK_INJECT_TICK`, `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH`, `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH_PLAYER`, `SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG`, `SSB64_NETPLAY_ROLLBACK_VERIFY_STRICT`, `SSB64_NETPLAY_SIM_HZ`).
 - `docs/netplay_architecture.md` documents the input architecture, rollback wiring, sim-vs-display cadence, and pipeline revisit notes.
 
 ## Architecture Rules
@@ -81,7 +81,7 @@ Build rollback netcode in phases:
 - Duplicate log lines expose transport health: `gap`/`dup`/`ooo` flag sequence regressions independently of staged frame counters because redundant frame bundles hide single packet loss.
 - One-way packet diagnosis is still manual. Keep logging role, local/remote players, tick, staged frames, highest remote tick, dropped packets, late frames, and barrier state when changing netpeer.
 - Narrow gameplay/state hashes exist (`src/sys/netsync.c`); rollback snapshots in `src/sys/netrollback.c` mirror a **narrow** fighter footprint and are extended incrementally (e.g. damage-air velocity, hitlag) alongside `syNetSyncHashBattleFighters()` when chasing post-resim or cross-peer `figh` drift — widen snapshot + hash coverage when NetSync or gameplay diverges after resim (`docs/netplay_architecture.md`).
-- **Multi-human (>2) rollback:** `syNetRollbackFindEarliestInputMismatch()` scans only `syNetPeerGetRemotePlayerSlot()`; extending mismatch + staging to multiple remote slots waits on netpeer packet model changes — do not bolt on extra slots until `netpeer` owns per-player remote rings.
+- **Multi-human (>2) rollback:** `syNetRollbackFindEarliestInputMismatch()` scans every port in `SSB64_NETPLAY_REMOTE_SLOTS` (default: `SSB64_NETPLAY_REMOTE_PLAYER`). Debug P2P may send **INPUT wire version 3** with a second bundled local slot when `SSB64_NETPLAY_EXTRA_LOCAL_PLAYER` is set; receivers must allow both sender controller indices via `SSB64_NETPLAY_PEER_SENDER_SLOTS`.
 - No STUN/TURN, NAT traversal, relay fallback, matchmaking, or final session owner model exists yet.
 
 ## Desync triage playbook

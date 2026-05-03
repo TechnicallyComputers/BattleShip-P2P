@@ -27,10 +27,18 @@ extern void port_log(const char *fmt, ...);
 
 #define SYNETPEER_MAGIC 0x53534E50 // SSNP
 #define SYNETPEER_VERSION 2
+#define SYNETPEER_VERSION_DUAL_LOCAL 3
 #define SYNETPEER_MAX_PACKET_FRAMES 16
 #define SYNETPEER_FRAME_BYTES 8
 #define SYNETPEER_INPUT_HEADER_BYTES (4 + 2 + 2 + 4 + 4 + 4 + 1 + 1 + 1 + 1)
-#define SYNETPEER_PACKET_BYTES ((SYNETPEER_INPUT_HEADER_BYTES) + ((SYNETPEER_MAX_PACKET_FRAMES) * (SYNETPEER_FRAME_BYTES)) + 4)
+#define SYNETPEER_PACKET_BYTES_V2 ((SYNETPEER_INPUT_HEADER_BYTES) + ((SYNETPEER_MAX_PACKET_FRAMES) * (SYNETPEER_FRAME_BYTES)) + 4)
+#define SYNETPEER_PACKET_BYTES_V3                                                                                    \
+	((SYNETPEER_INPUT_HEADER_BYTES) + ((SYNETPEER_MAX_PACKET_FRAMES) * (SYNETPEER_FRAME_BYTES)) + 1 + 1 +             \
+	 ((SYNETPEER_MAX_PACKET_FRAMES) * (SYNETPEER_FRAME_BYTES)) + 4)
+#define SYNETPEER_PACKET_RECV_MAX                                                                                      \
+	(((SYNETPEER_PACKET_BYTES_V2) > (SYNETPEER_PACKET_BYTES_V3)) ? (SYNETPEER_PACKET_BYTES_V2) : (SYNETPEER_PACKET_BYTES_V3))
+#define SYNETPEER_MAX_REMOTE_PLAYLIST 4
+#define SYNETPEER_SECONDARY_SLOT_ABSENT 255
 #define SYNETPEER_VALIDATION_INPUT_WINDOW 120
 #define SYNETPEER_METADATA_BYTES (11 * 4 + 8 + (MAXCONTROLLERS * 7))
 #define SYNETPEER_BOOTSTRAP_PACKET_BYTES (4 + 2 + 2 + 4 + SYNETPEER_METADATA_BYTES + 4)
@@ -60,12 +68,26 @@ typedef struct SYNetPeerPacketFrame
 
 } SYNetPeerPacketFrame;
 
+static void syNetPeerConfigureRemoteReceiveSlots(void);
+static void syNetPeerConfigurePeerSenderSlots(void);
+static void syNetPeerConfigureExtraLocalSender(void);
+static sb32 syNetPeerValidateRemoteReceiveList(void);
+static sb32 syNetPeerValidatePeerSenderList(void);
+static sb32 syNetPeerGatherHistoryBundle(s32 slot, SYNetPeerPacketFrame *frames, s32 *out_frame_count);
+static void syNetPeerStagePacketBundle(s32 target_player, const SYNetPeerPacketFrame *frames, s32 frame_count,
+                                       u32 current_tick);
+
 sb32 sSYNetPeerIsEnabled;
 sb32 sSYNetPeerIsConfigured;
 sb32 sSYNetPeerIsActive;
 s32 sSYNetPeerLocalPlayer;
 s32 sSYNetPeerRemotePlayer;
 u32 sSYNetPeerInputDelay;
+static u8 sSYNetPeerRemoteReceiveSlots[SYNETPEER_MAX_REMOTE_PLAYLIST] = { 1 };
+static s32 sSYNetPeerRemoteReceiveCount = 1;
+static u8 sSYNetPeerPeerSenderSlots[SYNETPEER_MAX_REMOTE_PLAYLIST] = { 1 };
+static s32 sSYNetPeerPeerSenderCount = 1;
+static s32 sSYNetPeerExtraLocalSenderSlot = -1;
 u32 sSYNetPeerSessionID;
 u32 sSYNetPeerHighestRemoteTick;
 u32 sSYNetPeerPacketsSent;
@@ -127,13 +149,15 @@ u32 syNetPeerChecksumAccumulateFrame(u32 checksum, const SYNetPeerPacketFrame *f
 	return checksum;
 }
 
-u32 syNetPeerChecksumPacket(u32 session_id, u32 ack_tick, u32 packet_seq, u8 player, u8 frame_count, const SYNetPeerPacketFrame *frames)
+u32 syNetPeerChecksumInputPacket(u32 session_id, u32 ack_tick, u32 packet_seq, u16 wire_version, u8 player, u8 frame_count,
+                                 const SYNetPeerPacketFrame *frames, u8 secondary_slot, u8 sec_frame_count,
+                                 const SYNetPeerPacketFrame *sec_frames)
 {
 	u32 checksum = 2166136261U;
 	s32 i;
 
 	checksum = syNetPeerChecksumAccumulateU32(checksum, SYNETPEER_MAGIC);
-	checksum = syNetPeerChecksumAccumulateU32(checksum, SYNETPEER_VERSION);
+	checksum = syNetPeerChecksumAccumulateU32(checksum, wire_version);
 	checksum = syNetPeerChecksumAccumulateU32(checksum, SYNETPEER_PACKET_INPUT);
 	checksum = syNetPeerChecksumAccumulateU32(checksum, session_id);
 	checksum = syNetPeerChecksumAccumulateU32(checksum, ack_tick);
@@ -144,6 +168,15 @@ u32 syNetPeerChecksumPacket(u32 session_id, u32 ack_tick, u32 packet_seq, u8 pla
 	for (i = 0; i < frame_count; i++)
 	{
 		checksum = syNetPeerChecksumAccumulateFrame(checksum, &frames[i]);
+	}
+	if ((wire_version >= SYNETPEER_VERSION_DUAL_LOCAL) && (secondary_slot != SYNETPEER_SECONDARY_SLOT_ABSENT))
+	{
+		checksum = syNetPeerChecksumAccumulateU32(checksum, secondary_slot);
+		checksum = syNetPeerChecksumAccumulateU32(checksum, sec_frame_count);
+		for (i = 0; i < sec_frame_count; i++)
+		{
+			checksum = syNetPeerChecksumAccumulateFrame(checksum, &sec_frames[i]);
+		}
 	}
 	return checksum;
 }
@@ -836,6 +869,13 @@ void syNetPeerInitDebugEnv(void)
 		         sSYNetPeerLocalPlayer, sSYNetPeerRemotePlayer);
 		return;
 	}
+	syNetPeerConfigureRemoteReceiveSlots();
+	syNetPeerConfigurePeerSenderSlots();
+	syNetPeerConfigureExtraLocalSender();
+	if ((syNetPeerValidateRemoteReceiveList() == FALSE) || (syNetPeerValidatePeerSenderList() == FALSE))
+	{
+		return;
+	}
 #if !defined(_WIN32)
 	if ((syNetPeerParseIPv4Address(bind_env, &sSYNetPeerBindAddress) == FALSE) ||
 		(syNetPeerParseIPv4Address(peer_env, &sSYNetPeerPeerAddress) == FALSE))
@@ -894,8 +934,15 @@ void syNetPeerStartVSSession(void)
 	sSYNetPeerExecutionHoldFrames = 0;
 	sSYNetPeerExecutionBeginLogged = (sSYNetPeerBattleBarrierEnabled == FALSE) ? TRUE : FALSE;
 
-	syNetInputSetSlotSource(sSYNetPeerLocalPlayer, nSYNetInputSourceLocal);
-	syNetInputSetSlotSource(sSYNetPeerRemotePlayer, nSYNetInputSourceRemotePredicted);
+	{
+		s32 ri;
+
+		syNetInputSetSlotSource(sSYNetPeerLocalPlayer, nSYNetInputSourceLocal);
+		for (ri = 0; ri < sSYNetPeerRemoteReceiveCount; ri++)
+		{
+			syNetInputSetSlotSource((s32)sSYNetPeerRemoteReceiveSlots[ri], nSYNetInputSourceRemotePredicted);
+		}
+	}
 
 	syNetRollbackStartVSSession();
 
@@ -921,33 +968,217 @@ sb32 syNetPeerCheckStartBarrierReleased(void)
 	return syNetPeerCheckBattleExecutionReady();
 }
 
-void syNetPeerBuildPacket(u8 *buffer, u32 *out_size)
+static sb32 syNetPeerU8InList(u8 value, const u8 *list, s32 count)
+{
+	s32 i;
+
+	for (i = 0; i < count; i++)
+	{
+		if (list[i] == value)
+		{
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static sb32 syNetPeerParseCommaControllerSlots(const char *str, u8 *out_slots, s32 *out_count)
+{
+	const char *p;
+	s32 n;
+	s32 v;
+	sb32 have_digit;
+
+	if ((str == NULL) || (out_slots == NULL) || (out_count == NULL))
+	{
+		return FALSE;
+	}
+	n = 0;
+	p = str;
+	while ((*p != '\0') && (n < SYNETPEER_MAX_REMOTE_PLAYLIST))
+	{
+		while ((*p == ' ') || (*p == '\t') || (*p == ','))
+		{
+			p++;
+		}
+		if (*p == '\0')
+		{
+			break;
+		}
+		v = 0;
+		have_digit = FALSE;
+		while ((*p >= '0') && (*p <= '9'))
+		{
+			v = (v * 10) + (*p - '0');
+			have_digit = TRUE;
+			p++;
+		}
+		if ((have_digit == FALSE) || (v < 0) || (v >= MAXCONTROLLERS))
+		{
+			return FALSE;
+		}
+		if (syNetPeerU8InList((u8)v, out_slots, n) != FALSE)
+		{
+			return FALSE;
+		}
+		out_slots[n++] = (u8)v;
+		while ((*p == ' ') || (*p == '\t'))
+		{
+			p++;
+		}
+		if (*p == ',')
+		{
+			p++;
+		}
+	}
+	*out_count = n;
+	return (n > 0) ? TRUE : FALSE;
+}
+
+static void syNetPeerConfigureRemoteReceiveSlots(void)
+{
+	char *env_slots;
+
+	sSYNetPeerRemoteReceiveSlots[0] = (u8)sSYNetPeerRemotePlayer;
+	sSYNetPeerRemoteReceiveCount = 1;
+	env_slots = getenv("SSB64_NETPLAY_REMOTE_SLOTS");
+	if ((env_slots != NULL) && (env_slots[0] != '\0'))
+	{
+		if (syNetPeerParseCommaControllerSlots(env_slots, sSYNetPeerRemoteReceiveSlots, &sSYNetPeerRemoteReceiveCount) ==
+		    FALSE)
+		{
+			port_log("SSB64 NetPeer: invalid SSB64_NETPLAY_REMOTE_SLOTS; using remote=%d only\n",
+			         sSYNetPeerRemotePlayer);
+			sSYNetPeerRemoteReceiveSlots[0] = (u8)sSYNetPeerRemotePlayer;
+			sSYNetPeerRemoteReceiveCount = 1;
+		}
+	}
+}
+
+static void syNetPeerConfigurePeerSenderSlots(void)
+{
+	char *env_slots;
+
+	sSYNetPeerPeerSenderSlots[0] = (u8)sSYNetPeerRemotePlayer;
+	sSYNetPeerPeerSenderCount = 1;
+	env_slots = getenv("SSB64_NETPLAY_PEER_SENDER_SLOTS");
+	if ((env_slots != NULL) && (env_slots[0] != '\0'))
+	{
+		if (syNetPeerParseCommaControllerSlots(env_slots, sSYNetPeerPeerSenderSlots, &sSYNetPeerPeerSenderCount) ==
+		    FALSE)
+		{
+			port_log("SSB64 NetPeer: invalid SSB64_NETPLAY_PEER_SENDER_SLOTS; using remote=%d only\n",
+			         sSYNetPeerRemotePlayer);
+			sSYNetPeerPeerSenderSlots[0] = (u8)sSYNetPeerRemotePlayer;
+			sSYNetPeerPeerSenderCount = 1;
+		}
+	}
+}
+
+static sb32 syNetPeerIsAllowedPeerSenderSlot(u8 slot)
+{
+	if (slot == (u8)sSYNetPeerLocalPlayer)
+	{
+		return FALSE;
+	}
+	return syNetPeerU8InList(slot, sSYNetPeerPeerSenderSlots, sSYNetPeerPeerSenderCount);
+}
+
+static void syNetPeerConfigureExtraLocalSender(void)
+{
+	char *env_extra;
+	s32 v;
+
+	sSYNetPeerExtraLocalSenderSlot = -1;
+	env_extra = getenv("SSB64_NETPLAY_EXTRA_LOCAL_PLAYER");
+	if ((env_extra == NULL) || (env_extra[0] == '\0'))
+	{
+		return;
+	}
+	v = atoi(env_extra);
+	if ((v < 0) || (v >= MAXCONTROLLERS) || (v == sSYNetPeerLocalPlayer))
+	{
+		port_log("SSB64 NetPeer: ignoring invalid SSB64_NETPLAY_EXTRA_LOCAL_PLAYER=%d\n", v);
+		return;
+	}
+	if (syNetPeerU8InList((u8)v, sSYNetPeerRemoteReceiveSlots, sSYNetPeerRemoteReceiveCount) != FALSE)
+	{
+		port_log(
+		    "SSB64 NetPeer: SSB64_NETPLAY_EXTRA_LOCAL_PLAYER=%d conflicts with remote receive slots; ignoring extra bundle\n",
+		    v);
+		return;
+	}
+	sSYNetPeerExtraLocalSenderSlot = v;
+}
+
+static sb32 syNetPeerValidateRemoteReceiveList(void)
+{
+	s32 i;
+	s32 j;
+
+	for (i = 0; i < sSYNetPeerRemoteReceiveCount; i++)
+	{
+		if (((s32)sSYNetPeerRemoteReceiveSlots[i] < 0) || ((s32)sSYNetPeerRemoteReceiveSlots[i] >= MAXCONTROLLERS) ||
+			((s32)sSYNetPeerRemoteReceiveSlots[i] == sSYNetPeerLocalPlayer))
+		{
+			port_log("SSB64 NetPeer: invalid remote receive slot list\n");
+			return FALSE;
+		}
+		for (j = i + 1; j < sSYNetPeerRemoteReceiveCount; j++)
+		{
+			if (sSYNetPeerRemoteReceiveSlots[i] == sSYNetPeerRemoteReceiveSlots[j])
+			{
+				port_log("SSB64 NetPeer: duplicate remote receive slot list\n");
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+static sb32 syNetPeerValidatePeerSenderList(void)
+{
+	s32 i;
+	s32 j;
+
+	for (i = 0; i < sSYNetPeerPeerSenderCount; i++)
+	{
+		if (((s32)sSYNetPeerPeerSenderSlots[i] < 0) || ((s32)sSYNetPeerPeerSenderSlots[i] >= MAXCONTROLLERS) ||
+			((s32)sSYNetPeerPeerSenderSlots[i] == sSYNetPeerLocalPlayer))
+		{
+			port_log("SSB64 NetPeer: invalid peer sender slot list\n");
+			return FALSE;
+		}
+		for (j = i + 1; j < sSYNetPeerPeerSenderCount; j++)
+		{
+			if (sSYNetPeerPeerSenderSlots[i] == sSYNetPeerPeerSenderSlots[j])
+			{
+				port_log("SSB64 NetPeer: duplicate peer sender slot list\n");
+				return FALSE;
+			}
+		}
+	}
+	return TRUE;
+}
+
+static sb32 syNetPeerGatherHistoryBundle(s32 slot, SYNetPeerPacketFrame *frames, s32 *out_frame_count)
 {
 	SYNetInputFrame published_frame;
 	SYNetInputFrame history_frame;
-	SYNetPeerPacketFrame frames[SYNETPEER_MAX_PACKET_FRAMES];
-	SYNetPeerPacketFrame zero_frame;
-	u8 *cursor = buffer;
 	u32 latest_tick;
-	u32 checksum;
-	s32 frame_count = 0;
+	s32 frame_count;
 	s32 back;
-	s32 i;
 
-	memset(frames, 0, sizeof(frames));
-	memset(&zero_frame, 0, sizeof(zero_frame));
-
-	if (syNetInputGetPublishedFrame(sSYNetPeerLocalPlayer, &published_frame) == FALSE)
+	if (syNetInputGetPublishedFrame(slot, &published_frame) == FALSE)
 	{
-		*out_size = 0;
-		return;
+		return FALSE;
 	}
 	latest_tick = published_frame.tick;
-
+	frame_count = 0;
 	for (back = SYNETPEER_MAX_PACKET_FRAMES - 1; back >= 0; back--)
 	{
 		if ((latest_tick >= (u32)back) &&
-			(syNetInputGetHistoryFrame(sSYNetPeerLocalPlayer, latest_tick - back, &history_frame) != FALSE))
+			(syNetInputGetHistoryFrame(slot, latest_tick - back, &history_frame) != FALSE))
 		{
 			frames[frame_count].tick = history_frame.tick + sSYNetPeerInputDelay;
 			frames[frame_count].buttons = history_frame.buttons;
@@ -956,18 +1187,46 @@ void syNetPeerBuildPacket(u8 *buffer, u32 *out_size)
 			frame_count++;
 		}
 	}
-	checksum = syNetPeerChecksumPacket
-	(
-		sSYNetPeerSessionID,
-		sSYNetPeerHighestRemoteTick,
-		sSYNetPeerSendSeq,
-		(u8)sSYNetPeerLocalPlayer,
-		(u8)frame_count,
-		frames
-	);
+	*out_frame_count = frame_count;
+	return TRUE;
+}
+
+void syNetPeerBuildPacket(u8 *buffer, u32 *out_size)
+{
+	SYNetPeerPacketFrame frames[SYNETPEER_MAX_PACKET_FRAMES];
+	SYNetPeerPacketFrame sec_frames[SYNETPEER_MAX_PACKET_FRAMES];
+	SYNetPeerPacketFrame zero_frame;
+	u8 *cursor = buffer;
+	u32 checksum;
+	s32 frame_count = 0;
+	s32 sec_frame_count = 0;
+	s32 i;
+	u16 wire_version;
+	u8 secondary_slot_byte;
+
+	memset(frames, 0, sizeof(frames));
+	memset(sec_frames, 0, sizeof(sec_frames));
+	memset(&zero_frame, 0, sizeof(zero_frame));
+
+	if (syNetPeerGatherHistoryBundle(sSYNetPeerLocalPlayer, frames, &frame_count) == FALSE)
+	{
+		*out_size = 0;
+		return;
+	}
+	wire_version = SYNETPEER_VERSION;
+	secondary_slot_byte = SYNETPEER_SECONDARY_SLOT_ABSENT;
+	if ((sSYNetPeerExtraLocalSenderSlot >= 0) &&
+		(syNetPeerGatherHistoryBundle(sSYNetPeerExtraLocalSenderSlot, sec_frames, &sec_frame_count) != FALSE))
+	{
+		wire_version = SYNETPEER_VERSION_DUAL_LOCAL;
+		secondary_slot_byte = (u8)sSYNetPeerExtraLocalSenderSlot;
+	}
+	checksum = syNetPeerChecksumInputPacket(sSYNetPeerSessionID, sSYNetPeerHighestRemoteTick, sSYNetPeerSendSeq,
+	                                       wire_version, (u8)sSYNetPeerLocalPlayer, (u8)frame_count, frames,
+	                                       secondary_slot_byte, (u8)sec_frame_count, sec_frames);
 
 	syNetPeerWriteU32(&cursor, SYNETPEER_MAGIC);
-	syNetPeerWriteU16(&cursor, SYNETPEER_VERSION);
+	syNetPeerWriteU16(&cursor, wire_version);
 	syNetPeerWriteU16(&cursor, 0);
 	syNetPeerWriteU32(&cursor, sSYNetPeerSessionID);
 	syNetPeerWriteU32(&cursor, sSYNetPeerHighestRemoteTick);
@@ -986,14 +1245,30 @@ void syNetPeerBuildPacket(u8 *buffer, u32 *out_size)
 		syNetPeerWriteU8(&cursor, (u8)frame->stick_x);
 		syNetPeerWriteU8(&cursor, (u8)frame->stick_y);
 	}
+	if (wire_version >= SYNETPEER_VERSION_DUAL_LOCAL)
+	{
+		syNetPeerWriteU8(&cursor, secondary_slot_byte);
+		syNetPeerWriteU8(&cursor, (u8)sec_frame_count);
+		for (i = 0; i < SYNETPEER_MAX_PACKET_FRAMES; i++)
+		{
+			SYNetPeerPacketFrame *frame = (i < sec_frame_count) ? &sec_frames[i] : &zero_frame;
+
+			syNetPeerWriteU32(&cursor, frame->tick);
+			syNetPeerWriteU16(&cursor, frame->buttons);
+			syNetPeerWriteU8(&cursor, (u8)frame->stick_x);
+			syNetPeerWriteU8(&cursor, (u8)frame->stick_y);
+		}
+		*out_size = SYNETPEER_PACKET_BYTES_V3;
+	}
+	else *out_size = SYNETPEER_PACKET_BYTES_V2;
+
 	syNetPeerWriteU32(&cursor, checksum);
-	*out_size = SYNETPEER_PACKET_BYTES;
 }
 
 void syNetPeerSendLocalInput(void)
 {
 #if defined(PORT) && !defined(_WIN32)
-	u8 buffer[SYNETPEER_PACKET_BYTES];
+	u8 buffer[SYNETPEER_PACKET_RECV_MAX];
 	u32 size;
 
 	syNetPeerBuildPacket(buffer, &size);
@@ -1011,23 +1286,56 @@ void syNetPeerSendLocalInput(void)
 #endif
 }
 
+static void syNetPeerStagePacketBundle(s32 target_player, const SYNetPeerPacketFrame *frames, s32 frame_count, u32 current_tick)
+{
+	s32 i;
+
+	for (i = 0; i < frame_count; i++)
+	{
+#ifdef PORT
+		syNetRollbackDebugOnIncomingRemoteFrame((u32 *)&frames[i].tick, (u16 *)&frames[i].buttons,
+		                                       (s8 *)&frames[i].stick_x, (s8 *)&frames[i].stick_y);
+#endif
+		{
+			sb32 is_new_remote_tick = (frames[i].tick > sSYNetPeerHighestRemoteTick) ? TRUE : FALSE;
+
+			if ((is_new_remote_tick != FALSE) && (frames[i].tick < current_tick))
+			{
+				sSYNetPeerLateFrames++;
+			}
+			if (is_new_remote_tick != FALSE)
+			{
+				sSYNetPeerHighestRemoteTick = frames[i].tick;
+			}
+		}
+		syNetInputSetRemoteInput(target_player, frames[i].tick, frames[i].buttons, frames[i].stick_x, frames[i].stick_y);
+		sSYNetPeerFramesStaged++;
+		sSYNetPeerInputChecksum = syNetPeerChecksumAccumulateU32(sSYNetPeerInputChecksum, (u32)target_player);
+		sSYNetPeerInputChecksum = syNetPeerChecksumAccumulateFrame(sSYNetPeerInputChecksum, &frames[i]);
+	}
+}
+
 void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 {
 	const u8 *cursor = buffer;
 	SYNetPeerPacketFrame frames[SYNETPEER_MAX_PACKET_FRAMES];
+	SYNetPeerPacketFrame sec_frames[SYNETPEER_MAX_PACKET_FRAMES];
 	u32 magic;
 	u32 session_id;
 	u32 ack_tick;
 	u32 packet_seq;
 	u32 checksum;
 	u32 expected_checksum;
-	u16 version;
+	u16 wire_version;
 	u8 player;
 	u8 frame_count;
 	u8 packet_local_player;
 	u8 packet_remote_player;
+	u8 secondary_slot;
+	u8 sec_frame_count;
 	u32 current_tick = syNetInputGetTick();
 	s32 i;
+	sb32 is_dual;
 
 #if defined(PORT) && !defined(_WIN32)
 	if (size == SYNETPEER_CONTROL_PACKET_BYTES)
@@ -1036,16 +1344,27 @@ void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 		return;
 	}
 #endif
-	if (size != SYNETPEER_PACKET_BYTES)
+	is_dual = FALSE;
+	sec_frame_count = 0;
+	secondary_slot = SYNETPEER_SECONDARY_SLOT_ABSENT;
+	if ((size != SYNETPEER_PACKET_BYTES_V2) && (size != SYNETPEER_PACKET_BYTES_V3))
 	{
 		sSYNetPeerPacketsDropped++;
 		return;
 	}
 	memset(frames, 0, sizeof(frames));
+	memset(sec_frames, 0, sizeof(sec_frames));
 
 	magic = syNetPeerReadU32(&cursor);
-	version = syNetPeerReadU16(&cursor);
+	wire_version = syNetPeerReadU16(&cursor);
 	(void)syNetPeerReadU16(&cursor);
+	if ((size == SYNETPEER_PACKET_BYTES_V2 && wire_version != SYNETPEER_VERSION) ||
+	    (size == SYNETPEER_PACKET_BYTES_V3 && wire_version != SYNETPEER_VERSION_DUAL_LOCAL))
+	{
+		sSYNetPeerPacketsDropped++;
+		return;
+	}
+	is_dual = (wire_version >= SYNETPEER_VERSION_DUAL_LOCAL) ? TRUE : FALSE;
 	session_id = syNetPeerReadU32(&cursor);
 	ack_tick = syNetPeerReadU32(&cursor);
 	packet_seq = syNetPeerReadU32(&cursor);
@@ -1054,11 +1373,9 @@ void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 	packet_local_player = syNetPeerReadU8(&cursor);
 	packet_remote_player = syNetPeerReadU8(&cursor);
 
-	if ((magic != SYNETPEER_MAGIC) || (version != SYNETPEER_VERSION) ||
-		(session_id != sSYNetPeerSessionID) || (player != (u8)sSYNetPeerRemotePlayer) ||
-		(packet_local_player != (u8)sSYNetPeerRemotePlayer) ||
-		(packet_remote_player != (u8)sSYNetPeerLocalPlayer) ||
-		(frame_count > SYNETPEER_MAX_PACKET_FRAMES))
+	if ((magic != SYNETPEER_MAGIC) || (session_id != sSYNetPeerSessionID) || (player != packet_local_player) ||
+		(packet_remote_player != (u8)sSYNetPeerLocalPlayer) || (frame_count > SYNETPEER_MAX_PACKET_FRAMES) ||
+		(syNetPeerIsAllowedPeerSenderSlot(player) == FALSE))
 	{
 		sSYNetPeerPacketsDropped++;
 		return;
@@ -1070,8 +1387,27 @@ void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 		frames[i].stick_x = (s8)syNetPeerReadU8(&cursor);
 		frames[i].stick_y = (s8)syNetPeerReadU8(&cursor);
 	}
+	if (is_dual != FALSE)
+	{
+		secondary_slot = syNetPeerReadU8(&cursor);
+		sec_frame_count = syNetPeerReadU8(&cursor);
+		if ((secondary_slot == SYNETPEER_SECONDARY_SLOT_ABSENT) || (sec_frame_count > SYNETPEER_MAX_PACKET_FRAMES) ||
+			(syNetPeerIsAllowedPeerSenderSlot(secondary_slot) == FALSE))
+		{
+			sSYNetPeerPacketsDropped++;
+			return;
+		}
+		for (i = 0; i < SYNETPEER_MAX_PACKET_FRAMES; i++)
+		{
+			sec_frames[i].tick = syNetPeerReadU32(&cursor);
+			sec_frames[i].buttons = syNetPeerReadU16(&cursor);
+			sec_frames[i].stick_x = (s8)syNetPeerReadU8(&cursor);
+			sec_frames[i].stick_y = (s8)syNetPeerReadU8(&cursor);
+		}
+	}
 	checksum = syNetPeerReadU32(&cursor);
-	expected_checksum = syNetPeerChecksumPacket(session_id, ack_tick, packet_seq, player, frame_count, frames);
+	expected_checksum = syNetPeerChecksumInputPacket(session_id, ack_tick, packet_seq, wire_version, player, frame_count,
+	                                                 frames, secondary_slot, sec_frame_count, sec_frames);
 
 	if (checksum != expected_checksum)
 	{
@@ -1119,46 +1455,39 @@ void syNetPeerHandlePacket(const u8 *buffer, s32 size)
 				newest_tick_bundle = frames[i].tick;
 			}
 		}
+		if ((is_dual != FALSE) && (sec_frame_count > 0))
+		{
+			s32 j;
+
+			for (j = 0; j < sec_frame_count; j++)
+			{
+				if (sec_frames[j].tick < oldest_tick_bundle)
+				{
+					oldest_tick_bundle = sec_frames[j].tick;
+				}
+				if (sec_frames[j].tick > newest_tick_bundle)
+				{
+					newest_tick_bundle = sec_frames[j].tick;
+				}
+			}
+		}
 		sSYNetPeerLastPacketOldestTick = oldest_tick_bundle;
 		sSYNetPeerLastPacketNewestTick = newest_tick_bundle;
 		sSYNetPeerLastPacketTicksValid = TRUE;
 	}
 	else sSYNetPeerLastPacketTicksValid = FALSE;
 
-	for (i = 0; i < frame_count; i++)
+	syNetPeerStagePacketBundle((s32)player, frames, frame_count, current_tick);
+	if ((is_dual != FALSE) && (sec_frame_count > 0))
 	{
-#ifdef PORT
-		syNetRollbackDebugOnIncomingRemoteFrame(&frames[i].tick, &frames[i].buttons, &frames[i].stick_x,
-		                                       &frames[i].stick_y);
-#endif
-		sb32 is_new_remote_tick = (frames[i].tick > sSYNetPeerHighestRemoteTick) ? TRUE : FALSE;
-
-		if ((is_new_remote_tick != FALSE) && (frames[i].tick < current_tick))
-		{
-			sSYNetPeerLateFrames++;
-		}
-		if (is_new_remote_tick != FALSE)
-		{
-			sSYNetPeerHighestRemoteTick = frames[i].tick;
-		}
-		syNetInputSetRemoteInput
-		(
-			sSYNetPeerRemotePlayer,
-			frames[i].tick,
-			frames[i].buttons,
-			frames[i].stick_x,
-			frames[i].stick_y
-		);
-		sSYNetPeerFramesStaged++;
-		sSYNetPeerInputChecksum = syNetPeerChecksumAccumulateU32(sSYNetPeerInputChecksum, sSYNetPeerRemotePlayer);
-		sSYNetPeerInputChecksum = syNetPeerChecksumAccumulateFrame(sSYNetPeerInputChecksum, &frames[i]);
+		syNetPeerStagePacketBundle((s32)secondary_slot, sec_frames, sec_frame_count, current_tick);
 	}
 }
 
 void syNetPeerReceiveRemoteInput(void)
 {
 #if defined(PORT) && !defined(_WIN32)
-	u8 buffer[SYNETPEER_PACKET_BYTES];
+	u8 buffer[SYNETPEER_PACKET_RECV_MAX];
 
 	while (TRUE)
 	{
@@ -1183,6 +1512,7 @@ void syNetPeerLogNetSyncValidation(u32 tick)
 	u32 checksums[MAXCONTROLLERS];
 	u32 inp_all = 0;
 	u32 fighter_hash;
+	u32 map_hash;
 	u32 win_begin = 0;
 	u32 win_length = tick;
 
@@ -1198,9 +1528,10 @@ void syNetPeerLogNetSyncValidation(u32 tick)
 	syNetInputGetHistoryInputValueChecksumWindow(win_begin, win_length, checksums, &inp_all);
 
 	fighter_hash = syNetSyncHashBattleFighters();
+	map_hash = syNetSyncHashMapCollisionKinematics();
 
 	port_log(
-		"SSB64 NetSync: role=%s lp=%d rp=%d tick=%u hist_win=[%u,%u) all=0x%08X p0=0x%08X p1=0x%08X p2=0x%08X p3=0x%08X figh=0x%08X snd_next=%u rcv_hw=%u gap=%u dup=%u ooo=%u puck=%u pko=%u pkn=%u sent=%u recv=%u dropped=%u stg=%u hr=%u late=%u inpchk=0x%08X pkt_valid=%d rb=%u lf=%u\n",
+		"SSB64 NetSync: role=%s lp=%d rp=%d tick=%u hist_win=[%u,%u) all=0x%08X p0=0x%08X p1=0x%08X p2=0x%08X p3=0x%08X figh=0x%08X mph=0x%08X snd_next=%u rcv_hw=%u gap=%u dup=%u ooo=%u puck=%u pko=%u pkn=%u sent=%u recv=%u dropped=%u stg=%u hr=%u late=%u inpchk=0x%08X pkt_valid=%d rb=%u lf=%u\n",
 		(sSYNetPeerBootstrapIsHost != FALSE) ? "host" : "client",
 		sSYNetPeerLocalPlayer,
 		sSYNetPeerRemotePlayer,
@@ -1213,6 +1544,7 @@ void syNetPeerLogNetSyncValidation(u32 tick)
 		checksums[2],
 		checksums[3],
 		fighter_hash,
+		map_hash,
 		sSYNetPeerSendSeq,
 		sSYNetPeerRecvSeqHighWater,
 		sSYNetPeerSeqGaps,
@@ -1437,4 +1769,19 @@ s32 syNetPeerGetRemotePlayerSlot(void)
 u32 syNetPeerGetHighestRemoteTick(void)
 {
 	return sSYNetPeerHighestRemoteTick;
+}
+
+s32 syNetPeerGetRemoteHumanSlotCount(void)
+{
+	return sSYNetPeerRemoteReceiveCount;
+}
+
+sb32 syNetPeerGetRemoteHumanSlotByIndex(s32 index, s32 *out_slot)
+{
+	if ((index < 0) || (index >= sSYNetPeerRemoteReceiveCount) || (out_slot == NULL))
+	{
+		return FALSE;
+	}
+	*out_slot = (s32)sSYNetPeerRemoteReceiveSlots[index];
+	return TRUE;
 }

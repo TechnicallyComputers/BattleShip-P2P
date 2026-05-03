@@ -199,6 +199,9 @@ Current debug environment variables:
 - `SSB64_NETPLAY_BOOTSTRAP=1` enables automatic VS match bootstrap.
 - `SSB64_NETPLAY_HOST=1` marks the peer that creates and sends match metadata.
 - `SSB64_NETPLAY_SEED` optionally overrides the bootstrap match RNG seed.
+- `SSB64_NETPLAY_REMOTE_SLOTS` optional comma-separated **receiver** controller indices (e.g. `1` or `1,3`) whose **published vs remote-confirmed** histories participate in rollback mismatch scan. Defaults to `SSB64_NETPLAY_REMOTE_PLAYER` only.
+- `SSB64_NETPLAY_EXTRA_LOCAL_PLAYER` optional second **sender** controller index on this machine; when set and valid, INPUT packets use **wire version 3** with a second bundled frame block for that slot (two humans on one PC talking to one peer). Leave unset for classic single-local packets (version 2).
+- `SSB64_NETPLAY_PEER_SENDER_SLOTS` optional comma list of **sender** controller indices allowed from the peer’s packets (defaults to the peer’s primary slot = your `SSB64_NETPLAY_REMOTE_PLAYER`). Required when the peer uses dual-local senders so primary/secondary `player` bytes both validate.
 
 Packet phases:
 
@@ -226,7 +229,7 @@ Operational desync instrumentation (logged only when UDP netplay is active and b
 | Log prefix | Approx. cadence | Use |
 | ---------- | ----------------- | --- |
 | `SSB64 NetPeer:` | Every 120 sim ticks (`SYNETPEER_LOG_INTERVAL`) | Transport counters, sequence diagnostics, staged frames, cumulative remote-input fingerprint (`inpchk`). |
-| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities and `coll_data.pos_prev` using IEEE754 bit reinterpretation — order-independent across controller ports. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. |
+| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities and `coll_data.pos_prev` using IEEE754 bit reinterpretation — order-independent across controller ports. **`mph`** (when present) is `syNetSyncHashMapCollisionKinematics()` over `gMPCollisionUpdateTic` and capped yakumono mover state for rollback bisect. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. |
 
 Debug workflow:
 
@@ -253,7 +256,7 @@ This verifies the input layer can reproduce the same per-tick controller stream 
 
 Rollback builds on the existing input boundary: peers agree on **simulation tick indices** and **inputs per tick**; when confirmed remote input disagrees with what was **published** for that tick, the session **restores** saved gameplay state and **resimulates** forward with corrected inputs.
 
-**Implementation (PORT, first landing):** [`src/sys/netrollback.c`](src/sys/netrollback.c) / [`src/sys/netrollback.h`](src/sys/netrollback.h). VS saves **post-tick** fighter scalars (aligned with `syNetSyncHashBattleFighters()` fields plus velocities, `pos_prev`, **aerial knockback velocity** `vel_damage_air`, and **`hitlag_tics`**) into a ring sized like `SYNETINPUT_HISTORY_LENGTH`. `syNetRollbackAfterBattleUpdate()` runs at the end of [`scVSBattleFuncUpdate`](src/sc/sccommon/scvsbattle.c). `syNetRollbackUpdate()` runs from [`syNetPeerUpdate()`](src/sys/netpeer.c): scans recent ticks for mismatch between published history and remote confirmed history on the remote slot, loads snapshot `mismatch_tick - 1`, then resimulates using `syNetInputFuncRead()` + `scVSBattleFuncUpdate()` until the current frontier. While resimulating, [`syNetPeerUpdateBattleGate()`](src/sys/netpeer.c) and [`syNetPeerUpdate()`](src/sys/netpeer.c) return early so recv/send do not recurse.
+**Implementation (PORT, first landing):** [`src/sys/netrollback.c`](src/sys/netrollback.c) / [`src/sys/netrollback.h`](src/sys/netrollback.h). VS saves **post-tick** fighter scalars (aligned with `syNetSyncHashBattleFighters()` fields plus velocities, `pos_prev`, **aerial knockback velocity** `vel_damage_air`, and **`hitlag_tics`**) plus a minimal **map / yakumono** slice (`gMPCollisionUpdateTic`, per-mover translate, `gMPCollisionSpeeds[]`, and yakumono `user_data.s`) into a ring sized like `SYNETINPUT_HISTORY_LENGTH`. Map state is **applied before fighters** on rollback load. `syNetRollbackAfterBattleUpdate()` runs at the end of [`scVSBattleFuncUpdate`](src/sc/sccommon/scvsbattle.c). `syNetRollbackUpdate()` runs from [`syNetPeerUpdate()`](src/sys/netpeer.c): scans recent ticks for mismatch between published history and remote confirmed history on **every** controller index listed in `SSB64_NETPLAY_REMOTE_SLOTS` (default: `SSB64_NETPLAY_REMOTE_PLAYER`), loads snapshot `mismatch_tick - 1`, then resimulates using `syNetInputFuncRead()` + `scVSBattleFuncUpdate()` until the current frontier. While resimulating, [`syNetPeerUpdateBattleGate()`](src/sys/netpeer.c) and [`syNetPeerUpdate()`](src/sys/netpeer.c) return early so recv/send do not recurse.
 
 | Env var | Effect |
 | ------- | ------ |
@@ -263,6 +266,7 @@ Rollback builds on the existing input boundary: peers agree on **simulation tick
 | `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH=1` | **Debug:** With `INJECT_TICK`, do **not** tamper the wire. After remote is staged and once `syNetInputGetTick() > N`, XOR **`0x1000` into published history only** if history and remote still agree — guarantees `history≠remote` for mismatch detection on fast LAN. Logs `FORCE_MISMATCH armed` / `detected published history == remote` / `gave up` as appropriate. |
 | `SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG=1` | **Debug:** While scanning for mismatches, log up to **16** per-VS-session cases where exactly one of `{published history, remote history}` exists for the remote slot at a tick inside the scan window (explains silent skips when NetSync diverges but rollback never fires). |
 | `SSB64_NETPLAY_ROLLBACK_VERIFY_STRICT=1` | **Debug:** After a successful resim, if `syNetSyncHashBattleFighters()` is unchanged vs the pre-resim hash, log a **VERIFY_STRICT** warning (possible no-op snapshot or single-tick invisible delta). |
+| `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH_PLAYER=N` | **Debug:** With `FORCE_MISMATCH`, XOR published history for controller port **`N`** instead of the first `SSB64_NETPLAY_REMOTE_SLOTS` entry. **`N`** must appear in that receive list. |
 
 [`syTaskmanSetIntervals()`](src/sys/taskman.h) is declared for the port; [`taskman.c`](src/sys/taskman.c) bundles `K` VI messages per logical update when `update_interval == K`.
 
@@ -314,3 +318,21 @@ Still **not** in scope (or not implied by rollback v1):
 **Rollback-related:** PORT VS UDP builds ship an initial **snapshot / mismatch / resim** stack (`src/sys/netrollback.c`). Fighter capture is intentionally narrow for v1 — expand as full-match determinism testing exposes gaps; details in [Rollback netcode (in implementation)](#rollback-netcode-in-implementation).
 
 Those systems should build on top of this input boundary rather than bypassing it.
+
+## Rollback validation backlog (circle back)
+
+**Strategy:** Do not block the next rollback milestones on exhaustive proof that **mid-air** and **mid-air hit** snapshot fields (`vel_damage_air`, `hitlag_tics`, etc.) match NetSync under every combat state. Keep **Fox up+B** and **moving-platform** edge cases as informal gameplay stress while extending snapshots and transport.
+
+**Roadmap (implementation order):** (1) **Multi-remote** — rollback scans every VS remote human slot; netpeer may bundle a second local sender in **INPUT v3** when configured (see env table additions in debug P2P). (2) **Stage / platform kinematics** — rollback ring captures a minimal **map collision** slice (`gMPCollisionUpdateTic` + per-yakumono pose/speed/status) before fighters; NetSync logs optional **`mph=`** hash for bisect. Revisit the checklist below after those land — much of it should get incidental coverage from 3P/4P-style remote lists and platform-heavy stages.
+
+**Circle-back checklist (narrow hash / harness gaps):**
+
+| Item | What to confirm later |
+|------|------------------------|
+| Load-fail **`lf`** | [`syNetRollbackLoadPostTick`](src/sys/netrollback.c) / `load post tick … failed` vs ring wrap if scan window or ring length change. |
+| Fighter blob under combat | [`syNetRollbackCaptureFighters`](src/sys/netrollback.c) / [`syNetRollbackApplyFighters`](src/sys/netrollback.c) for aerial KB + hitlag during real forced resim (not only early-tick harness). |
+| Two-peer **`figh`** | [`syNetSyncHashBattleFighters`](src/sys/netsync.c) vs peer logs at the same tick cadence; bisect per [Determinism bisect](#determinism-bisect-when-figh-diverges-but-inputs-match). |
+| **`mph`** (map hash) | Optional NetSync `mph=` — extend alongside snapshot fields when movers still diverge. |
+| **`VERIFY_STRICT`** | Interpreting “`figh` unchanged post-resim” vs invisible deltas / narrow hash; adjust or widen hash if noisy. |
+
+See [Debug P2P Netplay](#debug-p2p-netplay) for new multi-remote env vars when operating dual-local senders or non-default remote receive slot lists.

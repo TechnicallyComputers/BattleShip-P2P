@@ -8,6 +8,7 @@
 
 #include <ft/fighter.h>
 #include <gm/gmdef.h>
+#include <mp/map.h>
 #include <sys/controller.h>
 
 #ifdef PORT
@@ -21,6 +22,15 @@ extern void scVSBattleFuncUpdate(void);
 
 #define SYNETROLLBACK_RING_LENGTH SYNETINPUT_HISTORY_LENGTH
 #define SYNETROLLBACK_SCAN_WINDOW 256
+#define SYNETROLLBACK_MAX_MP_YAKU 32
+
+typedef struct SYNetRollbackYakuBlob
+{
+	Vec3f translate;
+	Vec3f speed;
+	s32 user_data_s;
+
+} SYNetRollbackYakuBlob;
 
 typedef struct SYNetRollbackFighterBlob
 {
@@ -46,6 +56,10 @@ typedef struct SYNetRollbackRingSlot
 {
 	u32 tick;
 	sb32 is_valid;
+	u16 mp_collision_tic;
+	s32 mp_yakumono_count;
+	sb32 mp_yaku_captured;
+	SYNetRollbackYakuBlob mp_yaku[SYNETROLLBACK_MAX_MP_YAKU];
 	SYNetRollbackFighterBlob fighters[GMCOMMON_PLAYERS_MAX];
 
 } SYNetRollbackRingSlot;
@@ -65,6 +79,7 @@ static sb32 sSYNetRollbackMismatchDebug;
 static sb32 sSYNetRollbackVerifyStrict;
 static u32 sSYNetRollbackLoadFailCount;
 static u32 sMismatchAsymLogsRemaining;
+static s32 sSYNetRollbackForceMismatchPlayerSlot;
 #endif
 
 void syNetRollbackInit(void)
@@ -75,6 +90,8 @@ void syNetRollbackInit(void)
 	char *env_fm;
 	char *env_md;
 	char *env_vs;
+	char *env_fmp;
+	s32 fmp;
 
 	sSYNetRollbackInjectTick = ~(u32)0;
 	sSYNetRollbackInjectConsumed = FALSE;
@@ -127,6 +144,17 @@ void syNetRollbackInit(void)
 	}
 	sSYNetRollbackLoadFailCount = 0;
 	sMismatchAsymLogsRemaining = 16;
+	sSYNetRollbackForceMismatchPlayerSlot = -1;
+	env_fmp = getenv("SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH_PLAYER");
+	if ((env_fmp != NULL) && (env_fmp[0] != '\0'))
+	{
+		fmp = atoi(env_fmp);
+		if ((fmp >= 0) && (fmp < MAXCONTROLLERS))
+		{
+			sSYNetRollbackForceMismatchPlayerSlot = fmp;
+			port_log("SSB64 NetRollback: FORCE_MISMATCH player slot override=%d\n", fmp);
+		}
+	}
 #else
 	sSYNetRollbackModuleEnabled = FALSE;
 #endif
@@ -263,6 +291,88 @@ static void syNetRollbackApplyFighters(const SYNetRollbackRingSlot *slot)
 	}
 }
 
+static void syNetRollbackCaptureMap(SYNetRollbackRingSlot *slot)
+{
+	s32 i;
+	s32 n;
+	s32 cap;
+	DObj *dobj;
+
+	slot->mp_yaku_captured = FALSE;
+	slot->mp_collision_tic = 0;
+	slot->mp_yakumono_count = 0;
+	if ((gMPCollisionYakumonoDObjs == NULL) || (gMPCollisionSpeeds == NULL))
+	{
+		return;
+	}
+	n = gMPCollisionYakumonosNum;
+	if (n < 0)
+	{
+		n = 0;
+	}
+	cap = (n > SYNETROLLBACK_MAX_MP_YAKU) ? SYNETROLLBACK_MAX_MP_YAKU : n;
+	slot->mp_collision_tic = gMPCollisionUpdateTic;
+	slot->mp_yakumono_count = cap;
+	for (i = 0; i < cap; i++)
+	{
+		dobj = gMPCollisionYakumonoDObjs->dobjs[i];
+		if (dobj == NULL)
+		{
+			slot->mp_yaku[i].translate.x = slot->mp_yaku[i].translate.y = slot->mp_yaku[i].translate.z = 0.0F;
+			slot->mp_yaku[i].speed.x = slot->mp_yaku[i].speed.y = slot->mp_yaku[i].speed.z = 0.0F;
+			slot->mp_yaku[i].user_data_s = 0;
+			continue;
+		}
+		slot->mp_yaku[i].translate = dobj->translate.vec.f;
+		slot->mp_yaku[i].speed = gMPCollisionSpeeds[i];
+		slot->mp_yaku[i].user_data_s = dobj->user_data.s;
+	}
+	slot->mp_yaku_captured = TRUE;
+}
+
+static void syNetRollbackApplyMap(const SYNetRollbackRingSlot *slot)
+{
+	s32 i;
+	s32 cap;
+	s32 live_n;
+	DObj *dobj;
+
+	if (slot->mp_yaku_captured == FALSE)
+	{
+		return;
+	}
+	gMPCollisionUpdateTic = slot->mp_collision_tic;
+	if ((gMPCollisionYakumonoDObjs == NULL) || (gMPCollisionSpeeds == NULL))
+	{
+		return;
+	}
+	live_n = gMPCollisionYakumonosNum;
+	if (live_n < 0)
+	{
+		live_n = 0;
+	}
+	cap = slot->mp_yakumono_count;
+	if (cap > live_n)
+	{
+		cap = live_n;
+	}
+	if (cap > SYNETROLLBACK_MAX_MP_YAKU)
+	{
+		cap = SYNETROLLBACK_MAX_MP_YAKU;
+	}
+	for (i = 0; i < cap; i++)
+	{
+		dobj = gMPCollisionYakumonoDObjs->dobjs[i];
+		if (dobj == NULL)
+		{
+			continue;
+		}
+		dobj->translate.vec.f = slot->mp_yaku[i].translate;
+		dobj->user_data.s = slot->mp_yaku[i].user_data_s;
+		gMPCollisionSpeeds[i] = slot->mp_yaku[i].speed;
+	}
+}
+
 static sb32 syNetRollbackSavePostTick(u32 tick)
 {
 	SYNetRollbackRingSlot *slot;
@@ -275,6 +385,7 @@ static sb32 syNetRollbackSavePostTick(u32 tick)
 	slot->tick = tick;
 	slot->is_valid = TRUE;
 	syNetRollbackCaptureFighters(slot);
+	syNetRollbackCaptureMap(slot);
 	return TRUE;
 }
 
@@ -288,6 +399,7 @@ static sb32 syNetRollbackLoadPostTick(u32 tick)
 	{
 		return FALSE;
 	}
+	syNetRollbackApplyMap(slot);
 	syNetRollbackApplyFighters(slot);
 	return TRUE;
 }
@@ -319,17 +431,10 @@ static u32 syNetRollbackFindEarliestInputMismatch(u32 frontier_tick)
 	SYNetInputFrame remote;
 	u32 begin;
 	u32 t;
+	s32 ri;
 	s32 remote_player;
 
 	if (frontier_tick == 0)
-	{
-		return ~(u32)0;
-	}
-	/* Multi-remote (4P): mismatch scan is intentionally limited to syNetPeerGetRemotePlayerSlot() until
-	 * netpeer stages confirmed inputs per remote human slot. */
-	remote_player = syNetPeerGetRemotePlayerSlot();
-
-	if ((remote_player < 0) || (remote_player >= MAXCONTROLLERS))
 	{
 		return ~(u32)0;
 	}
@@ -340,43 +445,82 @@ static u32 syNetRollbackFindEarliestInputMismatch(u32 frontier_tick)
 	}
 	for (t = begin; t < frontier_tick; t++)
 	{
-		sb32 has_hist;
-		sb32 has_remote;
+		for (ri = 0; ri < syNetPeerGetRemoteHumanSlotCount(); ri++)
+		{
+			sb32 has_hist;
+			sb32 has_remote;
 
-		has_hist = syNetInputGetHistoryFrame(remote_player, t, &hist);
-		has_remote = syNetInputGetRemoteHistoryFrame(remote_player, t, &remote);
-#ifdef PORT
-		if ((sSYNetRollbackMismatchDebug != FALSE) && (has_hist != has_remote))
-		{
-			if (sMismatchAsymLogsRemaining > 0U)
+			if (syNetPeerGetRemoteHumanSlotByIndex(ri, &remote_player) == FALSE)
 			{
-				port_log(
-				    "SSB64 NetRollback: MISMATCH_DEBUG asym tick=%u hist=%d remote=%d frontier=%u\n",
-				    t,
-				    (has_hist != FALSE) ? 1 : 0,
-				    (has_remote != FALSE) ? 1 : 0,
-				    frontier_tick);
-				sMismatchAsymLogsRemaining--;
+				continue;
 			}
-		}
+			if ((remote_player < 0) || (remote_player >= MAXCONTROLLERS))
+			{
+				continue;
+			}
+			has_hist = syNetInputGetHistoryFrame(remote_player, t, &hist);
+			has_remote = syNetInputGetRemoteHistoryFrame(remote_player, t, &remote);
+#ifdef PORT
+			if ((sSYNetRollbackMismatchDebug != FALSE) && (has_hist != has_remote))
+			{
+				if (sMismatchAsymLogsRemaining > 0U)
+				{
+					port_log(
+					    "SSB64 NetRollback: MISMATCH_DEBUG asym tick=%u slot=%d hist=%d remote=%d frontier=%u\n",
+					    t,
+					    remote_player,
+					    (has_hist != FALSE) ? 1 : 0,
+					    (has_remote != FALSE) ? 1 : 0,
+					    frontier_tick);
+					sMismatchAsymLogsRemaining--;
+				}
+			}
 #endif
-		if (has_hist == FALSE)
-		{
-			continue;
-		}
-		if (has_remote == FALSE)
-		{
-			continue;
-		}
-		if ((hist.buttons != remote.buttons) || (hist.stick_x != remote.stick_x) || (hist.stick_y != remote.stick_y))
-		{
-			return t;
+			if (has_hist == FALSE)
+			{
+				continue;
+			}
+			if (has_remote == FALSE)
+			{
+				continue;
+			}
+			if ((hist.buttons != remote.buttons) || (hist.stick_x != remote.stick_x) || (hist.stick_y != remote.stick_y))
+			{
+				return t;
+			}
 		}
 	}
 	return ~(u32)0;
 }
 
 #ifdef PORT
+static s32 syNetRollbackResolveForceMismatchTargetPlayer(void)
+{
+	s32 want;
+	s32 i;
+	s32 slot;
+
+	want = sSYNetRollbackForceMismatchPlayerSlot;
+	if (want >= 0)
+	{
+		for (i = 0; i < syNetPeerGetRemoteHumanSlotCount(); i++)
+		{
+			if ((syNetPeerGetRemoteHumanSlotByIndex(i, &slot) != FALSE) && (slot == want))
+			{
+				return want;
+			}
+		}
+		port_log(
+		    "SSB64 NetRollback: FORCE_MISMATCH_PLAYER=%d not in remote receive slot list; using first remote slot\n",
+		    want);
+	}
+	if (syNetPeerGetRemoteHumanSlotByIndex(0, &slot) != FALSE)
+	{
+		return slot;
+	}
+	return -1;
+}
+
 static void syNetRollbackDebugTryApplyPendingForceMismatch(void)
 {
 	s32 player;
@@ -397,7 +541,7 @@ static void syNetRollbackDebugTryApplyPendingForceMismatch(void)
 	{
 		return;
 	}
-	player = syNetPeerGetRemotePlayerSlot();
+	player = syNetRollbackResolveForceMismatchTargetPlayer();
 	if ((player < 0) || (player >= MAXCONTROLLERS))
 	{
 		return;
