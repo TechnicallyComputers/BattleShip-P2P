@@ -42,6 +42,7 @@
 #include "../debug_tools/gbi_trace/gbi_trace.h"
 
 #include "port_log.h"
+#include "mm_bootstrap.h"
 #include "renderdoc_trigger.h"
 
 /* Backbuffer screenshot capture — implemented in libultraship's DX11 backend.
@@ -68,6 +69,8 @@ extern OSMesgQueue gSYSchedulerTaskMesgQueue;
 
 /* VI retrace interrupt value (matches scheduler.c local define). */
 #define INTR_VRETRACE 1
+
+extern void syNetRollbackApplyPortSimPacing(unsigned int refresh_hz);
 
 } /* extern "C" */
 
@@ -516,6 +519,17 @@ void PortPushFrame(void)
 			window->HandleEvents();
 		}
 	}
+	{
+		unsigned int refresh_hz = 60;
+
+		if (context != nullptr) {
+			auto window = context->GetWindow();
+			if (window != nullptr) {
+				refresh_hz = window->GetCurrentRefreshRate();
+			}
+		}
+		syNetRollbackApplyPortSimPacing(refresh_hz);
+	}
 	/* Propagate the previous frame's queued framebuffer (if any) to VI's
 	 * "current" slot. The scheduler's CheckReadyFramebuffer fnCheck reads
 	 * osViGetCurrent/NextFramebuffer to decide whether the slot the game
@@ -584,6 +598,8 @@ void PortPushFrame(void)
 
 	/* Tell the hang watchdog a frame completed. */
 	port_watchdog_note_frame_end();
+
+	port_mm_game_heartbeat_tick();
 
 	/* Screenshot capture: env-var driven, zero cost when disabled. */
 	port_screenshot_init_once();

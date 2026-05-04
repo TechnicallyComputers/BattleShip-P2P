@@ -394,6 +394,15 @@ add_dependencies(${PROJECT_NAME} libultraship TorchExternal)
 add_dependencies(ssb64_game GenerateCreditsAssets)
 target_link_libraries(${PROJECT_NAME} PRIVATE libultraship)
 
+find_package(CURL QUIET)
+if(CURL_FOUND)
+    message(STATUS "libcurl found — matchmaking auto-bootstrap (SSB64_MM_AUTO) enabled")
+    target_compile_definitions(${PROJECT_NAME} PRIVATE SSB64_HAVE_LIBCURL=1)
+    target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
+else()
+    message(STATUS "libcurl not found — install libcurl dev package for SSB64_MM_AUTO HTTP bootstrap")
+endif()
+
 ################################################################################
 # Platform-specific settings
 ################################################################################
