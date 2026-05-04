@@ -70,7 +70,9 @@ extern OSMesgQueue gSYSchedulerTaskMesgQueue;
 /* VI retrace interrupt value (matches scheduler.c local define). */
 #define INTR_VRETRACE 1
 
+#ifdef SSB64_NETPLAY
 extern void syNetRollbackApplyPortSimPacing(unsigned int refresh_hz);
+#endif
 
 } /* extern "C" */
 
@@ -528,7 +530,9 @@ void PortPushFrame(void)
 				refresh_hz = window->GetCurrentRefreshRate();
 			}
 		}
+#ifdef SSB64_NETPLAY
 		syNetRollbackApplyPortSimPacing(refresh_hz);
+#endif
 	}
 	/* Propagate the previous frame's queued framebuffer (if any) to VI's
 	 * "current" slot. The scheduler's CheckReadyFramebuffer fnCheck reads

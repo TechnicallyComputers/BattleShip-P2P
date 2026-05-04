@@ -31,6 +31,7 @@ option(NON_MATCHING "Build without matching decomp constraints" ON)
 option(NON_EQUIVALENT "Build without equivalent decomp constraints" ON)
 option(USE_AUTO_VCPKG "Use automated vcpkg for dependency management" ON)
 option(SSB64_STAGE_CYCLE_DEMO "Boot directly into attract-demo stage cycle for rendering regression testing" OFF)
+option(SSB64_NETPLAY "Compile netplay overlays under port/net/sys and scene replacements" OFF)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -181,6 +182,8 @@ file(GLOB_RECURSE SSB64_SRC_WP      "decomp/src/wp/*.c"      "decomp/src/wp/*.h"
 # Port layer (C++ glue) — excludes port/stubs/ which is compiled as part of ssb64_game
 file(GLOB_RECURSE SSB64_SRC_PORT "port/*.cpp" "port/*.c" "port/*.h")
 list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "port/stubs/")
+# Scene/net overlays must only link via ssb64_game when SSB64_NETPLAY is enabled.
+list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "[/\\\\]port[/\\\\]net[/\\\\]")
 
 # Debug tools (GBI trace + Acmd trace systems)
 file(GLOB SSB64_DEBUG_TOOLS
@@ -207,6 +210,12 @@ set(SSB64_DECOMP_SOURCES
 
 # Exclude .inc.c files (inline data included by other .c files)
 list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "\\.inc\\.c$")
+
+if(SSB64_NETPLAY)
+    # Replace offline VS scenes with overlays from port/net/sc/
+    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "(^|[/\\\\])sc[/\\\\]scmanager\\.c$")
+    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "(^|[/\\\\])sccommon[/\\\\]scvsbattle\\.c$")
+endif()
 
 ################################################################################
 # Excluded directories (not compiled):
@@ -245,6 +254,9 @@ set(SSB64_COMPILE_DEFS
 
 if(SSB64_STAGE_CYCLE_DEMO)
     list(APPEND SSB64_COMPILE_DEFS PORT_STAGE_CYCLE_DEMO=1)
+endif()
+if(SSB64_NETPLAY)
+    list(APPEND SSB64_COMPILE_DEFS SSB64_NETPLAY=1)
 endif()
 
 ################################################################################
@@ -301,6 +313,22 @@ set(SSB64_NAUDIO_PORT
 )
 target_sources(ssb64_game PRIVATE ${SSB64_NAUDIO_PORT})
 
+if(SSB64_NETPLAY)
+    set(SSB64_NETGAME_C_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sys/netinput.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sys/netpeer.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sys/netreplay.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sys/netrollback.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sys/netsync.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sc/scmanager.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net/sc/sccommon/scvsbattle.c
+    )
+    target_sources(ssb64_game PRIVATE ${SSB64_NETGAME_C_SOURCES})
+    target_include_directories(ssb64_game BEFORE PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/port/net
+    )
+endif()
+
 target_compile_definitions(ssb64_game PRIVATE ${SSB64_COMPILE_DEFS})
 
 target_include_directories(ssb64_game PRIVATE
@@ -356,7 +384,11 @@ add_executable(${PROJECT_NAME} ${SSB64_SRC_PORT} ${SSB64_DEBUG_TOOLS} $<TARGET_O
 # User-facing binary name. The CMake target keeps the historical
 # `ssb64` identifier (matches the repo, build dirs, internal symbols),
 # but the produced executable is `BattleShip` / `BattleShip.exe`.
-set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "BattleShip")
+if(SSB64_NETPLAY)
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "BattleShipNet")
+else()
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "BattleShip")
+endif()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     set_target_properties(ssb64_game PROPERTIES
@@ -524,8 +556,13 @@ add_custom_target(GeneratePortO2R
 
 set(RELOCDATA_DECOMP_DIR  "${CMAKE_SOURCE_DIR}/decomp")
 set(RELOCDATA_RELOC_TABLE "${CMAKE_SOURCE_DIR}/port/resource/RelocFileTable.cpp")
-include(Battle-ShipYard/cmake/RelocData.cmake)
+if(EXISTS "${CMAKE_SOURCE_DIR}/Battle-ShipYard/cmake/RelocData.cmake")
+    include("${CMAKE_SOURCE_DIR}/Battle-ShipYard/cmake/RelocData.cmake")
 
-if(RELOCDATA_CC)
-    finalize_battleship_from_source(${CMAKE_BINARY_DIR}/BattleShip.fromsource.o2r)
+    if(RELOCDATA_CC)
+        finalize_battleship_from_source(${CMAKE_BINARY_DIR}/BattleShip.fromsource.o2r)
+    endif()
+else()
+    message(STATUS "Battle-ShipYard modkit CMake absent — skipping RelocData.fromsource pipeline "
+                   "(initialize submodule Battle-ShipYard to enable).")
 endif()
