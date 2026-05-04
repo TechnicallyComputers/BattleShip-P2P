@@ -1,6 +1,7 @@
 #include <sys/netsync.h>
 
 #include <ft/fighter.h>
+#include <ft/ftdef.h>
 #include <gm/gmdef.h>
 #include <mp/map.h>
 #include <sys/objdef.h>
@@ -69,6 +70,16 @@ u32 syNetSyncHashBattleFighters(void)
 		contribution = syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->physics.vel_damage_ground));
 
 		contribution = syNetSyncFnvAccumulateU32(contribution, (u32)fp->hitlag_tics);
+		contribution = syNetSyncFnvAccumulateU32(contribution, (u32)fp->status_total_tics);
+		if (fp->joints[nFTPartsJointTopN] != NULL)
+		{
+			contribution =
+				syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->joints[nFTPartsJointTopN]->translate.vec.f.x));
+			contribution =
+				syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->joints[nFTPartsJointTopN]->translate.vec.f.y));
+			contribution =
+				syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->joints[nFTPartsJointTopN]->translate.vec.f.z));
+		}
 		contribution = syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->physics.vel_damage_air.x));
 		contribution = syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->physics.vel_damage_air.y));
 		contribution = syNetSyncFnvAccumulateU32(contribution, syNetSyncHashF32(fp->physics.vel_damage_air.z));

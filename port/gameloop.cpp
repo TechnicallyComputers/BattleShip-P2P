@@ -42,6 +42,7 @@
 #include "../debug_tools/gbi_trace/gbi_trace.h"
 
 #include "port_log.h"
+#include "mm_bootstrap.h"
 #include "renderdoc_trigger.h"
 
 /* Backbuffer screenshot capture — implemented in libultraship's DX11 backend.
@@ -597,6 +598,8 @@ void PortPushFrame(void)
 
 	/* Tell the hang watchdog a frame completed. */
 	port_watchdog_note_frame_end();
+
+	port_mm_game_heartbeat_tick();
 
 	/* Screenshot capture: env-var driven, zero cost when disabled. */
 	port_screenshot_init_once();

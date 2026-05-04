@@ -93,8 +93,11 @@ void scVSBattleFuncUpdate(void)
 	{
 		return;
 	}
-	ifCommonBattleUpdateInterfaceAll();
-	syNetReplayUpdate();
+	if (syNetRollbackIsResimulating() == FALSE)
+	{
+		ifCommonBattleUpdateInterfaceAll();
+		syNetReplayUpdate();
+	}
 	syNetPeerUpdate();
 	syNetRollbackAfterBattleUpdate();
 }

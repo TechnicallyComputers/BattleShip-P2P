@@ -3,6 +3,12 @@
 #include <sys/netpeer.h>
 #include <sys/taskman.h>
 
+#ifdef PORT
+extern char *getenv(const char *name);
+extern int atoi(const char *s);
+static sb32 sSYNetInputPredictNeutral;
+#endif
+
 typedef struct SYNetInputSlot
 {
 	SYNetInputSource source;
@@ -144,6 +150,14 @@ void syNetInputReset(void)
 void syNetInputStartVSSession(void)
 {
 	syNetInputReset();
+#ifdef PORT
+	{
+		char *env_pn;
+
+		env_pn = getenv("SSB64_NETPLAY_PREDICT_NEUTRAL");
+		sSYNetInputPredictNeutral = ((env_pn != NULL) && (atoi(env_pn) != 0)) ? TRUE : FALSE;
+	}
+#endif
 }
 
 void syNetInputSetSlotSource(s32 player, SYNetInputSource source)
@@ -205,6 +219,13 @@ void syNetInputMakePredictedFrame(s32 player, u32 tick, SYNetInputFrame *out_fra
 {
 	SYNetInputFrame *last_confirmed = &sSYNetInputSlots[player].last_confirmed;
 
+#ifdef PORT
+	if (sSYNetInputPredictNeutral != FALSE)
+	{
+		syNetInputMakeFrame(out_frame, tick, 0, 0, 0, nSYNetInputSourceRemotePredicted, TRUE);
+		return;
+	}
+#endif
 	if (last_confirmed->is_valid != FALSE)
 	{
 		syNetInputMakeFrame

@@ -4,6 +4,9 @@
 #include <PR/ultratypes.h>
 #include <ssb_types.h>
 
+/* Mismatch scan window (ticks). Must match coordinator in netrollback.c. */
+#define SYNETROLLBACK_SCAN_WINDOW 256
+
 extern void syNetRollbackInit(void);
 extern void syNetRollbackStartVSSession(void);
 extern void syNetRollbackStopVSSession(void);

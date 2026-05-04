@@ -101,6 +101,9 @@ When investigating bootstrap P2P mismatches:
 | `SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH=1` | Patch **published history** after sim passes the tick so `history≠remote` on loopback. |
 | `SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG=1` | Log asymmetric `{history,remote}` presence inside mismatch scan (budget 16 logs per VS start). |
 | `SSB64_NETPLAY_ROLLBACK_VERIFY_STRICT=1` | Warn when post-resim `figh` equals pre-resim (possible no-op snapshot). |
+| `SSB64_NETPLAY_ADAPTIVE_DELAY=1` | Raise input delay toward `SSB64_NETPLAY_DELAY_MAX` on `lf`/`late` spikes; decay after stable intervals. |
+| `SSB64_NETPLAY_DELAY_MAX` | Ceiling for adaptive delay (default **12**). |
+| `SSB64_NETPLAY_PREDICT_NEUTRAL=1` | Predict remote inputs as neutral instead of hold-last (stress testing). |
 
 When editing `src/sys/netpeer.c`:
 

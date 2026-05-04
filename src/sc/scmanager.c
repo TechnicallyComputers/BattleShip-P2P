@@ -1,5 +1,6 @@
 #ifdef PORT
 #include <port_log.h>
+#include "mm_bootstrap.h"
 #ifdef PORT
 extern char *getenv(const char *name);
 extern int atoi(const char *s);
@@ -929,6 +930,7 @@ void scManagerRunLoop(sb32 arg)
 			port_log("SSB64: SSB64_SPGAME_FKIND override → fkind=%d\n", f);
 		}
 		syNetReplayInitDebugEnv();
+		port_mm_bootstrap_try();
 		syNetPeerInitDebugEnv();
 	}
 	port_log("SSB64: scManagerRunLoop — controllers=%d scene=%d\n",

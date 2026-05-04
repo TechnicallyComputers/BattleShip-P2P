@@ -7,6 +7,7 @@
 #include <sys/objman.h>
 
 #include <ft/fighter.h>
+#include <ft/ftdef.h>
 #include <gm/gmdef.h>
 #include <mp/map.h>
 #include <sys/controller.h>
@@ -21,7 +22,6 @@ extern void port_log(const char *fmt, ...);
 extern void scVSBattleFuncUpdate(void);
 
 #define SYNETROLLBACK_RING_LENGTH SYNETINPUT_HISTORY_LENGTH
-#define SYNETROLLBACK_SCAN_WINDOW 256
 #define SYNETROLLBACK_MAX_MP_YAKU 32
 
 typedef struct SYNetRollbackYakuBlob
@@ -49,6 +49,8 @@ typedef struct SYNetRollbackFighterBlob
 	Vec3f pos_prev;
 	Vec3f vel_damage_air;
 	u32 hitlag_tics;
+	Vec3f topn_translate;
+	u32 status_total_tics;
 
 } SYNetRollbackFighterBlob;
 
@@ -248,6 +250,15 @@ static void syNetRollbackCaptureFighters(SYNetRollbackRingSlot *slot)
 			blob->pos_prev = fp->coll_data.pos_prev;
 			blob->vel_damage_air = fp->physics.vel_damage_air;
 			blob->hitlag_tics = fp->hitlag_tics;
+			blob->status_total_tics = fp->status_total_tics;
+			if (fp->joints[nFTPartsJointTopN] != NULL)
+			{
+				blob->topn_translate = fp->joints[nFTPartsJointTopN]->translate.vec.f;
+			}
+			else
+			{
+				blob->topn_translate.x = blob->topn_translate.y = blob->topn_translate.z = 0.0F;
+			}
 		}
 	}
 }
@@ -288,6 +299,11 @@ static void syNetRollbackApplyFighters(const SYNetRollbackRingSlot *slot)
 		fp->coll_data.pos_prev = blob->pos_prev;
 		fp->physics.vel_damage_air = blob->vel_damage_air;
 		fp->hitlag_tics = blob->hitlag_tics;
+		fp->status_total_tics = blob->status_total_tics;
+		if (fp->joints[nFTPartsJointTopN] != NULL)
+		{
+			fp->joints[nFTPartsJointTopN]->translate.vec.f = blob->topn_translate;
+		}
 	}
 }
 
@@ -603,7 +619,11 @@ static void syNetRollbackRunResim(u32 mismatch_tick, u32 target_tick)
 	if (syNetRollbackLoadPostTick(mismatch_tick - 1) == FALSE)
 	{
 #ifdef PORT
-		port_log("SSB64 NetRollback: load post tick %u failed (need earlier snapshots)\n", mismatch_tick - 1);
+		port_log(
+		    "SSB64 NetRollback: load post tick %u failed (need earlier snapshots; check delay/loss vs ring=%u scan=%u)\n",
+		    mismatch_tick - 1,
+		    (unsigned int)SYNETINPUT_HISTORY_LENGTH,
+		    (unsigned int)SYNETROLLBACK_SCAN_WINDOW);
 		sSYNetRollbackLoadFailCount++;
 #endif
 		return;
