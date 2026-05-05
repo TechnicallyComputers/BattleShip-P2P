@@ -13,6 +13,12 @@
   - `& 'C:\Program Files\CMake\bin\cmake.exe' --build .\build\x64 --target ExtractAssetHeaders`
 - The executable target is `ssb64`, but the produced binary is `BattleShip`.
 
+### Netmenu configure (`SSB64_NETMENU`)
+
+- **OFF (default):** `ssb64_game` compiles **`decomp/src/mn/mnvsmode/mnvsmode.c`** (stock VS Mode menu).
+- **ON:** CMake excludes that decomp file and compiles **`port/net/menus/mnvsmode.c`** instead (`SSB64_NETMENU=1` is defined). See **`docs/netplay_architecture.md`** (*Port net tree*) and **`.cursor/rules/battleship-net-codebase-policy.mdc`** for overlay norms.
+- Maintain separate build directories for offline vs netmenu configures, for example `-DSSB64_NETMENU=ON`.
+
 ## Runtime Logs
 After running the game:
 - **Game trace log**: `ssb64.log` in the cwd — `port_log()` output (boot sequence, thread creation, frame milestones). Overwritten each run.

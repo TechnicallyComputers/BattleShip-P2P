@@ -1,7 +1,9 @@
 #include "app_paths.h"
+#include "ssb64_paths_capi.h"
 
 #include <libultraship/libultraship.h>
 
+#include <cstring>
 #include <filesystem>
 #include <system_error>
 
@@ -26,7 +28,28 @@ std::string RealAppBundlePath() {
         return exe.parent_path().string();
     }
 #endif
-    return Ship::Context::GetAppBundlePath();
+	return Ship::Context::GetAppBundlePath();
 }
 
 } // namespace ssb64
+
+extern "C" int ssb64_RealAppBundlePathUtf8(char *out, size_t cap)
+{
+	std::string p;
+
+	if (out == nullptr || cap == 0)
+	{
+		return 0;
+	}
+
+	p = ssb64::RealAppBundlePath();
+	if (p.size() + 1 > cap)
+	{
+		out[0] = '\0';
+		return 0;
+	}
+
+	memcpy(out, p.c_str(), p.size() + 1);
+
+	return 1;
+}

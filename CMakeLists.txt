@@ -31,7 +31,7 @@ option(NON_MATCHING "Build without matching decomp constraints" ON)
 option(NON_EQUIVALENT "Build without equivalent decomp constraints" ON)
 option(USE_AUTO_VCPKG "Use automated vcpkg for dependency management" ON)
 option(SSB64_STAGE_CYCLE_DEMO "Boot directly into attract-demo stage cycle for rendering regression testing" OFF)
-option(SSB64_NETPLAY "Compile netplay overlays under port/net/sys and scene replacements" OFF)
+option(SSB64_NETMENU "VS Mode custom menu UX (stripped VS START-only screen; extend for net lobby)" OFF)
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
@@ -182,8 +182,7 @@ file(GLOB_RECURSE SSB64_SRC_WP      "decomp/src/wp/*.c"      "decomp/src/wp/*.h"
 # Port layer (C++ glue) — excludes port/stubs/ which is compiled as part of ssb64_game
 file(GLOB_RECURSE SSB64_SRC_PORT "port/*.cpp" "port/*.c" "port/*.h")
 list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "port/stubs/")
-# Scene/net overlays must only link via ssb64_game when SSB64_NETPLAY is enabled.
-list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "[/\\\\]port[/\\\\]net[/\\\\]")
+list(FILTER SSB64_SRC_PORT EXCLUDE REGEX "port/net/")
 
 # Debug tools (GBI trace + Acmd trace systems)
 file(GLOB SSB64_DEBUG_TOOLS
@@ -211,10 +210,11 @@ set(SSB64_DECOMP_SOURCES
 # Exclude .inc.c files (inline data included by other .c files)
 list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "\\.inc\\.c$")
 
-if(SSB64_NETPLAY)
-    # Replace offline VS scenes with overlays from port/net/sc/
-    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "(^|[/\\\\])sc[/\\\\]scmanager\\.c$")
-    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "(^|[/\\\\])sccommon[/\\\\]scvsbattle\\.c$")
+if(SSB64_NETMENU)
+    # Netmenu replaces selected decomp TUs with forks under port/net/ (see docs/netplay_architecture.md).
+    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "decomp/src/mn/mnvsmode/mnvsmode\\.c$")
+    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "decomp/src/sc/scmanager\\.c$")
+    list(FILTER SSB64_DECOMP_SOURCES EXCLUDE REGEX "decomp/src/lb/lbcommon\\.c$")
 endif()
 
 ################################################################################
@@ -259,11 +259,27 @@ if(SSB64_NETPLAY)
     list(APPEND SSB64_COMPILE_DEFS SSB64_NETPLAY=1)
 endif()
 
+if(SSB64_NETMENU)
+    list(APPEND SSB64_COMPILE_DEFS SSB64_NETMENU=1)
+endif()
+
 ################################################################################
 # Decomp C code — OBJECT library with custom include/ shadowing system headers
 ################################################################################
 
 add_library(ssb64_game OBJECT ${SSB64_DECOMP_SOURCES})
+
+if(SSB64_NETMENU)
+    target_sources(ssb64_game PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net/menus/mnvsmodenet.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net/menus/mnvsmode_original.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net/mn_vs_submenu_png.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net/sc/scmanager.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net/lb/lbcommon.c")
+    target_include_directories(ssb64_game PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/port/net"
+        "${CMAKE_CURRENT_SOURCE_DIR}/torch/lib/n64graphics")
+endif()
 
 # Port stub definitions (C code that satisfies N64 linker symbols)
 file(GLOB SSB64_STUBS "port/stubs/*.c")
@@ -495,6 +511,17 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${TORCH_EXECUTABLE}
         $<TARGET_FILE_DIR:${PROJECT_NAME}>/${TORCH_SIDECAR_NAME}
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/port/net/assets
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/port/net/assets/offline_vs.png
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/port/net/assets/offline_vs.png
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/port/net/assets/online_vs.png
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/port/net/assets/online_vs.png
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/port/net/assets/replays.png
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>/port/net/assets/replays.png
 )
 
 ################################################################################

@@ -49,6 +49,19 @@ taskman game tick during VS
 
 The P2P start barrier and VS execution gate are debug-only and only active when both `SSB64_NETPLAY=1` and `SSB64_NETPLAY_BOOTSTRAP=1` are set. Local VS, replay playback/recording, and manual P2P input injection without bootstrap continue advancing netinput and VS updates immediately.
 
+## Port net tree (`port/net/`) — netmenu and future net-only code
+
+BattleShip treats **`port/net/`** as the **canonical location for all new netplay-related source** (menus, scenes, stubs, helpers) that intentionally diverges from upstream `github.com/VetriTheRetri/ssb-decomp-re`.
+
+Rules:
+
+1. **Do not edit existing files under `decomp/src/` or `decomp/include/`** for BattleShip-exclusive net UX or overlays. Preserve the submodule for ROM-aligned reference; implement divergences under `port/net/`.
+2. When a fork of a decomp `.c` file is needed, **copy** the translation unit into `port/net/` (use subdirectories such as `port/net/menus/` for MN modules). Keep the fork self-contained aside from shared headers that remain in `decomp/`.
+3. **CMake swaps** substitute the fork for the decomp TU when building the netmenu/“net” profile. Today: `-DSSB64_NETMENU=ON` defines `SSB64_NETMENU=1`, **excludes** `decomp/src/mn/mnvsmode/mnvsmode.c` from `ssb64_game`, and **adds** `port/net/menus/mnvsmode.c` instead. Default / offline configures leave `SSB64_NETMENU` **OFF** so only the stock decomp `mnvsmode.c` is compiled.
+4. **`port/net/**/*.c` must not** compile through the recursive `port/*.c` glob for the executable. Root `CMakeLists.txt` excludes `port/net/` from `SSB64_SRC_PORT`; net sources are wired only via explicit `target_sources(ssb64_game …)` behind the relevant options.
+
+Repository overlay policy lives in `.cursor/rules/battleship-net-codebase-policy.mdc` (CMake swap details remain here).
+
 ## Canonical Input Frame
 
 `SYNetInputFrame` is the deterministic input record used by netplay:

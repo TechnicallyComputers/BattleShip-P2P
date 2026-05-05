@@ -2,9 +2,7 @@
 
 ## Purpose
 
-This file tracks netcode-specific guidance for future agent sessions. It is a project handoff document, not a Cursor rules file, and it should not override the repository's main developer guidance.
-
-Use this document when working on rollback netcode, netplay input, saved input replay, prediction, session ownership, or interactions between those systems and the core game loop.
+This file tracks netcode-specific guidance for future sessions focused on rollback netcode, netplay input, saved input replay, prediction, session ownership, or interactions between those systems and the core game loop. Overlay **source-layout** norms (forks under `port/net/`, CMake swaps vs stock `decomp`) are summarized in **`docs/netplay_architecture.md`** (*Port net tree*) and stated normatively under **`.cursor/rules/battleship-net-codebase-policy.mdc`**.
 
 ## Current Netcode Goal
 
@@ -37,6 +35,8 @@ Build rollback netcode in phases:
 
 ## Architecture Rules
 
+- **Decomp submodule (`decomp/src/`, `decomp/include/`):** existing files there are not changed for BattleShip-only net/menu behavior; forks live under **`port/net/`** (see `docs/netplay_architecture.md`, section *Port net tree*, and `.cursor/rules/battleship-net-codebase-policy.mdc`) with CMake swapping the stock TU only for net-oriented configures.
+- **`port/net/`** is the preferred home for new BattleShip netplay-related overlays (menus, scene forks, helpers). Offline builds compile stock `decomp` sources; netmenu-style builds substitute `port/net/` forks per root `CMakeLists.txt` (e.g. `-DSSB64_NETMENU=ON` swaps `port/net/menus/mnvsmode.c` for `decomp/src/mn/mnvsmode/mnvsmode.c`).
 - Keep `src/sys/controller.c` focused on local hardware input and N64-style controller behavior.
 - Put new netplay-only input functions in `src/sys/netinput.c` and declarations in `src/sys/netinput.h`.
 - Put deterministic gameplay-state hashing needed for rollback or netplay parity near `netsync`/netpeer rather than scattering ad-hoc checks through fighter code unless a subsystem truly owns the invariant.

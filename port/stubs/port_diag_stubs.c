@@ -87,8 +87,9 @@ const char *port_diag_get_scene_name(u8 id)
 	case nSCKindData:             return "Data";
 	case nSCKindSoundTest:        return "SoundTest";
 	case nSCKindExplain:          return "Explain";
-	case nSCKindAutoDemo:         return "AutoDemo";
-	default:                      return "?";
+	case nSCKindAutoDemo:             return "AutoDemo";
+	case nSCKindVSOfflineClassic:     return "VSOfflineClassic";
+	default:                          return "?";
 	}
 }
 
