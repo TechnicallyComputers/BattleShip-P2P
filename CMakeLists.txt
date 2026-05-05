@@ -659,23 +659,20 @@ add_custom_target(GeneratePortO2R
 set(RELOCDATA_DECOMP_DIR  "${CMAKE_SOURCE_DIR}/decomp")
 set(RELOCDATA_RELOC_TABLE "${CMAKE_SOURCE_DIR}/port/resource/RelocFileTable.cpp")
 if(EXISTS "${CMAKE_SOURCE_DIR}/Battle-ShipYard/cmake/RelocData.cmake")
-    include("${CMAKE_SOURCE_DIR}/Battle-ShipYard/cmake/RelocData.cmake")
-# ExtractAssets writes BattleShip.o2r to ${CMAKE_SOURCE_DIR}; tell the modkit
-# to make BuildBattleShipFromSource depend on it so the source-compile +
-# passthrough commands don't race on a fresh `cmake -B && cmake --build` flow
-# (the failure mode that broke v0.7.6-beta packaging).
-set(RELOCDATA_BATTLESHIP_O2R_TARGET ExtractAssets)
-include(Battle-ShipYard/cmake/RelocData.cmake)
+    # ExtractAssets writes BattleShip.o2r to ${CMAKE_SOURCE_DIR}; tell the modkit
+    # to make BuildBattleShipFromSource depend on it so the source-compile +
+    # passthrough commands don't race on a fresh `cmake -B && cmake --build` flow
+    # (the failure mode that broke v0.7.6-beta packaging).
+    set(RELOCDATA_BATTLESHIP_O2R_TARGET ExtractAssets)
+    include(Battle-ShipYard/cmake/RelocData.cmake)
 
-    if(RELOCDATA_CC)
+    if(RELOCDATA_CC AND EXISTS "${SSB64_BASEROM}")
         finalize_battleship_from_source(${CMAKE_BINARY_DIR}/BattleShip.fromsource.o2r)
+    elseif(RELOCDATA_CC)
+        message(STATUS "RelocData: baserom absent — BuildBattleShipFromSource skipped "
+                       "(release CI / no-rom builds; runtime falls back to Torch-passthrough reloc data)")
     endif()
 else()
     message(STATUS "Battle-ShipYard modkit CMake absent — skipping RelocData.fromsource pipeline "
                    "(initialize submodule Battle-ShipYard to enable).")
-if(RELOCDATA_CC AND EXISTS "${SSB64_BASEROM}")
-    finalize_battleship_from_source(${CMAKE_BINARY_DIR}/BattleShip.fromsource.o2r)
-elseif(RELOCDATA_CC)
-    message(STATUS "RelocData: baserom absent — BuildBattleShipFromSource skipped "
-                   "(release CI / no-rom builds; runtime falls back to Torch-passthrough reloc data)")
 endif()
