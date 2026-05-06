@@ -1,5 +1,3 @@
-#ifndef PORT_MM_BOOTSTRAP_H
-#define PORT_MM_BOOTSTRAP_H
 #pragma once
 
 #ifdef __cplusplus

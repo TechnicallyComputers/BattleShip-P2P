@@ -1,0 +1,169 @@
+name: Release
+
+# Triggered by:
+#   - Pushing a tag matching v* (e.g. v1.0.0, v0.1-test)
+#   - Manual dispatch from the GitHub UI for smoke-testing
+#
+# Three platform jobs build with NON_PORTABLE=ON via the corresponding
+# scripts/package-*.sh|.ps1 helper, then a final `release` job stitches
+# the artifacts into a GitHub Release attached to the tag.
+#
+# The build is ROM-independent end-to-end: BattleShip.o2r is NEVER produced
+# by CI. Users extract it from their own ROM via the ImGui first-run
+# wizard at launch.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:    # manual trigger; no Release is created
+
+permissions:
+  contents: write       # softprops/action-gh-release needs this on the
+                        # final job to attach assets and create the
+                        # Release. Read-only on every other step.
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install build deps
+        # libultraship's CMake calls find_package on:
+        #   libzip, nlohmann_json, tinyxml2, spdlog (libultraship/src)
+        #   SDL2, GLEW                              (mac.cmake)
+        # Local dev workflows inherit these from existing brew installs;
+        # CI hosts need them explicit. spdlog has a FetchContent fallback
+        # in mac.cmake but the others don't.
+        run: |
+          brew install cmake ninja \
+            sdl2 glew libzip nlohmann-json tinyxml2 spdlog \
+            zip create-dmg dylibbundler
+      - name: Package macOS .app + .dmg
+        run: bash scripts/package-macos.sh
+      - uses: actions/upload-artifact@v4
+        # The .dmg is the standard drag-to-Applications installer macOS
+        # users expect. We don't ship the loose .app zip anymore — anyone
+        # wanting the bundle alone can pop the .dmg open and drag the
+        # .app out. Smaller release surface, friendlier UX.
+        with:
+          name: BattleShip-macos
+          path: dist/BattleShip.dmg
+          if-no-files-found: error
+
+  build-linux:
+    # Build on jammy (glibc 2.35) so the AppImage runs everywhere we
+    # care about: Steam Deck (Holo, glibc 2.38), Debian 12 (2.36),
+    # Fedora 38+ (2.37+), Ubuntu 22.04+. The AppImage links against
+    # the build host's glibc — it's on linuxdeploy's excludelist, not
+    # bundled — so jammy's 2.35 sets the floor. Noble (2.39) is too
+    # new; it cuts off Steam Deck.
+    #
+    # jammy's libtinyxml2-dev ships only pkg-config metadata; the
+    # cmake/Findtinyxml2.cmake shim falls back to pkg-config and
+    # builds an IMPORTED target by hand so libultraship's
+    # find_package(tinyxml2) resolves cleanly.
+    #
+    # libzip-dev on jammy AND noble exports its CMake config with
+    # zipcmp / zipmerge / ziptool as IMPORTED EXECUTABLE targets, but
+    # neither distro packages those binaries. CMake's existence check
+    # fires at find_package() time even though we never invoke the
+    # tools — stub them with `touch + chmod +x` to bypass the check.
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install build deps
+        # libultraship find_package set: libzip, nlohmann_json, tinyxml2,
+        # spdlog, SDL2, GLEW. See header comment on the runner for the
+        # libzip CLI stub workaround.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build zip clang \
+            libsdl2-dev libzip-dev libglew-dev \
+            nlohmann-json3-dev libtinyxml2-dev libspdlog-dev \
+            libgl1-mesa-dev libegl1-mesa-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            python3 imagemagick file
+          sudo touch /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
+          sudo chmod +x /usr/bin/zipcmp /usr/bin/zipmerge /usr/bin/ziptool
+      - name: Use clang as the C/C++ compiler
+        # Match the macOS-validated Clang toolchain. GCC trips on
+        # decomp-style shadow headers (-Wint-conversion /
+        # -Wimplicit-function-declaration on va_args paths in
+        # src/sys/debug.c) that Clang accepts. Runtime is unchanged.
+        run: |
+          echo "CC=clang"   >> $GITHUB_ENV
+          echo "CXX=clang++" >> $GITHUB_ENV
+      - name: Install AppImage tooling
+        # appimagetool packs an AppDir into a runnable AppImage.
+        # linuxdeploy walks the binary's NEEDED .so list, copies the
+        # actual library files into AppDir/usr/lib/ (excluding glibc /
+        # libGL / other system-driver libs per its built-in
+        # excludelist), and patches RPATH. Without this, the AppImage
+        # links dynamically against whatever .so versions happen to be
+        # on the user's distro and fails on anything but the build host.
+        run: |
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -O /usr/local/bin/appimagetool
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage \
+            -O /usr/local/bin/linuxdeploy
+          chmod +x /usr/local/bin/appimagetool /usr/local/bin/linuxdeploy
+      - name: Package Linux AppImage
+        # APPIMAGE_EXTRACT_AND_RUN=1 lets linuxdeploy / appimagetool
+        # run without libfuse2 (some runner images ship without it).
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: bash scripts/package-linux.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BattleShip-linux
+          path: dist/BattleShip-x86_64.AppImage
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install build deps
+        # Windows runner ships with cmake / Visual Studio Build Tools
+        # already. SDL2 comes from vcpkg, which is integrated by
+        # libultraship/CMakeLists's vcpkg bootstrap.
+        run: |
+          choco install ninja -y
+        shell: pwsh
+      - name: Package Windows zip
+        run: pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/package-windows.ps1
+        shell: pwsh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BattleShip-windows
+          path: dist/BattleShip-windows.zip
+          if-no-files-found: error
+
+  release:
+    name: Publish GitHub Release
+    needs: [build-macos, build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v')   # only on tag pushes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/BattleShip.dmg
+            artifacts/BattleShip-x86_64.AppImage
+            artifacts/BattleShip-windows.zip
+          generate_release_notes: true
+          draft: true   # land as a draft so a human can sanity-check
+                        # before the release is visible to the public.

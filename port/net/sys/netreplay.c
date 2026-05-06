@@ -101,11 +101,8 @@ void syNetReplayCaptureBattleMetadata(SCBattleState *battle_state, SYNetInputRep
 		metadata->levels[player] = battle_state->players[player].level;
 		metadata->shades[player] = battle_state->players[player].shade;
 	}
-<<<<<<< HEAD
-=======
 	metadata->netplay_sim_slot_host_hw = 0U;
 	metadata->netplay_sim_slot_client_hw = 1U;
->>>>>>> b868dfc (Netcode Major Update)
 }
 
 void syNetReplayApplyBattleMetadata(const SYNetInputReplayMetadata *metadata)

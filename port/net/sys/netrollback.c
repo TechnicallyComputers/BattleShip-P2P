@@ -5,10 +5,7 @@
 #include <sys/netsync.h>
 #include <sys/objdef.h>
 #include <sys/objman.h>
-<<<<<<< HEAD
-=======
 #include <sys/taskman.h>
->>>>>>> b868dfc (Netcode Major Update)
 
 #include <ft/fighter.h>
 #include <ft/ftdef.h>
@@ -16,16 +13,11 @@
 #include <mp/map.h>
 #include <sys/controller.h>
 
-<<<<<<< HEAD
-#ifdef PORT
-#include <sys/taskman.h>
-=======
 /* May already be declared in taskman.h for PORT builds; duplicated here so parsers that see a
  * taskman.h variant without PORT-gated prototypes still diagnose calls under #ifdef PORT correctly. */
 extern void syTaskmanSetIntervals(u16 update, u16 framedraw);
 
 #ifdef PORT
->>>>>>> b868dfc (Netcode Major Update)
 extern char *getenv(const char *name);
 extern int atoi(const char *s);
 extern void port_log(const char *fmt, ...);
@@ -33,15 +25,12 @@ extern void port_log(const char *fmt, ...);
 
 extern void scVSBattleFuncUpdate(void);
 
-<<<<<<< HEAD
-=======
 /*
  * Ring storage: one `SYNetRollbackRingSlot` per `tick % SYNETROLLBACK_RING_LENGTH` (same span as input history).
  * Save runs **after** sim completes tick T-1 (see `AfterBattleUpdate`); load restores fighters + a subset of map
  * yakumono state so resim can diverge from an exact prior world point.
  */
 
->>>>>>> b868dfc (Netcode Major Update)
 #define SYNETROLLBACK_RING_LENGTH SYNETINPUT_HISTORY_LENGTH
 #define SYNETROLLBACK_MAX_MP_YAKU 32
 
@@ -234,10 +223,7 @@ static SYNetRollbackRingSlot *syNetRollbackRingSlotForTick(u32 tick)
 	return &sSYNetRollbackRing[tick % SYNETROLLBACK_RING_LENGTH];
 }
 
-<<<<<<< HEAD
-=======
 /* Serialize live fighter fields we need to rebuild motion/damage continuity after a rewind. */
->>>>>>> b868dfc (Netcode Major Update)
 static void syNetRollbackCaptureFighters(SYNetRollbackRingSlot *slot)
 {
 	GObj *fighter_gobj;
@@ -288,10 +274,7 @@ static void syNetRollbackCaptureFighters(SYNetRollbackRingSlot *slot)
 	}
 }
 
-<<<<<<< HEAD
-=======
 /* Overwrite currently loaded fighters with blob data; skips entries whose kind/slot no longer match (stale pointer guard). */
->>>>>>> b868dfc (Netcode Major Update)
 static void syNetRollbackApplyFighters(const SYNetRollbackRingSlot *slot)
 {
 	GObj *fighter_gobj;
@@ -418,10 +401,7 @@ static void syNetRollbackApplyMap(const SYNetRollbackRingSlot *slot)
 	}
 }
 
-<<<<<<< HEAD
-=======
 /* Mark ring slot for completed sim tick `tick` and snapshot fighters + yakumono subset. */
->>>>>>> b868dfc (Netcode Major Update)
 static sb32 syNetRollbackSavePostTick(u32 tick)
 {
 	SYNetRollbackRingSlot *slot;
@@ -438,10 +418,7 @@ static sb32 syNetRollbackSavePostTick(u32 tick)
 	return TRUE;
 }
 
-<<<<<<< HEAD
-=======
 /* Reconstruct world at end of tick `tick` (used when rewinding to just before mismatch). */
->>>>>>> b868dfc (Netcode Major Update)
 static sb32 syNetRollbackLoadPostTick(u32 tick)
 {
 	SYNetRollbackRingSlot *slot;
@@ -457,8 +434,6 @@ static sb32 syNetRollbackLoadPostTick(u32 tick)
 	return TRUE;
 }
 
-<<<<<<< HEAD
-=======
 #ifdef PORT
 sb32 syNetRollbackLoadSnapshotAfterCompletedTick(u32 completed_sim_tick)
 {
@@ -467,7 +442,6 @@ sb32 syNetRollbackLoadSnapshotAfterCompletedTick(u32 completed_sim_tick)
 #endif
 
 /* Once per frame after battle sim: persist the world that finished `(current_input_tick - 1)` while rollback is on. */
->>>>>>> b868dfc (Netcode Major Update)
 void syNetRollbackAfterBattleUpdate(void)
 {
 	u32 post_tick;
@@ -482,10 +456,7 @@ void syNetRollbackAfterBattleUpdate(void)
 	}
 	post_tick = syNetInputGetTick();
 
-<<<<<<< HEAD
-=======
 	/* First VS frame: post_tick==1 => save completed sim state for netinput tick 0. */
->>>>>>> b868dfc (Netcode Major Update)
 	if (post_tick == 0)
 	{
 		return;
@@ -493,10 +464,7 @@ void syNetRollbackAfterBattleUpdate(void)
 	syNetRollbackSavePostTick(post_tick - 1);
 }
 
-<<<<<<< HEAD
-=======
 /* Walk backward from `frontier_tick` up to `SYNETROLLBACK_SCAN_WINDOW` comparing published vs remote history. */
->>>>>>> b868dfc (Netcode Major Update)
 static u32 syNetRollbackFindEarliestInputMismatch(u32 frontier_tick)
 {
 	SYNetInputFrame hist;
@@ -664,10 +632,7 @@ static void syNetRollbackDebugTryApplyPendingForceMismatch(void)
 }
 #endif
 
-<<<<<<< HEAD
-=======
 /* Load snapshot at `mismatch_tick-1`, reseed netinput, then replay frames until we reach the live `target_tick`. */
->>>>>>> b868dfc (Netcode Major Update)
 static void syNetRollbackRunResim(u32 mismatch_tick, u32 target_tick)
 {
 	u32 t;
@@ -700,10 +665,7 @@ static void syNetRollbackRunResim(u32 mismatch_tick, u32 target_tick)
 	sSYNetRollbackResimDepth--;
 }
 
-<<<<<<< HEAD
-=======
 /* Transport-time hook: if inputs diverge, resim (nested calls short-circuit via `IsResimulating`). */
->>>>>>> b868dfc (Netcode Major Update)
 void syNetRollbackUpdate(void)
 {
 	u32 frontier;
