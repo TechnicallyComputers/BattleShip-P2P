@@ -245,13 +245,10 @@ Current debug environment variables:
 - `SSB64_NETPLAY_BOOTSTRAP=1` enables automatic VS match bootstrap.
 - `SSB64_NETPLAY_HOST=1` marks the peer that creates and sends match metadata.
 - `SSB64_NETPLAY_SEED` optionally overrides the bootstrap match RNG seed.
-<<<<<<< HEAD
 - `SSB64_NETPLAY_REMOTE_SLOTS` optional comma-separated **receiver** controller indices (e.g. `1` or `1,3`) whose **published vs remote-confirmed** histories participate in rollback mismatch scan. Defaults to `SSB64_NETPLAY_REMOTE_PLAYER` only.
 - `SSB64_NETPLAY_EXTRA_LOCAL_PLAYER` optional second **sender** controller index on this machine; when set and valid, INPUT packets use **wire version 3** with a second bundled frame block for that slot (two humans on one PC talking to one peer). Leave unset for classic single-local packets (version 2).
 - `SSB64_NETPLAY_PEER_SENDER_SLOTS` optional comma list of **sender** controller indices allowed from the peer’s packets (defaults to the peer’s primary slot = your `SSB64_NETPLAY_REMOTE_PLAYER`). Required when the peer uses dual-local senders so primary/secondary `player` bytes both validate.
-=======
 - `SSB64_NETPLAY_BARRIER_EXTRA_LEAD_MS` adds that many milliseconds to the post–clock-sync wall-clock VS execution start (see `port/net/sys/netpeer.c`).
->>>>>>> caf222a (push netcode update overhaul)
 
 Packet phases:
 
@@ -281,11 +278,7 @@ Operational desync instrumentation (logged only when UDP netplay is active and b
 | Log prefix | Approx. cadence | Use |
 | ---------- | ----------------- | --- |
 | `SSB64 NetPeer:` | Every 120 sim ticks (`SYNETPEER_LOG_INTERVAL`) | Transport counters, sequence diagnostics, staged frames, cumulative remote-input fingerprint (`inpchk`). |
-<<<<<<< HEAD
-| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities, `coll_data.pos_prev`, TopN root translate, and `status_total_tics` using IEEE754 bit reinterpretation — order-independent across controller ports. **`mph`** (when present) is `syNetSyncHashMapCollisionKinematics()` over `gMPCollisionUpdateTic` and capped yakumono mover state for rollback bisect. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. Trailing **`delay`/`ring`/`rscan`** echo `SSB64_NETPLAY_DELAY` (possibly adaptive), `SYNETINPUT_HISTORY_LENGTH` (rollback ring depth), and `SYNETROLLBACK_SCAN_WINDOW`. |
-=======
-| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. Optional **`remote_ring_hist_win=`** (env **`SSB64_NETPLAY_REMOTE_RING_CHECKSUM=1`** or **`SSB64_NETPLAY_TICK_DIAG=2`**) uses the same window over **`sSYNetInputRemoteHistory`** before resolve/publish. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities and `coll_data.pos_prev` using IEEE754 bit reinterpretation — order-independent across controller ports. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. |
->>>>>>> caf222a (push netcode update overhaul)
+| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. Optional **`remote_ring_hist_win=`** (env **`SSB64_NETPLAY_REMOTE_RING_CHECKSUM=1`** or **`SSB64_NETPLAY_TICK_DIAG=2`**) uses the same window over **`sSYNetInputRemoteHistory`** before resolve/publish. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities, `coll_data.pos_prev`, TopN root translate, and `status_total_tics` using IEEE754 bit reinterpretation — order-independent across controller ports. **`mph`** (when present) is `syNetSyncHashMapCollisionKinematics()` over `gMPCollisionUpdateTic` and capped yakumono mover state for rollback bisect. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. Trailing **`delay`/`ring`/`rscan`** echo `SSB64_NETPLAY_DELAY` (possibly adaptive), `SYNETINPUT_HISTORY_LENGTH` (rollback ring depth), and `SYNETROLLBACK_SCAN_WINDOW`. |
 
 Debug workflow:
 
