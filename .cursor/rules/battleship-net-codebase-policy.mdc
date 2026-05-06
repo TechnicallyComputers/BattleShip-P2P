@@ -1,0 +1,36 @@
+---
+description: BattleShip strict net overlay policy — forks under port/net, CMake swaps, offline stock builds
+alwaysApply: true
+---
+
+# BattleShip net codebase policy
+
+Conventions documented here apply to the BattleShip repository’s net-menu / netplay-oriented build profile and overlay sources. Authoritative procedural detail for overlays also appears in **`docs/netplay_architecture.md`** (`port/net/` tree). Other root-level contextual files maintained by collaborators are outside the scope of this rule.
+
+## `port/net/` as the overlay root
+
+BattleShip minimizes drift from the `decomp` submodule by concentrating **purpose-built or forked** game-side sources under **`port/net/`**, with subdirectories chosen for clarity (e.g. `port/net/menus/`, future `port/net/sc/`, `port/net/sys/`). New net-menu and net-flow code is added **under this tree whenever practical**.
+
+## No BattleShip-exclusive edits inside `decomp/`
+
+Existing files under **`decomp/src/`** and **`decomp/include/`** are **not** modified for overlays that exist only for net-menu or net-configured binaries. The submodule stays aligned with upstream ROM-tracking work.
+
+## Prefer copy-and-substitute over patch-in-place
+
+When a behavioral change would require editing a compilation unit **outside** `port/net/`:
+
+- **Prefer** copying that unit (or extracting a cohesive subset into a fork) under **`port/net/`** following a recognizable layout (mirror module names where useful).
+- **Wire CMake** so the net-oriented configure **excludes** the stock TU and **compiles** the `port/net/` fork instead **only when** the relevant option is enabled (e.g. `SSB64_NETMENU=ON`; see root `CMakeLists.txt`).
+- Default / offline configures **must** compile **stock** `decomp` sources for those symbols with **no** `port/net/` substitute unless a separate overlay flag is flipped.
+
+Documentation updates under **`docs/`** remain exempt from this “copy first” discipline when they merely describe behaviour or build flags.
+
+## Build wiring
+
+- **`port/net/**/*.c`** must not participate in unconditional `port/*.c` exe globs; it is excluded and linked only via explicit `target_sources(ssb64_game …)` guarded by CMake options.
+- Each new fork requires an explicit CMake rule: exclude stock path when overlay is on; add fork path when overlay is on; keep offline builds bitwise consistent with unchanged stock sources.
+
+## Cross-references
+
+- Technical detail and current swaps: **`docs/netplay_architecture.md`**
+- Netcode handoff notes: **`docs/netcode_agent_rules.md`**
