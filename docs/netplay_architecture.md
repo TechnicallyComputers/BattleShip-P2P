@@ -33,9 +33,10 @@ VS scene start
 taskman game tick during VS
   -> scene controller callback
   -> syNetInputFuncRead()
-  -> syControllerFuncRead()
-  -> resolve one SYNetInputFrame per player for the current tick
-  -> publish resolved frames into gSYControllerDevices
+      -> syControllerFuncRead()
+      -> PORT: copy raw devices to hardware latch, neutralize gSYControllerDevices[]
+      -> resolve one SYNetInputFrame per player for the current tick
+      -> publish resolved frames into gSYControllerDevices
   -> advance netinput tick once the optional P2P start barrier is released
   -> scene_update()
   -> syNetPeerUpdateBattleGate()
@@ -47,20 +48,42 @@ taskman game tick during VS
 
 `syNetInputGetTick()` returns a VS-local tick counter reset by `syNetInputStartVSSession()`. `dSYTaskmanUpdateCount` remains part of the engine, but netplay input history is keyed by match-local time so rematches and scene transitions do not reuse stale global tick assumptions.
 
+### Simulation-facing controller state (VS)
+
+On PORT, within one `syNetInputFuncRead`, raw hardware is copied to an internal latch and `gSYControllerDevices[]` is cleared before resolve; local slots sample only that latch. `syNetInputResolveFrame` / `syNetInputPublishFrame` then write the **authoritative** per-simulation-slot input sample (local, remote, replay, etc.) into `gSYControllerDevices[]`. **Battle code must treat `gSYControllerDevices[player]` after publish as the only inputs that affect simulation** for that slot—never read pre-publish values for gameplay. Use `syNetInputGetSimController(player)` from [`port/net/sys/netinput.c`](port/net/sys/netinput.c) when wiring `FTDesc.controller` so the contract is explicit (same address as `&gSYControllerDevices[player]` for in-range players).
+
 The P2P start barrier and VS execution gate are debug-only and only active when both `SSB64_NETPLAY=1` and `SSB64_NETPLAY_BOOTSTRAP=1` are set. Local VS, replay playback/recording, and manual P2P input injection without bootstrap continue advancing netinput and VS updates immediately.
 
 ## Port net tree (`port/net/`) — netmenu and future net-only code
 
 BattleShip treats **`port/net/`** as the **canonical location for all new netplay-related source** (menus, scenes, stubs, helpers) that intentionally diverges from upstream `github.com/VetriTheRetri/ssb-decomp-re`.
 
+**Menu-specific workflow, file inventory, and maintenance notes:** [netplay_menus.md](./netplay_menus.md).
+
 Rules:
 
 1. **Do not edit existing files under `decomp/src/` or `decomp/include/`** for BattleShip-exclusive net UX or overlays. Preserve the submodule for ROM-aligned reference; implement divergences under `port/net/`.
 2. When a fork of a decomp `.c` file is needed, **copy** the translation unit into `port/net/` (use subdirectories such as `port/net/menus/` for MN modules). Keep the fork self-contained aside from shared headers that remain in `decomp/`.
-3. **CMake swaps** substitute the fork for the decomp TU when building the netmenu/“net” profile. Today: `-DSSB64_NETMENU=ON` defines `SSB64_NETMENU=1`, **excludes** `decomp/src/mn/mnvsmode/mnvsmode.c` from `ssb64_game`, and **adds** `port/net/menus/mnvsmode.c` instead. Default / offline configures leave `SSB64_NETMENU` **OFF** so only the stock decomp `mnvsmode.c` is compiled.
+3. **CMake swaps** substitute the fork for the decomp TU when building the netmenu profile. With `-DSSB64_NETMENU=ON`, `SSB64_NETMENU=1` is defined and selected decomp TUs are **excluded** from `ssb64_game` (for example `decomp/src/mn/mnvsmode/mnvsmode.c`, `decomp/src/mn/mnvsmode/mnvsresults.c`, `decomp/src/sc/scmanager.c`, `decomp/src/lb/lbcommon.c`) while matching sources under `port/net/` are **added** via explicit `target_sources`. The VS hub role is implemented by `port/net/menus/mnvsmodenet.c` (not a same-named `mnvsmode.c` under `port/net/`). Default configures leave **`SSB64_NETMENU` OFF** so only stock decomp TUs compile.
 4. **`port/net/**/*.c` must not** compile through the recursive `port/*.c` glob for the executable. Root `CMakeLists.txt` excludes `port/net/` from `SSB64_SRC_PORT`; net sources are wired only via explicit `target_sources(ssb64_game …)` behind the relevant options.
 
-Repository overlay policy lives in `.cursor/rules/battleship-net-codebase-policy.mdc` (CMake swap details remain here).
+### VS Net Automatch (Linux, `SSB64_NETMENU`)
+
+Automatch uses the **same** `syNetPeer` bootstrap and start barrier as env-driven netplay: after the HTTPS server returns a peer `host:port` and roles, code calls **`syNetPeerConfigureUdpForAutomatch`**, **`syNetPeerOpenSocket`**, STUN-derived **`udp_endpoint`** for queue join when `SSB64_MATCHMAKING_PUBLIC_ENDPOINT` is unset, **`SYNetInputReplayMetadata`/MATCH_CONFIG** exchange with an **`AUTOMATCH_OFFER`** pre-pass for stage ban + fighter negotiation, then **`syNetPeerRunBootstrap`** (returns **`FALSE`** on failure; the client does not load VS until bootstrap succeeds). **`gSYNetPeerSuppressBootstrapSceneAdvance`** prevents the bootstrap path from overwriting `scene_curr` until VS load is deliberate. **`SCCommonData.is_vs_automatch_battle`** and **`vs_net_automatch_post_battle_scene`** route **results** back to **`nSCKindVSNetAutomatch`** (`port/net/menus/mnvsresults.c`).
+
+**Reachability (LAN vs reflexive):** The match payload may include optional **`peer_lan`** when **`lan_endpoint`** is sent on `POST /v1/queue`. The client tries **`peer_lan`** first, then the reflexive **`peer`** string.
+
+**Env precedence:** If **`SSB64_MATCHMAKING_LAN_ENDPOINT`** is set, it is sent as **`lan_endpoint`** unchanged. Otherwise the client may **auto-detect** an RFC1918 IPv4 and the bound UDP port (`getifaddrs` + `getsockname` in `port/net/matchmaking/mm_lan_detect.c`), with optional **`SSB64_MATCHMAKING_LAN_INTERFACE=ifname`** to pin an interface. **`SSB64_MATCHMAKING_PUBLIC_ENDPOINT`** still overrides STUN for **`udp_endpoint`**.
+
+**Hairpin NAT:** Two LAN peers often share the same STUN reflexive (WAN) address. Reaching each other via that reflexive **`peer`** alone requires the router to support **NAT hairpin (loopback)**; many do not. A non-empty **`peer_lan`** avoids that requirement for same-LAN paths.
+
+**Manual LAN hint:** Set **`SSB64_MATCHMAKING_LAN_ENDPOINT=`<your LAN IPv4>`:`<UDP port>** when auto-detection picks the wrong interface or multi-home ordering is ambiguous (port must match your bind, e.g. `192.168.1.50:7778`).
+
+**Two instances on one host:** Use distinct **`SSB64_MATCHMAKING_BIND`** values (e.g. `0.0.0.0:7778` and `0.0.0.0:7779`). Auto-LAN or env should advertise **`127.0.0.1:<port>`** or the machine’s LAN IP with each process’s actual UDP port so **`peer_lan`** dials the correct socket.
+
+**End-to-end sequence (functions, packets, failures):** [netplay_matchmaking.md](./netplay_matchmaking.md).
+
+Repository overlay policy lives in `.cursor/rules/battleship-net-codebase-policy.mdc` (CMake swap inventory for menus is summarized in `docs/netplay_menus.md`).
 
 ## Canonical Input Frame
 
@@ -94,6 +117,14 @@ Each controller slot has a `SYNetInputSource`:
 | `nSYNetInputSourceSaved` | Use a saved input sample for replay or deterministic validation. |
 
 Slots default to local input. This means routing VS battle through `syNetInputFuncRead()` should preserve local controller behavior until a caller explicitly changes a VS slot source.
+
+### Simulation slots vs primary device (UDP P2P)
+
+MATCH_CONFIG / replay metadata fields `netplay_sim_slot_host_hw` and `netplay_sim_slot_client_hw` are **simulation slot indices** (who is P1 vs P2 in the VS sim for host vs guest). They are **not** SDL or `gSYControllerDevices` port numbers. In 1v1 VS, automatch and bootstrap require **host human → sim 0** and **guest human → sim 1**; `syNetPeerApplyInputSlotsFromMetadata` maps that to each peer’s `LocalPlayer` / `RemotePlayer`.
+
+Each machine samples **one** physical controller for its local human: by default `gSYControllerDevices[0]` (settings “player 1”), or the index from **`SSB64_NETPLAY_LOCAL_HARDWARE`** if set. That index is independent of sim slot naming.
+
+Before trusting remote INPUT packets, debug UDP peers exchange **`SYNETPEER_PACKET_INPUT_BIND`**: each side sends the expected host/guest sim pair (from local metadata or the default 0/1 contract) plus its resolved primary device index; both sides must receive a matching contract. Until that mutual step completes (when **`SSB64_NETPLAY_REQUIRE_INPUT_BIND`** is unset or non-zero, the default), incoming INPUT is dropped. Set **`SSB64_NETPLAY_REQUIRE_INPUT_BIND=0`** only for paired testing against older builds that do not send INPUT_BIND.
 
 ## History Buffers
 
@@ -168,7 +199,7 @@ For full-match debug replay files, `netinput.c` also keeps a separate replay fra
 | `syNetPeerStartVSSession()` | Open/reuse the UDP socket for VS, configure local/remote slot ownership, and enable the optional in-battle start barrier. |
 | `syNetPeerCheckBattleExecutionReady()` | Return whether VS battle simulation/presentation may advance. Non-netplay and non-bootstrap sessions return true. |
 | `syNetPeerCheckStartBarrierReleased()` | Return whether netinput may advance the VS-local tick. Non-netplay and non-bootstrap sessions return true. |
-| `syNetPeerUpdateBattleGate()` | Receive control packets and drive `BATTLE_READY` / `BATTLE_START` while VS execution is held. |
+| `syNetPeerUpdateBattleGate()` | Receive control packets and drive `BATTLE_READY` / `BATTLE_START` while VS execution is held. Also retries `INPUT_BIND` until the mutual input-binding handshake completes (unless `SSB64_NETPLAY_REQUIRE_INPUT_BIND=0`). |
 | `syNetPeerUpdate()` | Receive packets, drive the start barrier, send local input frames, and log runtime stats. |
 | `syNetPeerStopVSSession()` | Close the debug UDP socket and log the session summary. |
 
@@ -204,6 +235,8 @@ Current debug environment variables:
 
 - `SSB64_NETPLAY=1` enables the UDP P2P module.
 - `SSB64_NETPLAY_LOCAL_PLAYER` selects the local slot index.
+- `SSB64_NETPLAY_LOCAL_HARDWARE` — during an active VS net session, local input for your **local sim slot** (host `0`, guest `1` in 1v1) is read from this `gSYControllerDevices` index. If **unset**, the default is **`0`** (settings **player 1** / first SDL bind), so the guest’s primary pad controls their in-game P2 fighter even though their sim slot is `1`. Set to `1`, `2`, or `3` when your active pad is bound as player 2–4. Invalid env values fall back to **`0`**.
+- `SSB64_NETPLAY_LOG_LOCAL_INPUT` — if non-zero while **local sim slot is not 0** (1v1 guest / manual P2P peer with `LOCAL_PLAYER=1`), logs ~every 128 VS ticks: sampled hardware index and the local frame after mapping (for diagnosing dead local controls). Manual P2P host (`LOCAL_PLAYER=0`) omits this spam; use `SSB64_NETPLAY_LOCAL_HARDWARE` plus VS-start `local_hardware` line on the host.
 - `SSB64_NETPLAY_REMOTE_PLAYER` selects the remote slot index.
 - `SSB64_NETPLAY_BIND` is the local IPv4 bind address in `host:port` form.
 - `SSB64_NETPLAY_PEER` is the remote IPv4 address in `host:port` form.
@@ -212,9 +245,13 @@ Current debug environment variables:
 - `SSB64_NETPLAY_BOOTSTRAP=1` enables automatic VS match bootstrap.
 - `SSB64_NETPLAY_HOST=1` marks the peer that creates and sends match metadata.
 - `SSB64_NETPLAY_SEED` optionally overrides the bootstrap match RNG seed.
+<<<<<<< HEAD
 - `SSB64_NETPLAY_REMOTE_SLOTS` optional comma-separated **receiver** controller indices (e.g. `1` or `1,3`) whose **published vs remote-confirmed** histories participate in rollback mismatch scan. Defaults to `SSB64_NETPLAY_REMOTE_PLAYER` only.
 - `SSB64_NETPLAY_EXTRA_LOCAL_PLAYER` optional second **sender** controller index on this machine; when set and valid, INPUT packets use **wire version 3** with a second bundled frame block for that slot (two humans on one PC talking to one peer). Leave unset for classic single-local packets (version 2).
 - `SSB64_NETPLAY_PEER_SENDER_SLOTS` optional comma list of **sender** controller indices allowed from the peer’s packets (defaults to the peer’s primary slot = your `SSB64_NETPLAY_REMOTE_PLAYER`). Required when the peer uses dual-local senders so primary/secondary `player` bytes both validate.
+=======
+- `SSB64_NETPLAY_BARRIER_EXTRA_LEAD_MS` adds that many milliseconds to the post–clock-sync wall-clock VS execution start (see `port/net/sys/netpeer.c`).
+>>>>>>> caf222a (push netcode update overhaul)
 
 Packet phases:
 
@@ -229,6 +266,8 @@ Match metadata sync, input tick start sync, and VS execution sync are separate l
 - The input tick barrier keeps `syNetInputGetTick()` at 0 until both peers have reached VS and exchanged readiness.
 - The VS execution gate keeps `scVSBattleFuncUpdate()` from advancing battle/interface presentation while the bootstrap barrier is still waiting.
 
+Clock-aligned barrier scheduling (when clock alignment is enabled): the host gathers multiple `TIME_PING` / `TIME_PONG` samples, computes per-sample offset and NTP-style RTT (`(h3 - h0) - (c2 - c1)`), filters outlier RTT/offset samples, then uses filtered median offset plus conservative lead (`lead_rtt / 2` + margin + jitter slack, with optional uncertainty/fallback/env extra lead) to pick `start_ms`. This avoids treating the last packet as a trustworthy anchor under Wi-Fi jitter. The client maps host start with the signed offset (`deadline = start_ms - offset`); if that mapped deadline is already in the past it clamps once to a small slack after `now` and logs it. **Guests must ignore duplicate identical `BATTLE_START_TIME` retransmits** so the clamp does not chase forward every UDP repeat (detail: [`netplay_matchmaking.md`](./netplay_matchmaking.md) — Barrier flow). This contract is intentionally peer-to-peer; the matchmaking server is not used as a time authority.
+
 The execution gate is intentionally shaped as a reusable readiness query. Future runtime pacing, peer advertised ticks, and rollback readiness checks should build on this boundary instead of adding more one-off checks to the VS scene.
 
 Bootstrap P2P input packets (`INPUT`, wire version `SYNETPEER_VERSION` 2):
@@ -242,7 +281,11 @@ Operational desync instrumentation (logged only when UDP netplay is active and b
 | Log prefix | Approx. cadence | Use |
 | ---------- | ----------------- | --- |
 | `SSB64 NetPeer:` | Every 120 sim ticks (`SYNETPEER_LOG_INTERVAL`) | Transport counters, sequence diagnostics, staged frames, cumulative remote-input fingerprint (`inpchk`). |
+<<<<<<< HEAD
 | `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities, `coll_data.pos_prev`, TopN root translate, and `status_total_tics` using IEEE754 bit reinterpretation — order-independent across controller ports. **`mph`** (when present) is `syNetSyncHashMapCollisionKinematics()` over `gMPCollisionUpdateTic` and capped yakumono mover state for rollback bisect. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. Trailing **`delay`/`ring`/`rscan`** echo `SSB64_NETPLAY_DELAY` (possibly adaptive), `SYNETINPUT_HISTORY_LENGTH` (rollback ring depth), and `SYNETROLLBACK_SCAN_WINDOW`. |
+=======
+| `SSB64 NetSync:` | Same ticks as NetPeer summaries | **`hist_win=[begin,end)`** — half-open `[begin,end)` VS tick range hashed from **resolved published history only** (`sSYNetInputHistory`) using the same logical fields as replay validation (player id + tick + buttons + sticks). **`all`** / **`p0..p3`** show combined and per-slot checksums. Optional **`remote_ring_hist_win=`** (env **`SSB64_NETPLAY_REMOTE_RING_CHECKSUM=1`** or **`SSB64_NETPLAY_TICK_DIAG=2`**) uses the same window over **`sSYNetInputRemoteHistory`** before resolve/publish. **`figh`** is `syNetSyncHashBattleFighters()` over active fighter `FTStruct` scalars plus selected velocities and `coll_data.pos_prev` using IEEE754 bit reinterpretation — order-independent across controller ports. **`pko`/`pkn`** are oldest/newest frame ticks bundled in the most recent validated remote `INPUT` packet (or sentinel `4294967295` when **`pkt_valid=0`**). **`gap`/`dup`/`ooo`** track inferred sequence anomalies. |
+>>>>>>> caf222a (push netcode update overhaul)
 
 Debug workflow:
 
@@ -250,6 +293,10 @@ Debug workflow:
 2. If **`hist_win`** checksum columns diverge first, prioritize packet redundancy, deserialization, staging order, tick assignment, or prediction quirks before rewriting rollback.
 3. If input windows match while **`figh`** diverges, widen or narrow deterministic gameplay hashes before blaming UDP pacing.
 4. If both stay aligned but observers still perceive drift, escalate to pacing / telemetry using the same instrumentation hooks.
+
+### Rollback mismatch debugging
+
+`syNetRollbackFindEarliestInputMismatch` walks backward from the rollback frontier over **`SYNETROLLBACK_SCAN_WINDOW`** ticks, comparing **published** history (`sSYNetInputHistory`) to the **remote** ring (`sSYNetInputRemoteHistory`) for each remote receive slot. Set **`SSB64_NETPLAY_ROLLBACK_MISMATCH_DEBUG`** to a non-empty value to log asymmetric rows (`MISMATCH_DEBUG`) when those layers disagree inside the scan even before a resim is applied. Use this when NetSync shows sustained checksum divergence but **`rb=`** (applied resim count) stays at zero: it can indicate the mismatch finder is not overlapping the divergent tick, load failures are consuming the rollback budget, or prediction/publish ordering is wrong (see early UDP ingress pump in `syNetInputFuncRead`). **`SSB64_NETPLAY_ROLLBACK_FORCE_MISMATCH`** and related vars in `netrollback.c` inject a one-shot test desync.
 
 `cmake` discovers `src/sys/*.c` through `file(GLOB_RECURSE …)`; adding a netplay sys source requires re-running CMake configuration (for example `cmake -B build`) so the glob refreshes before the next build.
 

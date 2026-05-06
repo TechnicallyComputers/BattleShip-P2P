@@ -34,6 +34,17 @@ void PortPushFrame(void);
 void PortGameShutdown(void);
 
 /**
+ * Monotonic PortPushFrame counter (starts at 1 after first frame). For netplay / barrier diagnostics.
+ */
+int port_get_push_frame_count(void);
+
+/**
+ * Snap the PortPushFrame counter to zero when the net battle barrier releases so host VI pushes and
+ * taskman frame counters restart the VS phase together (see netpeer clock barrier + EXEC_SYNC).
+ */
+void port_reset_push_frame_count_for_net_barrier(void);
+
+/**
  * Resume all registered service thread coroutines that are waiting.
  * Called internally by PortPushFrame. Defined in n64_stubs.c.
  */

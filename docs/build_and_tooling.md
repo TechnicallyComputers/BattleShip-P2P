@@ -15,9 +15,11 @@
 
 ### Netmenu configure (`SSB64_NETMENU`)
 
-- **OFF (default):** `ssb64_game` compiles **`decomp/src/mn/mnvsmode/mnvsmode.c`** (stock VS Mode menu).
-- **ON:** CMake excludes that decomp file and compiles **`port/net/menus/mnvsmode.c`** instead (`SSB64_NETMENU=1` is defined). See **`docs/netplay_architecture.md`** (*Port net tree*) and **`.cursor/rules/battleship-net-codebase-policy.mdc`** for overlay norms.
-- Maintain separate build directories for offline vs netmenu configures, for example `-DSSB64_NETMENU=ON`.
+- **OFF (default):** `ssb64_game` compiles stock decomp VS/menu TUs. Decomp VS scenes that include `<sys/net*.h>` get a per-file `-I port/net` so headers resolve without shadowing `<sc/scene.h>` globally.
+- **ON:** CMake mirrors **`port/net/**/*.c`** over **`decomp/src/<same relative path>`** where both exist (see **`cmake/Ssb64NetmenuSources.cmake`**), with a denylist for risky forks (e.g. `sys/taskman.c`) and **aliases** for renames (`mnvsmodenet.c` ↔ `mn/mnvsmode/mnvsmode.c`, etc.). `SSB64_NETMENU=1` is defined. Non-Windows netmenu links libcurl. See **`docs/netplay_architecture.md`**.
+- Maintain separate build directories for offline netmenu OFF vs ON, e.g. `cmake -B build -DSSB64_NETMENU=ON`.
+- **Linux AppImage:** [`scripts/package-linux.sh`](../scripts/package-linux.sh) configures with **`SSB64_NETMENU=ON`** by default (override with `./package-linux.sh -DSSB64_NETMENU=OFF`).
+- **Modkit / `BuildBattleShipFromSource`:** Passthrough reloc steps need a Torch **`BattleShip.o2r`** at configure time (repo root or build tree) or **`RELOCDATA_BATTLESHIP_O2R`**. Without it, CMake skips from-source reloc target generation; run **`ExtractAssets`** (or place the o2r) and reconfigure to enable it.
 
 ## Runtime Logs
 After running the game:

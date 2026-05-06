@@ -6,7 +6,7 @@
 # AppDir layout produced (before appimagetool packs it):
 #   AppDir/
 #     usr/bin/BattleShip                 — main executable
-#     usr/bin/torch                      — sidecar for first-run extraction
+#     usr/bin/port/net/assets/*.png      — VS netmenu label art (RealAppBundlePath)
 #     usr/share/BattleShip/f3d.o2r       — Fast3D shaders (ROM-independent)
 #     usr/share/BattleShip/config.yml    — Torch extraction config
 #     usr/share/BattleShip/yamls/us/*.yml — Torch extraction recipes
@@ -17,6 +17,10 @@
 #
 # Built with NON_PORTABLE=ON so saves and config land in
 # $XDG_DATA_HOME/BattleShip/ (or ~/.local/share/BattleShip/) instead of cwd.
+# Passes -DSSB64_NETMENU=ON by default so this bundle is the netmenu / netplay
+# profile (port/net overlays + CURL on Linux). Extra CMake cache arguments may
+# be passed through this script, e.g. to debug: ./package-linux.sh -DSSB64_NETMENU=OFF
+# Non-Windows netmenu builds require libcurl (CMake find_package(CURL)).
 # BattleShip.o2r is NOT bundled — extracted on first launch via the ImGui
 # wizard from the user's ROM into the app-data dir.
 #
@@ -60,11 +64,13 @@ step "Encoding credits text"
     done
 )
 
-# ── 1. Configure + build with NON_PORTABLE=ON ──
-step "Configuring release build with NON_PORTABLE=ON"
+# ── 1. Configure + build (NON_PORTABLE + netmenu AppImage profile) ──
+step "Configuring release build (NON_PORTABLE=ON, SSB64_NETMENU=ON)"
 cmake -B "$BUILD_DIR" "$ROOT" \
     -DCMAKE_BUILD_TYPE=Release \
     -DNON_PORTABLE=ON \
+    -DSSB64_NETMENU=ON \
+    "$@" \
     >/dev/null
 
 step "Building BattleShip + torch"
@@ -90,6 +96,16 @@ mkdir -p "$APPDIR/usr/bin" "$APPDIR/usr/share/$APP_NAME/yamls/us"
 
 cp "$GAME_BIN"   "$APPDIR/usr/bin/$APP_NAME"
 cp "$TORCH_BIN"  "$APPDIR/usr/bin/torch"
+
+# VS netmenu PNG labels: mn_vs_submenu_png.c resolves paths as
+# RealAppBundlePath()/port/net/assets/<file> — on Linux that is usr/bin
+# (dirname of /proc/self/exe), not usr/share/BattleShip. Mirror the dev
+# layout so custom assets under port/net/assets/ are included.
+if [[ -d "$ROOT/port/net/assets" ]]; then
+    mkdir -p "$APPDIR/usr/bin/port/net/assets"
+    cp -a "$ROOT/port/net/assets/." "$APPDIR/usr/bin/port/net/assets/"
+fi
+
 cp "$F3D_O2R"    "$APPDIR/usr/share/$APP_NAME/f3d.o2r"
 cp "$ROOT/gamecontrollerdb.txt" "$APPDIR/usr/share/$APP_NAME/gamecontrollerdb.txt"
 cp "$ROOT/config.yml" "$APPDIR/usr/share/$APP_NAME/config.yml"

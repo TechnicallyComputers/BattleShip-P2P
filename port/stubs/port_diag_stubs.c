@@ -89,6 +89,9 @@ const char *port_diag_get_scene_name(u8 id)
 	case nSCKindExplain:          return "Explain";
 	case nSCKindAutoDemo:             return "AutoDemo";
 	case nSCKindVSOfflineClassic:     return "VSOfflineClassic";
+	case nSCKindVSOnline:             return "VSOnline";
+	case nSCKindVSNetAutomatch:       return "VSNetAutomatch";
+	case nSCKindVSNetLevelPrefs:      return "VSNetLevelPrefs";
 	default:                          return "?";
 	}
 }
