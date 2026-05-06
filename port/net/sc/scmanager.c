@@ -22,7 +22,14 @@ extern int atoi(const char *s);
 #include <sys/netpeer.h>
 #include <sys/netreplay.h>
 
-extern void mnVSModeStartScene();
+extern void mnVSModeStartScene(void);
+#ifdef SSB64_NETMENU
+extern void mnVSModeOfflineClassicStartScene(void);
+extern void mnVSModeOnlineStartScene(void);
+extern void mnVSNetAutomatchStartScene(void);
+extern void mnVSNetMatchStagingStartScene(void);
+extern void mnVSNetLevelPrefsStartScene(void);
+#endif /* SSB64_NETMENU */
 
 // // // // // // // // // // // //
 //                               //
@@ -568,6 +575,12 @@ SCCommonData dSCManagerDefaultSceneData =
 	nGRKindCastle,									// Training Mode stage selected
 	0,												// Levels to subtract from challenger's CPU level
 	FALSE											// Has the title screen animation been viewed?
+#ifdef SSB64_NETMENU
+	,
+	0,												// VS net level prefs: user stage ban bitmask (slots 0-8)
+	0,												// Post-battle scene for VS net automatch (0 = normal routing)
+	FALSE											// Came from VS net automatch handshake
+#endif
 };
 
 // 0x800A3FC8
@@ -1045,6 +1058,40 @@ void scManagerRunLoop(sb32 arg)
 				syDmaLoadOverlay(&dSCManagerOverlays[19]);
 				mnVSModeStartScene();
 				break;
+
+#ifdef SSB64_NETMENU
+			case nSCKindVSOfflineClassic:
+				syDmaLoadOverlay(&dSCManagerOverlays[1]);
+				syDmaLoadOverlay(&dSCManagerOverlays[19]);
+				mnVSModeOfflineClassicStartScene();
+				break;
+
+			case nSCKindVSOnline:
+				syDmaLoadOverlay(&dSCManagerOverlays[1]);
+				syDmaLoadOverlay(&dSCManagerOverlays[19]);
+				mnVSModeOnlineStartScene();
+				break;
+
+			case nSCKindVSNetAutomatch:
+				syDmaLoadOverlay(&dSCManagerOverlays[2]);
+				syDmaLoadOverlay(&dSCManagerOverlays[1]);
+				syDmaLoadOverlay(&dSCManagerOverlays[27]);
+				mnVSNetAutomatchStartScene();
+				break;
+
+			case nSCKindVSNetMatchStaging:
+				syDmaLoadOverlay(&dSCManagerOverlays[2]);
+				syDmaLoadOverlay(&dSCManagerOverlays[1]);
+				syDmaLoadOverlay(&dSCManagerOverlays[27]);
+				mnVSNetMatchStagingStartScene();
+				break;
+
+			case nSCKindVSNetLevelPrefs:
+				syDmaLoadOverlay(&dSCManagerOverlays[1]);
+				syDmaLoadOverlay(&dSCManagerOverlays[30]);
+				mnVSNetLevelPrefsStartScene();
+				break;
+#endif /* SSB64_NETMENU */
 
 			case nSCKindVSOptions:
 				syDmaLoadOverlay(&dSCManagerOverlays[1]);

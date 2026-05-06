@@ -7,7 +7,16 @@
 #include <sys/objdef.h>
 #include <sys/objman.h>
 
+<<<<<<< HEAD
 
+=======
+/*
+ * NetSync — cheap, partial-state checksums for diagnosing divergent gameplay.
+ * When NetPeer logs `SSB64 NetSync:` lines, hashes should match across peers for the same input window.
+ *
+ * These are *helpers* — they do **not** initiate rollback (netrollback uses input history for that).
+ */
+>>>>>>> b868dfc (Netcode Major Update)
 
 static u32 syNetSyncFnvAccumulateU32(u32 hash, u32 value)
 {
@@ -31,6 +40,10 @@ static u32 syNetSyncHashF32(f32 value)
 	return reinterpret.uv;
 }
 
+<<<<<<< HEAD
+=======
+/* Walk active fighter GObj list; fold selected scalars per player slot, then merge slots deterministically. */
+>>>>>>> b868dfc (Netcode Major Update)
 u32 syNetSyncHashBattleFighters(void)
 {
 	GObj *fighter_gobj;
@@ -113,6 +126,13 @@ u32 syNetSyncHashBattleFighters(void)
 
 #define SYNETSYNC_MAX_MP_YAKU 32
 
+<<<<<<< HEAD
+=======
+/*
+ * Sample up to SYNETSYNC_MAX_MP_YAKU yakumono kinematic entries (stage moving pieces / hazards).
+ * Intended as a canary for “map half of sim diverged”; not a full world hash.
+ */
+>>>>>>> b868dfc (Netcode Major Update)
 u32 syNetSyncHashMapCollisionKinematics(void)
 {
 	u32 hash;

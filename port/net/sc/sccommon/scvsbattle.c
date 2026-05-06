@@ -156,8 +156,12 @@ void scVSBattleStartBattle(void)
 	FTDesc desc;
 	SYColorRGBA color;
 
+#ifdef PORT
+	syNetPeerCommitStagedBootstrapMetadataForBattleStart();
+#endif
 	syNetInputStartVSSession();
 	syNetReplayStartVSSession(gSCManagerBattleState);
+	/* Idempotent when automatch staging already called syNetPeerStartVSSession. */
 	syNetPeerStartVSSession();
 
 	gSCManagerSceneData.is_reset = FALSE;
@@ -223,7 +227,11 @@ void scVSBattleStartBattle(void)
 		desc.stock_count = gSCManagerBattleState->stocks;
 		desc.damage = 0;
 		desc.pkind = gSCManagerBattleState->players[player].pkind;
-		desc.controller = &gSYControllerDevices[player];
+		{
+			SYController *sim = syNetInputGetSimController(player);
+
+			desc.controller = (sim != NULL) ? sim : &gSYControllerDevices[player];
+		}
 
 		desc.figatree_heap = ftManagerAllocFigatreeHeapKind(gSCManagerBattleState->players[player].fkind);
 
@@ -496,7 +504,11 @@ void scVSBattleStartSuddenDeath(void)
 		desc.damage = 300;
 		desc.is_skip_entry = TRUE;
 		desc.pkind = gSCManagerBattleState->players[player].pkind;
-		desc.controller = &gSYControllerDevices[player];
+		{
+			SYController *sim = syNetInputGetSimController(player);
+
+			desc.controller = (sim != NULL) ? sim : &gSYControllerDevices[player];
+		}
 
 		desc.figatree_heap = ftManagerAllocFigatreeHeapKind(gSCManagerBattleState->players[player].fkind);
 
